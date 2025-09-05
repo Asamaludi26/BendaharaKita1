@@ -44,9 +44,6 @@ const App: React.FC = () => {
     const [archivedActuals, setArchivedActuals] = useState<ArchivedActualReport[]>(mockArchivedActuals);
 
     // Modal states
-    const [isAddingActuals, setIsAddingActuals] = useState(false);
-    const [isAddingTarget, setIsAddingTarget] = useState(false);
-    
     const [editingGoal, setEditingGoal] = useState<SavingsGoal | null>(null);
     const [editingDebt, setEditingDebt] = useState<DebtItem | null>(null);
 
@@ -76,7 +73,7 @@ const App: React.FC = () => {
         setMonthlyTarget(data);
         const newArchive: ArchivedMonthlyTarget = { monthYear, target: data };
         setArchivedTargets(prev => [...prev.filter(a => a.monthYear !== monthYear), newArchive]);
-        setIsAddingTarget(false);
+        setView(View.REPORT);
         showToast("Target bulanan berhasil disimpan!");
     };
 
@@ -125,7 +122,7 @@ const App: React.FC = () => {
         });
 
         setTransactions(prev => [...prev, ...newTransactions]);
-        setIsAddingActuals(false);
+        setView(View.REPORT);
         showToast("Laporan aktual berhasil disimpan!");
     };
 
@@ -183,9 +180,17 @@ const App: React.FC = () => {
             case View.TRANSACTIONS:
                 return <Transactions transactions={transactions} />;
             case View.REPORT:
-                return <Report 
-                    onSelectActual={() => setIsAddingActuals(true)}
-                    onSelectTarget={() => setIsAddingTarget(true)}
+                return <Report setView={setView} />;
+            case View.ADD_ACTUAL:
+                return <AddTransaction 
+                    setView={setView}
+                    onSave={handleSaveActuals}
+                    monthlyTarget={monthlyTarget}
+                />;
+            case View.ADD_TARGET:
+                return <AddTargetForm 
+                    setView={setView}
+                    onSave={handleSaveTarget}
                 />;
             case View.MANAGEMENT:
                 return <Management setView={setView} />;
@@ -229,16 +234,6 @@ const App: React.FC = () => {
             <main className="pb-24">
                 {renderView()}
             </main>
-            
-            {isAddingActuals && <AddTransaction 
-                onClose={() => setIsAddingActuals(false)}
-                onSave={handleSaveActuals}
-                monthlyTarget={monthlyTarget}
-            />}
-            {isAddingTarget && <AddTargetForm 
-                onClose={() => setIsAddingTarget(false)}
-                onSave={handleSaveTarget}
-            />}
             
             {editingGoal && <AddEditSavingsGoalModal 
                 goal={editingGoal.id ? editingGoal : null}

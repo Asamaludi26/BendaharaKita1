@@ -85,6 +85,7 @@ const ActualsHistory: React.FC<ActualsHistoryProps> = ({ archives, setView }) =>
             <ReadOnlyActualsSection title="Pengeluaran Utama" items={selectedReport.target.pengeluaranUtama} actuals={selectedReport.actuals} itemIds={selectedReport.target.pengeluaranUtama.map(i => i.id)} />
             <ReadOnlyActualsSection title="Kebutuhan" items={selectedReport.target.kebutuhan} actuals={selectedReport.actuals} itemIds={selectedReport.target.kebutuhan.map(i => i.id)} />
             <ReadOnlyActualsSection title="Penunjang" items={selectedReport.target.penunjang} actuals={selectedReport.actuals} itemIds={selectedReport.target.penunjang.map(i => i.id)} />
+            <ReadOnlyActualsSection title="Pendidikan" items={selectedReport.target.pendidikan} actuals={selectedReport.actuals} itemIds={selectedReport.target.pendidikan.map(i => i.id)} />
             <ReadOnlyActualsSection title="Tujuan Tabungan" items={selectedReport.target.tabungan} actuals={selectedReport.actuals} itemIds={selectedReport.target.tabungan.map(i => i.id)} />
           </>
         ) : (

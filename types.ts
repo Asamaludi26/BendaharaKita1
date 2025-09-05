@@ -69,6 +69,8 @@ export enum View {
   DEBT_DETAIL,
   TARGET_HISTORY,
   ACTUALS_HISTORY,
+  ADD_TARGET,
+  ADD_ACTUAL,
 }
 
 export interface TargetFormField {
@@ -83,6 +85,7 @@ export type AddTargetFormData = {
   pengeluaranUtama: TargetFormField[];
   kebutuhan: TargetFormField[];
   penunjang: TargetFormField[];
+  pendidikan: TargetFormField[];
   tabungan: TargetFormField[];
 };
 

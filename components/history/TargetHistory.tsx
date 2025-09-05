@@ -84,6 +84,7 @@ const TargetHistory: React.FC<TargetHistoryProps> = ({ archives, setView }) => {
             <ReadOnlySection title="Pengeluaran Utama" items={selectedTarget.pengeluaranUtama} />
             <ReadOnlySection title="Kebutuhan" items={selectedTarget.kebutuhan} />
             <ReadOnlySection title="Penunjang" items={selectedTarget.penunjang} />
+            <ReadOnlySection title="Pendidikan" items={selectedTarget.pendidikan} />
             <ReadOnlySection title="Tujuan Tabungan" items={selectedTarget.tabungan} />
           </>
         ) : (

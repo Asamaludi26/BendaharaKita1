@@ -20,6 +20,7 @@
 </script>
 <style>
   :root {
+    /* Brand Colors */
     --primary-50: #EEF2FF;
     --primary-100: #E0E7FF;
     --primary-300: #A5B4FC;
@@ -31,12 +32,43 @@
     --secondary-500: #8B5CF6;
     --secondary-600: #7C3AED;
     
+    /* Semantic Financial & Chart Colors */
     --color-income: #10B981;
     --color-expense: #EF4444;
-    --color-balance: #3B82F6;
-    --color-savings: #F97316;
+    --color-debt: #F97316;
+    --color-savings: #3B82F6;
+    --color-balance: #6366F1;
     --color-net-positive: #22D3EE;
     --color-net-negative: #F97316;
+
+    /* Accordion Header Colors (Light Mode) */
+    --color-header-income-bg: #E7F7F1;
+    --color-header-income-text: #059669;
+    --color-header-debt-bg: #FFF4EC;
+    --color-header-debt-text: #F97316;
+    --color-header-expense-bg: #FEEEEE;
+    --color-header-expense-text: #EF4444;
+    --color-header-savings-bg: #EFF6FF;
+    --color-header-savings-text: #3B82F6;
+
+    /* Form Total Row Colors (Light Mode) */
+    --color-total-success-bg: #D1FAE5; /* green-100 */
+    --color-total-fail-bg: #FEE2E2;    /* red-100 */
+  }
+  html.dark {
+     /* Accordion Header Colors (Dark Mode) */
+    --color-header-income-bg: rgba(16, 185, 129, 0.15);
+    --color-header-income-text: #34D399;
+    --color-header-debt-bg: rgba(249, 115, 22, 0.15);
+    --color-header-debt-text: #FBBF24;
+    --color-header-expense-bg: rgba(239, 68, 68, 0.15);
+    --color-header-expense-text: #F87171;
+    --color-header-savings-bg: rgba(59, 130, 246, 0.15);
+    --color-header-savings-text: #93C5FD;
+    
+    /* Form Total Row Colors (Dark Mode) */
+    --color-total-success-bg: rgba(16, 185, 129, 0.2);
+    --color-total-fail-bg: rgba(239, 68, 68, 0.2);
   }
 </style>
 </head>

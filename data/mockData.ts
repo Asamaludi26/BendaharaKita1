@@ -11,7 +11,7 @@ const createDate = (monthOffset: number, day: number): Date => {
 // These will be used to generate consistent historical data.
 
 // FIX: Added missing 'cicilanUtang' property to satisfy the Omit<MonthlyTarget, ...> type.
-const baseTargetTemplate: Omit<MonthlyTarget, 'pendapatan' | 'pengeluaranUtama' | 'kebutuhan' | 'penunjang' | 'tabungan'> = {
+const baseTargetTemplate: Omit<MonthlyTarget, 'pendapatan' | 'pengeluaranUtama' | 'kebutuhan' | 'penunjang' | 'tabungan' | 'pendidikan'> = {
     cicilanUtang: []
 };
 
@@ -33,6 +33,9 @@ const generateTarget = (monthOffset: number, variations: Partial<MonthlyTarget> 
         penunjang: [
             { id: `penunjang-${monthYear}-1`, name: 'Transportasi', amount: '300000' },
             { id: `penunjang-${monthYear}-2`, name: 'Hiburan', amount: '250000' }
+        ],
+        pendidikan: [
+            { id: `pendidikan-${monthYear}-1`, name: 'Kursus Online', amount: '200000' }
         ],
         tabungan: [
             { id: `tabungan-${monthYear}-1`, name: 'Dana Darurat', amount: '500000' },

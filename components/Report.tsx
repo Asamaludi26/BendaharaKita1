@@ -1,18 +1,18 @@
 import React from 'react';
+import { View } from '../types';
 
 interface ReportProps {
-    onSelectActual: () => void;
-    onSelectTarget: () => void;
+    setView: (view: View) => void;
 }
 
-const Report: React.FC<ReportProps> = ({ onSelectActual, onSelectTarget }) => {
+const Report: React.FC<ReportProps> = ({ setView }) => {
     return (
         <div className="p-4 md:p-6 space-y-4">
             <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">Lapor</h1>
             <div className="space-y-4">
                 <button
-                    onClick={onSelectActual}
-                    className="w-full flex items-center p-6 bg-white dark:bg-gray-800 rounded-2xl hover:bg-indigo-50 dark:hover:bg-gray-700 border-2 border-transparent hover:border-[var(--primary-500)] transition-all duration-300 transform hover:-translate-y-1 shadow-md hover:shadow-lg"
+                    onClick={() => setView(View.ADD_ACTUAL)}
+                    className="w-full flex items-center p-6 bg-white dark:bg-gray-800 rounded-2xl border-2 border-transparent hover:border-[var(--primary-500)] transition-all duration-300 transform hover:-translate-y-1 shadow-md hover:shadow-lg"
                 >
                     <div className="w-16 h-16 rounded-2xl bg-[var(--primary-100)] dark:bg-[var(--primary-900)] flex items-center justify-center mr-6">
                         <i className="fa-solid fa-file-invoice-dollar text-[var(--primary-500)] text-4xl"></i>
@@ -24,8 +24,8 @@ const Report: React.FC<ReportProps> = ({ onSelectActual, onSelectTarget }) => {
                 </button>
 
                  <button
-                    onClick={onSelectTarget}
-                    className="w-full flex items-center p-6 bg-white dark:bg-gray-800 rounded-2xl hover:bg-purple-50 dark:hover:bg-gray-700 border-2 border-transparent hover:border-[var(--secondary-500)] transition-all duration-300 transform hover:-translate-y-1 shadow-md hover:shadow-lg"
+                    onClick={() => setView(View.ADD_TARGET)}
+                    className="w-full flex items-center p-6 bg-white dark:bg-gray-800 rounded-2xl border-2 border-transparent hover:border-[var(--secondary-500)] transition-all duration-300 transform hover:-translate-y-1 shadow-md hover:shadow-lg"
                 >
                     <div className="w-16 h-16 rounded-2xl bg-[var(--secondary-500)]/20 flex items-center justify-center mr-6">
                        <i className="fa-solid fa-bullseye text-[var(--secondary-500)] text-4xl"></i>

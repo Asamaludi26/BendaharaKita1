@@ -14,6 +14,8 @@ const initialFormData: AddTargetFormData = {
   pengeluaranUtama: [{ id: `pengeluaranUtama-${Date.now()}`, name: 'Sewa Rumah', amount: '900000' }],
   kebutuhan: [{ id: `kebutuhan-${Date.now()}`, name: 'Makan', amount: '600000' }],
   penunjang: [{ id: `penunjang-${Date.now()}`, name: 'Pulsa', amount: '50000' }],
+  // FIX: Added missing 'pendidikan' property to satisfy the AddTargetFormData type.
+  pendidikan: [{ id: `pendidikan-${Date.now()}`, name: 'Biaya Kuliah', amount: '1000000' }],
   tabungan: [{ id: `tabungan-${Date.now()}`, name: 'Dana Darurat', amount: '500000' }],
 };
 
@@ -107,6 +109,8 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({ onClose, onSave }) => {
           {renderSection('pengeluaranUtama', 'Pengeluaran Utama')}
           {renderSection('kebutuhan', 'Kebutuhan')}
           {renderSection('penunjang', 'Penunjang')}
+          {/* FIX: Added missing render call for 'pendidikan' to match data structure. */}
+          {renderSection('pendidikan', 'Pendidikan')}
           {renderSection('tabungan', 'Tujuan Tabungan')}
         </main>
         

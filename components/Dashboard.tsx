@@ -14,37 +14,53 @@ interface DashboardProps {
     transactions: Transaction[]; // Still needed for Gemini
 }
 
+interface CompositionData {
+  name: string;
+  value: number;
+  category: 'expense' | 'debt' | 'savings';
+}
+
 const getMetricsFromReport = (report: ArchivedActualReport | undefined) => {
-    if (!report) return { income: 0, nonDebtExpenses: 0, debtInstallments: 0, totalExpenses: 0, savings: 0, netCashFlow: 0, composition: {}, allOutflows: 0 };
+    if (!report) return { income: 0, nonDebtExpenses: 0, debtInstallments: 0, totalExpenses: 0, savings: 0, netCashFlow: 0, composition: [], allOutflows: 0 };
     
     let income = 0, nonDebtExpenses = 0, debtInstallments = 0, savings = 0;
-    const composition: { [key: string]: number } = {};
+    const compositionAgg: { [key: string]: { value: number; category: 'expense' | 'debt' | 'savings' } } = {};
+
+    const addToComposition = (name: string, value: number, category: 'expense' | 'debt' | 'savings') => {
+        if (value > 0) {
+            if (!compositionAgg[name]) {
+                compositionAgg[name] = { value: 0, category };
+            }
+            compositionAgg[name].value += value;
+        }
+    };
 
     (report.target.pendapatan || []).forEach(item => {
         income += parseInt(report.actuals[item.id] || '0');
     });
 
-    const nonDebtSections: (keyof typeof report.target)[] = ['pengeluaranUtama', 'kebutuhan', 'penunjang'];
+    const nonDebtSections: (keyof typeof report.target)[] = ['pengeluaranUtama', 'kebutuhan', 'penunjang', 'pendidikan'];
     nonDebtSections.forEach(section => {
         (report.target[section] || []).forEach(item => {
             const actualAmount = parseInt(report.actuals[item.id] || '0');
             nonDebtExpenses += actualAmount;
-            if (actualAmount > 0) composition[item.name] = (composition[item.name] || 0) + actualAmount;
+            addToComposition(item.name, actualAmount, 'expense');
         });
     });
     
     (report.target.cicilanUtang || []).forEach(item => {
         const actualAmount = parseInt(report.actuals[item.id] || '0');
         debtInstallments += actualAmount;
-        if (actualAmount > 0) composition[item.name] = (composition[item.name] || 0) + actualAmount;
+        addToComposition(item.name, actualAmount, 'debt');
     });
 
     (report.target.tabungan || []).forEach(item => {
         const actualAmount = parseInt(report.actuals[item.id] || '0');
         savings += actualAmount;
-        if (actualAmount > 0) composition[item.name] = (composition[item.name] || 0) + actualAmount;
+        addToComposition(item.name, actualAmount, 'savings');
     });
 
+    const composition = Object.entries(compositionAgg).map(([name, data]) => ({ name, ...data }));
     const totalExpenses = nonDebtExpenses + debtInstallments;
     const netCashFlow = income - totalExpenses;
     const allOutflows = totalExpenses + savings;
@@ -190,7 +206,7 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
         let targetIncome = 0, targetTotalExpenses = 0, targetNetCashFlow = 0, targetSavings = 0;
         if (currentTargetReport) {
              targetIncome = currentTargetReport.target.pendapatan.reduce((sum, item) => sum + parseInt(item.amount), 0);
-             const expenseSections: (keyof typeof currentTargetReport.target)[] = ['pengeluaranUtama', 'kebutuhan', 'penunjang', 'cicilanUtang'];
+             const expenseSections: (keyof typeof currentTargetReport.target)[] = ['pengeluaranUtama', 'kebutuhan', 'penunjang', 'cicilanUtang', 'pendidikan'];
              expenseSections.forEach(section => {
                 targetTotalExpenses += currentTargetReport.target[section].reduce((sum, item) => sum + parseInt(item.amount), 0);
              });
@@ -205,7 +221,7 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
             { title: 'Tabungan Bulan Ini', amount: currentMetrics.savings, previousAmount: prevMetrics.savings, target: targetSavings, icon: SavingsIcon, color: 'savings', type: 'savings' },
         ];
         
-        const pieData = Object.entries(currentMetrics.composition).map(([name, value]) => ({ name, value }));
+        const pieData: CompositionData[] = currentMetrics.composition;
         
         const currentTxs = transactions.filter(tx => {
             const txDate = new Date(tx.date);
@@ -328,7 +344,11 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
     }, [totalPendapatan, totalSemuaPengeluaran, totalTabungan, sisaUang, isOverspent, isDataAvailable]);
 
     
-    const PIE_COLORS = ['#EF4444', '#F97316', '#8B5CF6', '#10B981', '#3B82F6', '#F59E0B', '#EC4899', '#6366F1'];
+    const PIE_CHART_COLORS: { [key in CompositionData['category']]: string } = {
+      expense: 'var(--color-expense)',
+      debt: 'var(--color-debt)',
+      savings: 'var(--color-savings)',
+    };
 
 
     return (
@@ -581,7 +601,7 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
                                             {pieChartData.map((entry, index) => (
                                                 <Cell 
                                                     key={`cell-${index}`} 
-                                                    fill={PIE_COLORS[index % PIE_COLORS.length]} 
+                                                    fill={PIE_CHART_COLORS[entry.category]} 
                                                     className="stroke-transparent focus:outline-none"
                                                 />
                                             ))}
@@ -591,9 +611,9 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
                                 </ResponsiveContainer>
                             </div>
                             <div className="space-y-2 overflow-y-auto max-h-60 pr-2">
-                                {sortedPieData.map((entry) => {
+                                {sortedPieData.map((entry, index) => {
                                     const originalIndex = pieChartData.findIndex(p => p.name === entry.name);
-                                    const color = PIE_COLORS[originalIndex % PIE_COLORS.length];
+                                    const color = PIE_CHART_COLORS[entry.category];
                                     const percentage = totalOutflowsForPie > 0 ? (entry.value / totalOutflowsForPie) * 100 : 0;
                                     return (
                                         <div 
