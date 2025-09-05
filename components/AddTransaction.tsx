@@ -79,10 +79,10 @@ const AddTransaction: React.FC<AddTransactionProps> = ({ setView, onSave, monthl
              <p className="text-gray-600 dark:text-gray-300 mb-6">Anda harus membuat "Target Bulanan" terlebih dahulu sebelum bisa mengisi Laporan Aktual.</p>
              <button
                 type="button"
-                onClick={() => setView(View.REPORT)}
+                onClick={() => setView(View.ADD_TARGET)}
                 className="w-full bg-[var(--primary-600)] text-white font-bold py-3 px-6 rounded-full shadow-lg hover:bg-[var(--primary-700)] transition-colors"
             >
-                Kembali ke Laporan
+                Buat Target Sekarang
             </button>
          </div>
       </div>
