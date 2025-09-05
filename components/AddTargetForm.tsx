@@ -67,21 +67,21 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({ onClose, onSave }) => {
                 placeholder="Nama Item" 
                 value={field.name}
                 onChange={(e) => handleFieldChange(section, index, 'name', e.target.value)}
-                className="col-span-8 p-3 bg-slate-900 border border-slate-700 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="col-span-8 p-3 bg-slate-900 border border-slate-700 rounded-md focus:ring-2 focus:ring-[var(--primary-500)] focus:border-transparent"
               />
               <input 
                 type="number" 
                 placeholder="Jumlah" 
                 value={field.amount}
                 onChange={(e) => handleFieldChange(section, index, 'amount', e.target.value)}
-                className="col-span-4 p-3 bg-slate-900 border border-slate-700 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent text-right"
+                className="col-span-4 p-3 bg-slate-900 border border-slate-700 rounded-md focus:ring-2 focus:ring-[var(--primary-500)] focus:border-transparent text-right"
               />
             </div>
           ))}
           <button 
             type="button" 
             onClick={() => addField(section)} 
-            className="text-sm font-semibold text-purple-400 hover:text-purple-300 mt-2 transition-colors"
+            className="text-sm font-semibold text-[var(--primary-400)] hover:text-[var(--primary-300)] mt-2 transition-colors"
           >
             + Tambah Item
           </button>
@@ -109,7 +109,7 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({ onClose, onSave }) => {
         </main>
         
         <footer className="p-4 border-t border-slate-700 flex-shrink-0 bg-slate-800/80 backdrop-blur-sm rounded-b-2xl">
-          <button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-indigo-500 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+          <button type="submit" className="w-full bg-gradient-to-r from-[var(--secondary-600)] to-[var(--primary-500)] text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
             Simpan Target
           </button>
         </footer>

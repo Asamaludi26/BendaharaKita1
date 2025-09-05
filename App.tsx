@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { View, Transaction, TransactionType, DebtItem, SavingsGoal, MonthlyTarget, ArchivedMonthlyTarget, ArchivedActualReport } from './types';
 // FIX: Removed mockMonthlyData as it's no longer used.
 import { mockTransactions, mockDebts, mockSavingsGoals, mockArchivedTargets, mockArchivedActuals } from './data/mockData';
@@ -20,6 +20,14 @@ import AddTransaction from './components/AddTransaction';
 import AddTargetForm from './components/AddTargetForm';
 import AddEditSavingsGoalModal from './components/modals/AddEditSavingsGoalModal';
 import AddEditDebtModal from './components/modals/AddEditDebtModal';
+import Toast from './components/Toast';
+
+interface ToastState {
+  show: boolean;
+  message: string;
+  type: 'success' | 'error';
+}
+
 
 const App: React.FC = () => {
     // State management
@@ -42,8 +50,15 @@ const App: React.FC = () => {
     
     const [editingGoal, setEditingGoal] = useState<SavingsGoal | null>(null);
     const [editingDebt, setEditingDebt] = useState<DebtItem | null>(null);
+
+    // Toast state
+    const [toast, setToast] = useState<ToastState>({ show: false, message: '', type: 'success' });
     
     // Handlers
+    const showToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
+        setToast({ show: true, message, type });
+    }, []);
+
     const setView = useCallback((view: View, item?: DebtItem | SavingsGoal) => {
         if (view === View.ADD) {
             setIsChoosingAdd(true);
@@ -67,10 +82,14 @@ const App: React.FC = () => {
         const newArchive: ArchivedMonthlyTarget = { monthYear, target: data };
         setArchivedTargets(prev => [...prev.filter(a => a.monthYear !== monthYear), newArchive]);
         setIsAddingTarget(false);
+        showToast("Target bulanan berhasil disimpan!");
     };
 
     const handleSaveActuals = (data: { [key: string]: string }) => {
-        if (!monthlyTarget) return;
+        if (!monthlyTarget) {
+            showToast("Gagal: Target bulanan tidak ditemukan.", "error");
+            return;
+        };
 
         const now = new Date();
         const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -88,6 +107,7 @@ const App: React.FC = () => {
             // FIX: Corrected the type of sectionType from a string literal to the TransactionType enum to match the Transaction interface.
             let sectionType: TransactionType = TransactionType.EXPENSE;
             
+            // FIX: Corrected a syntax error in the type assertion from `(key of MonthlyTarget)[]` to `(keyof MonthlyTarget)[]` to resolve a cascade of scope-related compiler errors.
             for (const section of Object.keys(monthlyTarget) as (keyof MonthlyTarget)[]) {
                 const foundItem = monthlyTarget[section].find(i => i.id === id);
                 if (foundItem) {
@@ -111,6 +131,7 @@ const App: React.FC = () => {
 
         setTransactions(prev => [...prev, ...newTransactions]);
         setIsAddingActuals(false);
+        showToast("Laporan aktual berhasil disimpan!");
     };
 
     const handleSaveGoal = (goal: SavingsGoal) => {
@@ -124,11 +145,13 @@ const App: React.FC = () => {
             return [...prev, { ...goal, id: `goal-${Date.now()}` }];
         });
         setEditingGoal(null);
+        showToast("Tujuan tabungan berhasil disimpan!");
     };
 
     const handleDeleteGoal = (id: string) => {
         setSavingsGoals(prev => prev.filter(g => g.id !== id));
         setView(View.SAVINGS_GOALS);
+        showToast("Tujuan tabungan telah dihapus.", 'error');
     };
     
     const handleSaveDebt = (debt: DebtItem) => {
@@ -142,11 +165,13 @@ const App: React.FC = () => {
             return [...prev, { ...debt, id: `debt-${Date.now()}` }];
         });
         setEditingDebt(null);
+        showToast("Data utang berhasil disimpan!");
     };
 
     const handleDeleteDebt = (id: string) => {
         setDebts(prev => prev.filter(d => d.id !== id));
         setView(View.DEBT_MANAGEMENT);
+        showToast("Data utang telah dihapus.", 'error');
     };
 
     const renderView = () => {
@@ -194,6 +219,13 @@ const App: React.FC = () => {
 
     return (
         <div className="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-white min-h-screen font-sans">
+            {toast.show && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast({ show: false, message: '', type: 'success' })}
+                />
+            )}
             <main className="pb-24">
                 {renderView()}
             </main>

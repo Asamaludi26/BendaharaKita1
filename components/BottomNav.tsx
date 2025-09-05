@@ -15,8 +15,8 @@ const NavItem: React.FC<{
   onClick: () => void;
 }> = ({ view, label, Icon, isActive, onClick }) => (
   <button onClick={onClick} className="flex flex-col items-center justify-center w-full h-full space-y-1.5 transition-transform transform hover:scale-110">
-    <Icon className={`w-7 h-7 transition-colors ${isActive ? 'text-indigo-400' : 'text-gray-400'}`} />
-    <span className={`text-sm font-medium transition-colors ${isActive ? 'text-indigo-400' : 'text-gray-400'}`}>{label}</span>
+    <Icon className={`w-7 h-7 transition-colors ${isActive ? 'text-[var(--primary-400)]' : 'text-gray-400'}`} />
+    <span className={`text-sm font-medium transition-colors ${isActive ? 'text-[var(--primary-400)]' : 'text-gray-400'}`}>{label}</span>
   </button>
 );
 
@@ -41,7 +41,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeView, setView }) => {
       <div className="w-20 h-24 flex items-center justify-center">
         <button 
           onClick={() => setView(View.ADD)} 
-          className="w-14 h-24 bg-gradient-to-b from-purple-600 to-indigo-500 rounded-full flex items-center justify-center text-white shadow-lg -mt-10 transform hover:scale-105 transition-transform duration-300 ring-4 ring-gray-900"
+          className="w-14 h-24 bg-gradient-to-b from-[var(--secondary-600)] to-[var(--primary-500)] rounded-full flex items-center justify-center text-white shadow-lg -mt-10 transform hover:scale-105 transition-transform duration-300 ring-4 ring-gray-900"
         >
           <span className="text-4xl font-thin">+</span>
         </button>

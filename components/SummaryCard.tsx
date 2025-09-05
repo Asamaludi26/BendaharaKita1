@@ -1,4 +1,3 @@
-
 import React from 'react';
 import type { SummaryCardData } from '../types';
 
@@ -16,14 +15,17 @@ const SummaryCard: React.FC<SummaryCardProps> = ({ data, isComparisonMode }) => 
   const formatCurrency = (value: number) => `Rp ${value.toLocaleString('id-ID')}`;
 
   const progressPercentage = target ? (amount / target) * 100 : 0;
+  
+  const mainColor = `var(--color-${color})`;
+  const lightBgColor = `var(--color-${color})`;
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-4 flex flex-col justify-between transform hover:scale-105 transition-transform duration-300">
       <div>
         <div className="flex items-center justify-between mb-2">
           <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</p>
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center`} style={{ backgroundColor: `${color}20`}}>
-              <Icon className={`w-5 h-5`} style={{ color: color }}/>
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center bg-opacity-10`} style={{ backgroundColor: mainColor, opacity: 0.2 }}>
+              <Icon className={`w-5 h-5`} style={{ color: mainColor }}/>
           </div>
         </div>
         {isComparisonMode && target ? (
@@ -39,7 +41,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({ data, isComparisonMode }) => 
         {isComparisonMode && target ? (
           <div className="mt-4">
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-              <div className="h-1.5 rounded-full" style={{ width: `${Math.min(progressPercentage, 100)}%`, backgroundColor: color }}></div>
+              <div className="h-1.5 rounded-full" style={{ width: `${Math.min(progressPercentage, 100)}%`, backgroundColor: mainColor }}></div>
             </div>
           </div>
         ) : (

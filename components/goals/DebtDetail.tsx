@@ -53,7 +53,7 @@ const DebtDetail: React.FC<DebtDetailProps> = ({ debt, setView, onEdit, onDelete
 
             {/* Action Buttons */}
             <div className="flex items-center space-x-4">
-                <button onClick={() => onEdit(debt)} className="flex-1 bg-indigo-600 text-white font-bold py-3 rounded-lg shadow-md hover:bg-indigo-700 transition-colors flex items-center justify-center space-x-2">
+                <button onClick={() => onEdit(debt)} className="flex-1 bg-[var(--primary-600)] text-white font-bold py-3 rounded-lg shadow-md hover:bg-[var(--primary-700)] transition-colors flex items-center justify-center space-x-2">
                     <i className="fa-solid fa-pencil"></i>
                     <span>Edit</span>
                 </button>

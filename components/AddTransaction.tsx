@@ -42,7 +42,7 @@ const AddTransaction: React.FC<AddTransactionProps> = ({ onClose, onSave, monthl
              <button
                 type="button"
                 onClick={onClose}
-                className="w-full bg-indigo-600 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:bg-indigo-700 transition-colors"
+                className="w-full bg-[var(--primary-600)] text-white font-bold py-3 px-6 rounded-full shadow-lg hover:bg-[var(--primary-700)] transition-colors"
             >
                 Mengerti
             </button>
@@ -82,7 +82,7 @@ const AddTransaction: React.FC<AddTransactionProps> = ({ onClose, onSave, monthl
               placeholder="0"
               value={actualsData[field.id] || ''}
               onChange={(e) => handleActualChange(field.id, e.target.value)}
-              className="col-span-3 p-2 bg-slate-900 border border-slate-700 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent text-right"
+              className="col-span-3 p-2 bg-slate-900 border border-slate-700 rounded-md focus:ring-2 focus:ring-[var(--primary-500)] focus:border-transparent text-right"
             />
           </div>
         ))}
@@ -110,7 +110,7 @@ const AddTransaction: React.FC<AddTransactionProps> = ({ onClose, onSave, monthl
         </main>
         
         <footer className="p-4 border-t border-slate-700 flex-shrink-0 bg-slate-800/80 backdrop-blur-sm rounded-b-2xl">
-          <button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-indigo-500 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+          <button type="submit" className="w-full bg-gradient-to-r from-[var(--secondary-600)] to-[var(--primary-500)] text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
             Simpan Laporan Aktual
           </button>
         </footer>

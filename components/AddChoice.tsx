@@ -21,10 +21,10 @@ const AddChoice: React.FC<AddChoiceProps> = ({ onClose, onSelectActual, onSelect
                 <div className="space-y-6">
                     <button 
                         onClick={onSelectActual}
-                        className="w-full flex items-center p-8 bg-gray-50 dark:bg-gray-700/50 rounded-2xl hover:bg-indigo-50 dark:hover:bg-indigo-900/50 border-2 border-transparent hover:border-indigo-500 transition-all duration-300 transform hover:scale-105"
+                        className="w-full flex items-center p-8 bg-gray-50 dark:bg-gray-700/50 rounded-2xl hover:bg-[var(--primary-50)] dark:hover:bg-[var(--primary-900)]/50 border-2 border-transparent hover:border-[var(--primary-500)] transition-all duration-300 transform hover:scale-105"
                     >
-                        <div className="w-20 h-20 rounded-2xl bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center mr-6">
-                            <i className="fa-solid fa-file-invoice-dollar text-indigo-500 text-5xl"></i>
+                        <div className="w-20 h-20 rounded-2xl bg-[var(--primary-100)] dark:bg-[var(--primary-900)] flex items-center justify-center mr-6">
+                            <i className="fa-solid fa-file-invoice-dollar text-[var(--primary-500)] text-5xl"></i>
                         </div>
                         <div>
                             <p className="text-xl font-bold text-left text-gray-800 dark:text-white">Laporan Aktual</p>
@@ -34,10 +34,10 @@ const AddChoice: React.FC<AddChoiceProps> = ({ onClose, onSelectActual, onSelect
 
                      <button 
                         onClick={onSelectTarget}
-                        className="w-full flex items-center p-8 bg-gray-50 dark:bg-gray-700/50 rounded-2xl hover:bg-purple-50 dark:hover:bg-purple-900/50 border-2 border-transparent hover:border-purple-500 transition-all duration-300 transform hover:scale-105"
+                        className="w-full flex items-center p-8 bg-gray-50 dark:bg-gray-700/50 rounded-2xl hover:bg-[var(--secondary-500)]/10 dark:hover:bg-[var(--secondary-500)]/20 border-2 border-transparent hover:border-[var(--secondary-500)] transition-all duration-300 transform hover:scale-105"
                     >
-                        <div className="w-20 h-20 rounded-2xl bg-purple-100 dark:bg-purple-900 flex items-center justify-center mr-6">
-                           <i className="fa-solid fa-bullseye text-purple-500 text-5xl"></i>
+                        <div className="w-20 h-20 rounded-2xl bg-[var(--secondary-500)]/20 flex items-center justify-center mr-6">
+                           <i className="fa-solid fa-bullseye text-[var(--secondary-500)] text-5xl"></i>
                         </div>
                         <div>
                             <p className="text-xl font-bold text-left text-gray-800 dark:text-white">Target Bulanan</p>

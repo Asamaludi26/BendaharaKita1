@@ -38,19 +38,19 @@ const AddEditDebtModal: React.FC<AddEditDebtModalProps> = ({ onClose, onSave, de
         <main className="flex-1 p-6 space-y-4">
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-slate-300 mb-1">Nama Utang</label>
-            <input type="text" id="name" value={name} onChange={e => setName(e.target.value)} required className="w-full p-3 bg-slate-900 border border-slate-700 rounded-md focus:ring-2 focus:ring-purple-500" />
+            <input type="text" id="name" value={name} onChange={e => setName(e.target.value)} required className="w-full p-3 bg-slate-900 border border-slate-700 rounded-md focus:ring-2 focus:ring-[var(--primary-500)]" />
           </div>
           <div>
             <label htmlFor="totalAmount" className="block text-sm font-medium text-slate-300 mb-1">Jumlah Total</label>
-            <input type="number" id="totalAmount" value={totalAmount} onChange={e => setTotalAmount(Number(e.target.value))} required className="w-full p-3 bg-slate-900 border border-slate-700 rounded-md focus:ring-2 focus:ring-purple-500" />
+            <input type="number" id="totalAmount" value={totalAmount} onChange={e => setTotalAmount(Number(e.target.value))} required className="w-full p-3 bg-slate-900 border border-slate-700 rounded-md focus:ring-2 focus:ring-[var(--primary-500)]" />
           </div>
           <div>
             <label htmlFor="paidAmount" className="block text-sm font-medium text-slate-300 mb-1">Telah Dibayar</label>
-            <input type="number" id="paidAmount" value={paidAmount} onChange={e => setPaidAmount(Number(e.target.value))} required className="w-full p-3 bg-slate-900 border border-slate-700 rounded-md focus:ring-2 focus:ring-purple-500" />
+            <input type="number" id="paidAmount" value={paidAmount} onChange={e => setPaidAmount(Number(e.target.value))} required className="w-full p-3 bg-slate-900 border border-slate-700 rounded-md focus:ring-2 focus:ring-[var(--primary-500)]" />
           </div>
           <div>
             <label htmlFor="category" className="block text-sm font-medium text-slate-300 mb-1">Kategori</label>
-            <select id="category" value={category} onChange={e => setCategory(e.target.value as DebtCategory)} required className="w-full p-3 bg-slate-900 border border-slate-700 rounded-md focus:ring-2 focus:ring-purple-500">
+            <select id="category" value={category} onChange={e => setCategory(e.target.value as DebtCategory)} required className="w-full p-3 bg-slate-900 border border-slate-700 rounded-md focus:ring-2 focus:ring-[var(--primary-500)]">
               <option value="Konsumtif">Konsumtif</option>
               <option value="Produktif">Produktif</option>
             </select>
@@ -58,7 +58,7 @@ const AddEditDebtModal: React.FC<AddEditDebtModalProps> = ({ onClose, onSave, de
         </main>
         
         <footer className="p-4 border-t border-slate-700">
-          <button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-indigo-500 text-white font-bold py-3 rounded-full shadow-lg hover:scale-[1.02] transition-transform">
+          <button type="submit" className="w-full bg-gradient-to-r from-[var(--secondary-600)] to-[var(--primary-500)] text-white font-bold py-3 rounded-full shadow-lg hover:scale-[1.02] transition-transform">
             Simpan
           </button>
         </footer>

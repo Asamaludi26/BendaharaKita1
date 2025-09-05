@@ -29,8 +29,8 @@ const Management: React.FC<ManagementProps> = ({ setView }) => {
           </div>
         </button>
         <button onClick={() => setView(View.TARGET_HISTORY)} className="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-6 text-left hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center space-x-4">
-          <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/50 rounded-lg flex items-center justify-center">
-            <i className="fa-solid fa-bullseye text-purple-500 text-2xl"></i>
+          <div className="w-12 h-12 bg-[var(--secondary-500)]/10 dark:bg-[var(--secondary-500)]/20 rounded-lg flex items-center justify-center">
+            <i className="fa-solid fa-bullseye text-[var(--secondary-500)] text-2xl"></i>
           </div>
           <div>
             <h2 className="font-bold text-lg text-gray-800 dark:text-white">Riwayat Target Bulanan</h2>
@@ -38,8 +38,8 @@ const Management: React.FC<ManagementProps> = ({ setView }) => {
           </div>
         </button>
         <button onClick={() => setView(View.ACTUALS_HISTORY)} className="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-6 text-left hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center space-x-4">
-          <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg flex items-center justify-center">
-            <i className="fa-solid fa-file-invoice-dollar text-indigo-500 text-2xl"></i>
+          <div className="w-12 h-12 bg-[var(--primary-100)] dark:bg-[var(--primary-900)]/50 rounded-lg flex items-center justify-center">
+            <i className="fa-solid fa-file-invoice-dollar text-[var(--primary-500)] text-2xl"></i>
           </div>
           <div>
             <h2 className="font-bold text-lg text-gray-800 dark:text-white">Riwayat Laporan Aktual</h2>

@@ -56,7 +56,7 @@ const Transactions: React.FC<TransactionsProps> = ({ transactions }) => {
   const FilterChip: React.FC<{ type: 'all' | 'income' | 'expense', label: string }> = ({ type, label }) => (
     <button 
         onClick={() => setFilter(type)}
-        className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${filter === type ? 'bg-indigo-600 text-white shadow-md' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`}
+        className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${filter === type ? 'bg-[var(--primary-600)] text-white shadow-md' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`}
     >
         {label}
     </button>

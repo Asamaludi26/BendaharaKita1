@@ -43,7 +43,7 @@ const DebtManagement: React.FC<DebtManagementProps> = ({ debts, setView, onAdd }
   const FilterChip: React.FC<{ value: 'all' | DebtCategory, label: string }> = ({ value, label }) => (
     <button
         onClick={() => setFilter(value)}
-        className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${filter === value ? 'bg-indigo-600 text-white shadow-md' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`}
+        className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${filter === value ? 'bg-[var(--primary-600)] text-white shadow-md' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`}
     >
         {label}
     </button>
