@@ -1,6 +1,6 @@
 import React from 'react';
 import { View } from '../types';
-import { DashboardIcon, ProfileIcon, ManagementIcon, TransactionsIcon } from './icons';
+import { DashboardIcon, ProfileIcon, ManagementIcon, TransactionsIcon, ReportIcon } from './icons';
 
 interface BottomNavProps {
   activeView: View;
@@ -37,15 +37,13 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeView, setView }) => {
         isActive={activeView === View.TRANSACTIONS}
         onClick={() => setView(View.TRANSACTIONS)}
       />
-      {/* Revised Add button for better UX and design matching */}
-      <div className="w-20 h-24 flex items-center justify-center">
-        <button 
-          onClick={() => setView(View.ADD)} 
-          className="w-14 h-24 bg-gradient-to-b from-[var(--secondary-600)] to-[var(--primary-500)] rounded-full flex items-center justify-center text-white shadow-lg -mt-10 transform hover:scale-105 transition-transform duration-300 ring-4 ring-gray-900"
-        >
-          <span className="text-4xl font-thin">+</span>
-        </button>
-      </div>
+      <NavItem
+        view={View.REPORT}
+        label="Lapor"
+        Icon={ReportIcon}
+        isActive={activeView === View.REPORT}
+        onClick={() => setView(View.REPORT)}
+      />
       <NavItem
         view={View.MANAGEMENT}
         label="Manajemen"

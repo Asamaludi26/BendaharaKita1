@@ -60,7 +60,7 @@ export interface SummaryCardData {
 export enum View {
   DASHBOARD,
   TRANSACTIONS,
-  ADD,
+  REPORT,
   MANAGEMENT,
   PROFILE,
   SAVINGS_GOALS,

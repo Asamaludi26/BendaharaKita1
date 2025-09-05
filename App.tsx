@@ -15,7 +15,7 @@ import DebtManagement from './components/goals/DebtManagement';
 import DebtDetail from './components/goals/DebtDetail';
 import TargetHistory from './components/history/TargetHistory';
 import ActualsHistory from './components/history/ActualsHistory';
-import AddChoice from './components/AddChoice';
+import Report from './components/Report';
 import AddTransaction from './components/AddTransaction';
 import AddTargetForm from './components/AddTargetForm';
 import AddEditSavingsGoalModal from './components/modals/AddEditSavingsGoalModal';
@@ -44,7 +44,6 @@ const App: React.FC = () => {
     const [archivedActuals, setArchivedActuals] = useState<ArchivedActualReport[]>(mockArchivedActuals);
 
     // Modal states
-    const [isChoosingAdd, setIsChoosingAdd] = useState(false);
     const [isAddingActuals, setIsAddingActuals] = useState(false);
     const [isAddingTarget, setIsAddingTarget] = useState(false);
     
@@ -60,15 +59,11 @@ const App: React.FC = () => {
     }, []);
 
     const setView = useCallback((view: View, item?: DebtItem | SavingsGoal) => {
-        if (view === View.ADD) {
-            setIsChoosingAdd(true);
+        setActiveView(view);
+        if (item) {
+            setSelectedItem(item);
         } else {
-            setActiveView(view);
-            if (item) {
-                setSelectedItem(item);
-            } else {
-                setSelectedItem(null);
-            }
+            setSelectedItem(null);
         }
     }, []);
 
@@ -187,6 +182,11 @@ const App: React.FC = () => {
                 />;
             case View.TRANSACTIONS:
                 return <Transactions transactions={transactions} />;
+            case View.REPORT:
+                return <Report 
+                    onSelectActual={() => setIsAddingActuals(true)}
+                    onSelectTarget={() => setIsAddingTarget(true)}
+                />;
             case View.MANAGEMENT:
                 return <Management setView={setView} />;
             case View.PROFILE:
@@ -230,11 +230,6 @@ const App: React.FC = () => {
                 {renderView()}
             </main>
             
-            {isChoosingAdd && <AddChoice 
-                onClose={() => setIsChoosingAdd(false)}
-                onSelectActual={() => { setIsChoosingAdd(false); setIsAddingActuals(true); }}
-                onSelectTarget={() => { setIsChoosingAdd(false); setIsAddingTarget(true); }}
-            />}
             {isAddingActuals && <AddTransaction 
                 onClose={() => setIsAddingActuals(false)}
                 onSave={handleSaveActuals}
