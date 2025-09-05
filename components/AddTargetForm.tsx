@@ -1,13 +1,13 @@
-import React, { useState, useMemo } from 'react';
-import { AddTargetFormData, TargetFormField, View } from '../types';
+import React, { useState, useMemo, useEffect } from 'react';
+import { AddTargetFormData, TargetFormField, View, MonthlyTarget } from '../types';
 import { AccordionSection } from './AccordionSection';
 
 interface AddTargetFormProps {
   setView: (view: View) => void;
   onSave: (data: AddTargetFormData) => void;
+  savedTarget: MonthlyTarget | null;
 }
 
-// FIX: Initialized form data with at least one entry per section to provide a default structure.
 const initialFormData: AddTargetFormData = {
   pendapatan: [{ id: `pendapatan-${Date.now()}`, name: 'Gaji', amount: '' }],
   cicilanUtang: [{ id: `cicilanUtang-${Date.now()}`, name: 'Cicilan Motor', amount: '' }],
@@ -28,8 +28,26 @@ const sectionAccentColors: { [key in keyof AddTargetFormData]: string } = {
   tabungan: 'border-l-[var(--color-savings)]',
 };
 
-const AddTargetForm: React.FC<AddTargetFormProps> = ({ setView, onSave }) => {
-  const [formData, setFormData] = useState<AddTargetFormData>(initialFormData);
+const AddTargetForm: React.FC<AddTargetFormProps> = ({ setView, onSave, savedTarget }) => {
+  const [formData, setFormData] = useState<AddTargetFormData>(() => {
+    if (savedTarget) {
+      return savedTarget;
+    }
+    const savedDraft = localStorage.getItem('bendaharaKita-targetFormDraft');
+    if (savedDraft) {
+        try {
+            return JSON.parse(savedDraft);
+        } catch (error) {
+            console.error("Failed to parse target form draft from localStorage", error);
+            return initialFormData;
+        }
+    }
+    return initialFormData;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('bendaharaKita-targetFormDraft', JSON.stringify(formData));
+  }, [formData]);
 
   const handleFieldChange = (
     section: keyof AddTargetFormData, 
@@ -42,7 +60,6 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({ setView, onSave }) => {
     if (field === 'name') {
         itemToUpdate.name = value;
     } else if (field === 'amount') {
-        // Allow only numeric input
         itemToUpdate.amount = value.replace(/[^0-9]/g, '');
     }
     updatedSection[index] = itemToUpdate;
@@ -59,7 +76,7 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({ setView, onSave }) => {
   };
 
   const removeField = (section: keyof AddTargetFormData, index: number) => {
-    if (formData[section].length <= 1) return; // Prevent removing the last item
+    if (formData[section].length <= 1) return;
     const updatedSection = formData[section].filter((_, i) => i !== index);
     setFormData(prev => ({ ...prev, [section]: updatedSection }));
   };
@@ -67,6 +84,7 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({ setView, onSave }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave(formData);
+    localStorage.removeItem('bendaharaKita-targetFormDraft');
   };
   
   const totals = useMemo(() => {

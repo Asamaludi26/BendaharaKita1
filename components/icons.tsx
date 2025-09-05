@@ -56,3 +56,9 @@ export const ReportIcon: React.FC<IconProps> = (props) => (
     <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
   </svg>
 );
+
+export const GoalsIcon: React.FC<IconProps> = (props) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.504-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.871m-1.996-1.125h.008v.008h-.008v-.008zm1.992 0h.008v.008h-.008v-.008zM12 18.75v-3.375c0-.621-.504-1.125-1.125-1.125H9.75M12 18.75v-3.375c0-.621.504-1.125 1.125-1.125h1.125m-9 0h9" />
+    </svg>
+);

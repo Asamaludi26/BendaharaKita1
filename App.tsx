@@ -39,7 +39,6 @@ const App: React.FC = () => {
     const [debts, setDebts] = useState<DebtItem[]>(mockDebts);
     const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>(mockSavingsGoals);
 
-    const [monthlyTarget, setMonthlyTarget] = useState<MonthlyTarget | null>(null);
     const [archivedTargets, setArchivedTargets] = useState<ArchivedMonthlyTarget[]>(mockArchivedTargets);
     const [archivedActuals, setArchivedActuals] = useState<ArchivedActualReport[]>(mockArchivedActuals);
 
@@ -70,7 +69,6 @@ const App: React.FC = () => {
     const handleSaveTarget = (data: MonthlyTarget) => {
         const now = new Date();
         const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-        setMonthlyTarget(data);
         const newArchive: ArchivedMonthlyTarget = { monthYear, target: data };
         setArchivedTargets(prev => [...prev.filter(a => a.monthYear !== monthYear), newArchive]);
         setView(View.REPORT);
@@ -78,16 +76,18 @@ const App: React.FC = () => {
     };
 
     const handleSaveActuals = (data: { [key: string]: string }) => {
-        if (!monthlyTarget) {
+        const now = new Date();
+        const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        
+        const currentTarget = archivedTargets.find(a => a.monthYear === monthYear)?.target;
+
+        if (!currentTarget) {
             showToast("Gagal: Target bulanan tidak ditemukan.", "error");
             return;
         };
 
-        const now = new Date();
-        const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-
         // 1. Archive the actual report
-        const newArchivedActual: ArchivedActualReport = { monthYear, actuals: data, target: monthlyTarget };
+        const newArchivedActual: ArchivedActualReport = { monthYear, actuals: data, target: currentTarget };
         setArchivedActuals(prev => [...prev.filter(a => a.monthYear !== monthYear), newArchivedActual]);
 
         // 2. Generate transactions from the report
@@ -96,12 +96,10 @@ const App: React.FC = () => {
             if (!amountStr || isNaN(amount) || amount === 0) return [];
 
             let item: { name: string; } | undefined;
-            // FIX: Corrected the type of sectionType from a string literal to the TransactionType enum to match the Transaction interface.
             let sectionType: TransactionType = TransactionType.EXPENSE;
             
-            // FIX: Corrected a syntax error in the type assertion from `(key of MonthlyTarget)[]` to `(keyof MonthlyTarget)[]` to resolve a cascade of scope-related compiler errors.
-            for (const section of Object.keys(monthlyTarget) as (keyof MonthlyTarget)[]) {
-                const foundItem = monthlyTarget[section].find(i => i.id === id);
+            for (const section of Object.keys(currentTarget) as (keyof MonthlyTarget)[]) {
+                const foundItem = currentTarget[section].find(i => i.id === id);
                 if (foundItem) {
                     item = foundItem;
                     if (section === 'pendapatan') sectionType = TransactionType.INCOME;
@@ -166,6 +164,17 @@ const App: React.FC = () => {
         showToast("Data utang telah dihapus.", 'error');
     };
 
+    const monthlyTargetForActuals = useMemo(() => {
+        const currentMonthYear = `${displayDate.getFullYear()}-${String(displayDate.getMonth() + 1).padStart(2, '0')}`;
+        return archivedTargets.find(a => a.monthYear === currentMonthYear)?.target ?? null;
+    }, [displayDate, archivedTargets]);
+
+    const currentMonthTargetForEditing = useMemo(() => {
+        const now = new Date();
+        const currentMonthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        return archivedTargets.find(a => a.monthYear === currentMonthYear)?.target ?? null;
+    }, [archivedTargets]);
+
     const renderView = () => {
         switch (activeView) {
             case View.DASHBOARD:
@@ -185,12 +194,13 @@ const App: React.FC = () => {
                 return <AddTransaction 
                     setView={setView}
                     onSave={handleSaveActuals}
-                    monthlyTarget={monthlyTarget}
+                    monthlyTarget={monthlyTargetForActuals}
                 />;
             case View.ADD_TARGET:
                 return <AddTargetForm 
                     setView={setView}
                     onSave={handleSaveTarget}
+                    savedTarget={currentMonthTargetForEditing}
                 />;
             case View.MANAGEMENT:
                 return <Management setView={setView} />;

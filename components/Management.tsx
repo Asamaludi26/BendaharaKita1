@@ -8,7 +8,7 @@ interface ManagementProps {
 const Management: React.FC<ManagementProps> = ({ setView }) => {
   return (
     <div className="p-4 md:p-6 space-y-4">
-      <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">Manajemen Finansial</h1>
+      <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">Goals</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <button onClick={() => setView(View.SAVINGS_GOALS)} className="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-6 text-left hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center space-x-4">
           <div className="w-12 h-12 bg-green-100 dark:bg-green-900/50 rounded-lg flex items-center justify-center">
@@ -26,24 +26,6 @@ const Management: React.FC<ManagementProps> = ({ setView }) => {
           <div>
             <h2 className="font-bold text-lg text-gray-800 dark:text-white">Manajemen Utang</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">Kelola dan lunasi utang Anda.</p>
-          </div>
-        </button>
-        <button onClick={() => setView(View.TARGET_HISTORY)} className="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-6 text-left hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center space-x-4">
-          <div className="w-12 h-12 bg-[var(--secondary-500)]/10 dark:bg-[var(--secondary-500)]/20 rounded-lg flex items-center justify-center">
-            <i className="fa-solid fa-bullseye text-[var(--secondary-500)] text-2xl"></i>
-          </div>
-          <div>
-            <h2 className="font-bold text-lg text-gray-800 dark:text-white">Riwayat Target Bulanan</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Lihat anggaran yang pernah Anda buat.</p>
-          </div>
-        </button>
-        <button onClick={() => setView(View.ACTUALS_HISTORY)} className="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-6 text-left hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center space-x-4">
-          <div className="w-12 h-12 bg-[var(--primary-100)] dark:bg-[var(--primary-900)]/50 rounded-lg flex items-center justify-center">
-            <i className="fa-solid fa-file-invoice-dollar text-[var(--primary-500)] text-2xl"></i>
-          </div>
-          <div>
-            <h2 className="font-bold text-lg text-gray-800 dark:text-white">Riwayat Laporan Aktual</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Tinjau laporan realisasi bulanan.</p>
           </div>
         </button>
       </div>

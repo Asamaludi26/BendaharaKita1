@@ -1,6 +1,6 @@
 import React from 'react';
 import { View } from '../types';
-import { DashboardIcon, ProfileIcon, ManagementIcon, TransactionsIcon, ReportIcon } from './icons';
+import { DashboardIcon, ProfileIcon, ManagementIcon, TransactionsIcon, GoalsIcon } from './icons';
 
 interface BottomNavProps {
   activeView: View;
@@ -39,15 +39,15 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeView, setView }) => {
       />
       <NavItem
         view={View.REPORT}
-        label="Lapor"
-        Icon={ReportIcon}
+        label="Manajemen"
+        Icon={ManagementIcon}
         isActive={activeView === View.REPORT}
         onClick={() => setView(View.REPORT)}
       />
       <NavItem
         view={View.MANAGEMENT}
-        label="Manajemen"
-        Icon={ManagementIcon}
+        label="Goals"
+        Icon={GoalsIcon}
         isActive={activeView === View.MANAGEMENT}
         onClick={() => setView(View.MANAGEMENT)}
       />
