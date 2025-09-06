@@ -18,8 +18,11 @@ import AddDebtForm from './components/AddDebtForm';
 import AddSavingsGoalForm from './components/AddSavingsGoalForm';
 import DebtHistory from './components/history/DebtHistory';
 import SavingsGoalHistory from './components/history/SavingsGoalHistory';
+import OnboardingWizard from './components/goals/OnboardingWizard';
 
 const App: React.FC = () => {
+    // Check localStorage to see if onboarding has been completed
+    const [showOnboarding, setShowOnboarding] = useState(!localStorage.getItem('onboardingComplete'));
     const [view, setView] = useState<View>(View.DASHBOARD);
     const [activeGoalId, setActiveGoalId] = useState<string | null>(null);
 
@@ -75,6 +78,13 @@ const App: React.FC = () => {
         return debts.reduce((sum, debt) => sum + debt.totalAmount, 0);
     }, [debts]);
 
+    const handleOnboardingComplete = (initialData: { debts: DebtItem[], savingsGoals: SavingsGoal[] }) => {
+        setDebts(initialData.debts);
+        setSavingsGoals(initialData.savingsGoals);
+        localStorage.setItem('onboardingComplete', 'true');
+        setShowOnboarding(false);
+        setToast({ message: 'Pengaturan awal berhasil!', type: 'success' });
+    };
 
     const handleSaveTarget = (data: AddTargetFormData) => {
         setArchivedTargets(prev => {
@@ -110,26 +120,33 @@ const App: React.FC = () => {
         }
     };
     
-    const handleSaveDebt = (newDebtData: Omit<DebtItem, 'id' | 'payments'>) => {
+    const handleSaveDebt = (newDebtData: Omit<DebtItem, 'id' | 'payments'> & { payments: { date: string; amount: number }[] }) => {
         const newDebt: DebtItem = {
             ...newDebtData,
             id: `debt-${Date.now()}`,
-            payments: [],
         };
         setDebts(prev => [...prev, newDebt]);
         setToast({ message: 'Pinjaman baru berhasil dicatat!', type: 'success' });
         setView(View.MANAGEMENT);
     };
+    
 
-    const handleSaveSavingsGoal = (newGoalData: Omit<SavingsGoal, 'id' | 'currentAmount'>) => {
+    const handleSaveSavingsGoal = (newGoalData: Omit<SavingsGoal, 'id'>) => {
         const newGoal: SavingsGoal = {
             ...newGoalData,
             id: `sg-${Date.now()}`,
-            currentAmount: 0,
         };
         setSavingsGoals(prev => [...prev, newGoal]);
         setToast({ message: 'Tujuan tabungan baru berhasil dibuat!', type: 'success' });
         setView(View.MANAGEMENT);
+    };
+
+    const handleResetGoalsData = () => {
+        setDebts([]);
+        setSavingsGoals([]);
+        localStorage.removeItem('onboardingComplete');
+        setShowOnboarding(true);
+        setToast({ message: 'Data berhasil diatur ulang. Silakan masukkan data baru.', type: 'success' });
     };
 
     const handleSelectDebt = (id: string) => {
@@ -143,6 +160,23 @@ const App: React.FC = () => {
     };
 
     const renderView = () => {
+        const managementView = (
+             <Management 
+                setView={setView} 
+                debts={activeDebts} 
+                savingsGoals={activeSavingsGoals} 
+                onSelectDebt={handleSelectDebt} 
+                onSelectSavingsGoal={handleSelectSavingsGoal} 
+                onAddDebt={() => setView(View.ADD_DEBT)} 
+                onAddSavingsGoal={() => setView(View.ADD_SAVINGS_GOAL)} 
+                onViewHistory={() => setView(View.DEBT_HISTORY)} 
+                onViewSavingsHistory={() => setView(View.SAVINGS_GOAL_HISTORY)}
+                totalAllTimeSavings={totalAllTimeSavings}
+                totalAllTimeDebt={totalAllTimeDebt}
+                onResetGoals={handleResetGoalsData}
+            />
+        );
+
         switch (view) {
             case View.DASHBOARD:
                 return <Dashboard displayDate={displayDate} handlePrevMonth={handlePrevMonth} handleNextMonth={handleNextMonth} archivedTargets={archivedTargets} archivedActuals={archivedActuals} transactions={transactions} />;
@@ -159,19 +193,12 @@ const App: React.FC = () => {
             case View.ACTUALS_HISTORY:
                 return <ActualsHistory archives={archivedActuals} setView={setView} />;
             case View.MANAGEMENT:
-                return <Management 
-                    setView={setView} 
-                    debts={activeDebts} 
-                    savingsGoals={activeSavingsGoals} 
-                    onSelectDebt={handleSelectDebt} 
-                    onSelectSavingsGoal={handleSelectSavingsGoal} 
-                    onAddDebt={() => setView(View.ADD_DEBT)} 
-                    onAddSavingsGoal={() => setView(View.ADD_SAVINGS_GOAL)} 
-                    onViewHistory={() => setView(View.DEBT_HISTORY)} 
-                    onViewSavingsHistory={() => setView(View.SAVINGS_GOAL_HISTORY)}
-                    totalAllTimeSavings={totalAllTimeSavings}
-                    totalAllTimeDebt={totalAllTimeDebt}
-                />;
+                return (
+                    <div className="relative">
+                        {showOnboarding && <OnboardingWizard onComplete={handleOnboardingComplete} />}
+                        {managementView}
+                    </div>
+                );
             case View.ADD_DEBT:
                 return <AddDebtForm setView={setView} onSave={handleSaveDebt} />;
             case View.ADD_SAVINGS_GOAL:

@@ -3,14 +3,14 @@ import { View, SavingsGoal } from '../types';
 
 interface AddSavingsGoalFormProps {
     setView: (view: View) => void;
-    onSave: (goal: Omit<SavingsGoal, 'id' | 'currentAmount'>) => void;
+    onSave: (goal: Omit<SavingsGoal, 'id'>) => void;
 }
 
 const ProgressBar: React.FC<{ currentStep: number }> = ({ currentStep }) => {
     const steps = [
         { name: 'Nama Tujuan', icon: 'fa-flag-checkered' },
         { name: 'Target Dana', icon: 'fa-sack-dollar' },
-        { name: 'Tenggat Waktu', icon: 'fa-calendar-check' },
+        { name: 'Jadwal & Status', icon: 'fa-calendar-check' },
     ];
 
     return (
@@ -45,10 +45,11 @@ const AddSavingsGoalForm: React.FC<AddSavingsGoalFormProps> = ({ setView, onSave
         name: '',
         targetAmount: '',
         deadline: '',
+        currentAmount: '', // New field for existing savings
     });
 
     const handleInputChange = (field: keyof typeof formData, value: string) => {
-         const isNumeric = ['targetAmount'].includes(field);
+         const isNumeric = ['targetAmount', 'currentAmount'].includes(field);
          const processedValue = isNumeric ? value.replace(/[^0-9]/g, '') : value;
          setFormData(prev => ({ ...prev, [field]: processedValue }));
     };
@@ -74,10 +75,15 @@ const AddSavingsGoalForm: React.FC<AddSavingsGoalFormProps> = ({ setView, onSave
             alert("Harap lengkapi semua data pada langkah ini.");
             return;
         }
+        
+        // The onSave prop expects Omit<SavingsGoal, 'id' | 'currentAmount'>
+        // But we are now handling currentAmount. We will pass it differently or adjust App.tsx
+        // Let's pass the full object and let App.tsx handle it.
         onSave({
             name: formData.name,
             targetAmount: parseInt(formData.targetAmount),
             deadline: new Date(formData.deadline).toISOString(),
+            currentAmount: parseInt(formData.currentAmount || '0'),
         });
     };
 
@@ -113,6 +119,14 @@ const AddSavingsGoalForm: React.FC<AddSavingsGoalFormProps> = ({ setView, onSave
                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tenggat Waktu</label>
                              <input type="date" value={formData.deadline} onChange={e => handleInputChange('deadline', e.target.value)} className="w-full p-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-[var(--primary-500)] focus:border-transparent" />
                              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Kapan Anda ingin tujuan ini tercapai?</p>
+                         </div>
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Dana Terkumpul Saat Ini (Opsional)</label>
+                            <div className="relative">
+                                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">Rp</span>
+                                <input type="text" inputMode="numeric" placeholder="0" value={formData.currentAmount ? parseInt(formData.currentAmount).toLocaleString('id-ID') : ''} onChange={e => handleInputChange('currentAmount', e.target.value)} className="w-full p-3 pl-9 bg-gray-50 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-[var(--primary-500)] focus:border-transparent text-right" />
+                            </div>
+                             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Isi jika Anda sudah memiliki tabungan untuk tujuan ini.</p>
                          </div>
                      </div>
                 );
