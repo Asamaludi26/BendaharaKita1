@@ -1,6 +1,8 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { AddTargetFormData, TargetFormField, View, MonthlyTarget, DebtItem, SavingsGoal } from '../types';
 import { AccordionSection } from './AccordionSection';
+import Modal from './Modal';
 
 interface AddTargetFormProps {
   setView: (view: View) => void;
@@ -8,6 +10,7 @@ interface AddTargetFormProps {
   savedTarget: MonthlyTarget | null;
   debts: DebtItem[];
   savingsGoals: SavingsGoal[];
+  isPreFilled: boolean;
 }
 
 const initialFormData: AddTargetFormData = {
@@ -30,9 +33,21 @@ const sectionAccentColors: { [key in keyof AddTargetFormData]: string } = {
   tabungan: 'border-l-[var(--color-savings)]',
 };
 
-const AddTargetForm: React.FC<AddTargetFormProps> = ({ setView, onSave, savedTarget, debts, savingsGoals }) => {
+const AddTargetForm: React.FC<AddTargetFormProps> = ({ setView, onSave, savedTarget, debts, savingsGoals, isPreFilled }) => {
+  const [isLocked, setIsLocked] = useState(isPreFilled);
+  const [showPreFillModal, setShowPreFillModal] = useState(isPreFilled);
+  const [showSaveConfirmModal, setShowSaveConfirmModal] = useState(false);
+  const [isJustSaved, setIsJustSaved] = useState(false);
+
+
   const [formData, setFormData] = useState<AddTargetFormData>(() => {
     if (savedTarget) {
+      // If a target is saved for the current month (not pre-filled from past), it should be locked initially.
+      // isPreFilled being false here means a definitive target for this month exists.
+      if (!isPreFilled) {
+        setIsJustSaved(true);
+        setIsLocked(true);
+      }
       return savedTarget;
     }
     const savedDraft = localStorage.getItem('bendaharaKita-targetFormDraft');
@@ -47,12 +62,19 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({ setView, onSave, savedTar
     // Pre-populate if it's a new form
     const prePopulatedData = { ...initialFormData };
 
-    prePopulatedData.cicilanUtang = debts.length > 0 
-        ? debts.map(debt => ({ id: `cicilanUtang-pre-${debt.id}`, name: debt.name, amount: String(debt.monthlyInstallment) }))
+    const activeDebts = debts.filter(debt => {
+        const paidAmount = debt.payments.reduce((sum, p) => sum + p.amount, 0);
+        return (debt.totalAmount - paidAmount) > 0;
+    });
+
+    prePopulatedData.cicilanUtang = activeDebts.length > 0 
+        ? activeDebts.map(debt => ({ id: `cicilanUtang-pre-${debt.id}`, name: debt.name, amount: String(debt.monthlyInstallment) }))
         : initialFormData.cicilanUtang;
 
-    prePopulatedData.tabungan = savingsGoals.length > 0
-        ? savingsGoals.map(goal => {
+    const activeGoals = savingsGoals.filter(goal => goal.currentAmount < goal.targetAmount);
+
+    prePopulatedData.tabungan = activeGoals.length > 0
+        ? activeGoals.map(goal => {
             const now = new Date();
             now.setHours(0, 0, 0, 0);
             const deadline = new Date(goal.deadline);
@@ -77,7 +99,7 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({ setView, onSave, savedTar
             return {
               id: `tabungan-pre-${goal.id}`,
               name: goal.name,
-              amount: String(suggestedAmount)
+              amount: String(suggestedAmount > 0 ? suggestedAmount : 0)
             };
         })
         : initialFormData.tabungan;
@@ -86,8 +108,10 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({ setView, onSave, savedTar
   });
 
   useEffect(() => {
-    localStorage.setItem('bendaharaKita-targetFormDraft', JSON.stringify(formData));
-  }, [formData]);
+    if (!isLocked) {
+        localStorage.setItem('bendaharaKita-targetFormDraft', JSON.stringify(formData));
+    }
+  }, [formData, isLocked]);
 
   const handleFieldChange = (
     section: keyof AddTargetFormData, 
@@ -123,8 +147,15 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({ setView, onSave, savedTar
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
-    localStorage.removeItem('bendaharaKita-targetFormDraft');
+    setShowSaveConfirmModal(true);
+  };
+
+  const handleConfirmSave = () => {
+      onSave(formData);
+      localStorage.removeItem('bendaharaKita-targetFormDraft');
+      setShowSaveConfirmModal(false);
+      setIsLocked(true);
+      setIsJustSaved(true);
   };
   
   const totals = useMemo(() => {
@@ -149,7 +180,8 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({ setView, onSave, savedTar
               placeholder="Nama Item" 
               value={field.name}
               onChange={(e) => handleFieldChange(section, index, 'name', e.target.value)}
-              className="col-span-7 p-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-[var(--primary-500)] focus:border-transparent"
+              className="col-span-7 p-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-[var(--primary-500)] focus:border-transparent disabled:bg-gray-100 dark:disabled:bg-gray-700/50 disabled:cursor-not-allowed"
+              disabled={isLocked}
             />
             <input
               type="text"
@@ -157,13 +189,14 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({ setView, onSave, savedTar
               placeholder="0"
               value={field.amount ? parseInt(field.amount).toLocaleString('id-ID') : ''}
               onChange={(e) => handleFieldChange(section, index, 'amount', e.target.value)}
-              className="col-span-4 p-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-[var(--primary-500)] focus:border-transparent text-right"
+              className="col-span-4 p-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-[var(--primary-500)] focus:border-transparent text-right disabled:bg-gray-100 dark:disabled:bg-gray-700/50 disabled:cursor-not-allowed"
+              disabled={isLocked}
             />
              <button
               type="button"
               onClick={() => removeField(section, index)}
               className={`col-span-1 text-gray-400 hover:text-red-500 disabled:opacity-50 disabled:cursor-not-allowed`}
-              disabled={formData[section].length <= 1}
+              disabled={isLocked || formData[section].length <= 1}
             >
               <i className="fa-solid fa-trash-can"></i>
             </button>
@@ -173,7 +206,8 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({ setView, onSave, savedTar
             <button 
                 type="button" 
                 onClick={() => addField(section)} 
-                className="text-sm font-semibold text-[var(--primary-500)] hover:text-[var(--primary-600)] transition-colors"
+                className="text-sm font-semibold text-[var(--primary-500)] hover:text-[var(--primary-600)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isLocked}
             >
                 <i className="fa-solid fa-plus mr-2"></i>Tambah Item
             </button>
@@ -186,62 +220,212 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({ setView, onSave, savedTar
     </AccordionSection>
   );
 
-  return (
-    <div className="p-4 md:p-6 space-y-6">
-       <header className="flex items-center space-x-4">
-        <button onClick={() => setView(View.REPORT)} className="text-gray-500 dark:text-gray-400">
-            <i className="fa-solid fa-arrow-left text-xl"></i>
-        </button>
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Target Bulanan</h1>
-      </header>
-      
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-6">
-            <div>
-                <h2 className="text-lg font-semibold text-gray-500 dark:text-gray-400 mb-2 border-b border-gray-200 dark:border-gray-700 pb-2">1. Pendapatan Bulanan</h2>
-                {renderSection('pendapatan', 'Rincian Pendapatan')}
-            </div>
-            <div>
-                <h2 className="text-lg font-semibold text-gray-500 dark:text-gray-400 mb-2 border-b border-gray-200 dark:border-gray-700 pb-2">2. Rincian Utang Bulanan (Pembayaran Cicilan)</h2>
-                {renderSection('cicilanUtang', 'Rincian Cicilan Utang')}
-            </div>
-            <div>
-                <h2 className="text-lg font-semibold text-gray-500 dark:text-gray-400 mb-2 border-b border-gray-200 dark:border-gray-700 pb-2">3. Rincian Pengeluaran Bulanan (Non-Utang)</h2>
-                <div className="space-y-3">
-                  {renderSection('pengeluaranUtama', 'Pengeluaran Utama')}
-                  {renderSection('kebutuhan', 'Kebutuhan')}
-                  {renderSection('penunjang', 'Penunjang')}
-                  {renderSection('pendidikan', 'Pendidikan')}
+  const Banner = () => {
+    if (!isLocked || showPreFillModal) return null;
+
+    const bannerConfig = {
+      saved: {
+        icon: "fa-check-circle",
+        iconColor: "text-green-400",
+        title: "Target Disimpan",
+        description: "Target bulan ini telah diatur. Klik 'Ubah Lagi' jika ada perubahan.",
+        buttonText: "Ubah Lagi",
+        onButtonClick: () => setIsLocked(false),
+      },
+      prefill: {
+        icon: "fa-eye",
+        iconColor: "text-[var(--primary-400)]",
+        title: "Mode Lihat Saja",
+        description: "Target ini disalin dari bulan lalu. Klik 'Ubah Target' untuk menyesuaikannya.",
+        buttonText: "Ubah Target",
+        onButtonClick: () => setShowPreFillModal(true),
+      },
+    };
+
+    const config = isJustSaved || !isPreFilled ? bannerConfig.saved : bannerConfig.prefill;
+
+    return (
+        <div className="bg-gray-800/50 backdrop-blur-sm border border-[var(--primary-500)]/50 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 animate-fade-in">
+            <div className="flex items-center space-x-4">
+                <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-[var(--primary-500)]/20 rounded-full">
+                    <i className={`fa-solid ${config.icon} ${config.iconColor} text-xl`}></i>
+                </div>
+                <div>
+                    <h4 className="font-bold text-white">{config.title}</h4>
+                    <p className="text-sm text-gray-300">{config.description}</p>
                 </div>
             </div>
-            <div>
-                <h2 className="text-lg font-semibold text-gray-500 dark:text-gray-400 mb-2 border-b border-gray-200 dark:border-gray-700 pb-2">4. Rincian Tabungan Bulanan</h2>
-                {renderSection('tabungan', 'Tujuan Tabungan')}
-            </div>
-        </div>
-
-        <div className="sticky bottom-24 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm p-4 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 grid grid-cols-3 gap-4 items-center">
-            <div className="text-center">
-                <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Total Pendapatan</p>
-                <p className="text-lg font-bold text-green-500">Rp {totalPendapatan.toLocaleString('id-ID')}</p>
-            </div>
-            <div className="text-center">
-                <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Total Pengeluaran</p>
-                <p className="text-lg font-bold text-red-500">Rp {totalPengeluaran.toLocaleString('id-ID')}</p>
-            </div>
-            <div className="text-center">
-                <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Sisa Uang</p>
-                <p className={`text-lg font-bold ${sisa >= 0 ? 'text-blue-500' : 'text-yellow-500'}`}>Rp {sisa.toLocaleString('id-ID')}</p>
-            </div>
-        </div>
-        
-        <div className="pt-4 pb-20"> {/* Padding bottom to clear bottom nav */}
-            <button type="submit" className="w-full bg-gradient-to-r from-[var(--secondary-600)] to-[var(--primary-500)] text-white font-bold py-4 px-6 rounded-full shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
-                Simpan Target Bulanan
+            <button
+                onClick={config.onButtonClick}
+                className="w-full sm:w-auto flex-shrink-0 bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white font-bold py-2 px-5 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 text-sm"
+            >
+                <i className="fa-solid fa-pencil-alt mr-2"></i>
+                {config.buttonText}
             </button>
         </div>
-      </form>
-    </div>
+    );
+  };
+
+
+  return (
+    <>
+      <div className="p-4 md:p-6 space-y-6">
+        <header className="flex items-center space-x-4">
+          <button onClick={() => setView(View.REPORT)} className="text-gray-500 dark:text-gray-400">
+              <i className="fa-solid fa-arrow-left text-xl"></i>
+          </button>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Target Bulanan</h1>
+        </header>
+        
+        <Banner />
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-6">
+              <div>
+                  <h2 className="text-lg font-semibold text-gray-500 dark:text-gray-400 mb-2 border-b border-gray-200 dark:border-gray-700 pb-2">1. Pendapatan Bulanan</h2>
+                  {renderSection('pendapatan', 'Rincian Pendapatan')}
+              </div>
+              <div>
+                  <h2 className="text-lg font-semibold text-gray-500 dark:text-gray-400 mb-2 border-b border-gray-200 dark:border-gray-700 pb-2">2. Rincian Utang Bulanan (Pembayaran Cicilan)</h2>
+                  {renderSection('cicilanUtang', 'Rincian Cicilan Utang')}
+              </div>
+              <div>
+                  <h2 className="text-lg font-semibold text-gray-500 dark:text-gray-400 mb-2 border-b border-gray-200 dark:border-gray-700 pb-2">3. Rincian Pengeluaran Bulanan (Non-Utang)</h2>
+                  <div className="space-y-3">
+                    {renderSection('pengeluaranUtama', 'Pengeluaran Utama')}
+                    {renderSection('kebutuhan', 'Kebutuhan')}
+                    {renderSection('penunjang', 'Penunjang')}
+                    {renderSection('pendidikan', 'Pendidikan')}
+                  </div>
+              </div>
+              <div>
+                  <h2 className="text-lg font-semibold text-gray-500 dark:text-gray-400 mb-2 border-b border-gray-200 dark:border-gray-700 pb-2">4. Rincian Tabungan Bulanan</h2>
+                  {renderSection('tabungan', 'Tujuan Tabungan')}
+              </div>
+          </div>
+
+          <div className="sticky bottom-24 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm p-4 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 grid grid-cols-3 gap-4 items-center">
+              <div className="text-center">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Total Pendapatan</p>
+                  <p className="text-lg font-bold text-green-500">Rp {totalPendapatan.toLocaleString('id-ID')}</p>
+              </div>
+              <div className="text-center">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Total Pengeluaran</p>
+                  <p className="text-lg font-bold text-red-500">Rp {totalPengeluaran.toLocaleString('id-ID')}</p>
+              </div>
+              <div className="text-center">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Sisa Uang</p>
+                  <p className={`text-lg font-bold ${sisa >= 0 ? 'text-blue-500' : 'text-yellow-500'}`}>Rp {sisa.toLocaleString('id-ID')}</p>
+              </div>
+          </div>
+          
+          <div className="pt-4 pb-20"> {/* Padding bottom to clear bottom nav */}
+              <button type="submit" className="w-full bg-gradient-to-r from-[var(--secondary-600)] to-[var(--primary-500)] text-white font-bold py-4 px-6 rounded-full shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100" disabled={isLocked}>
+                  Simpan Target Bulanan
+              </button>
+          </div>
+        </form>
+      </div>
+
+      {/* Pre-fill confirmation modal */}
+      <Modal isOpen={showPreFillModal} onClose={() => setView(View.REPORT)}>
+        <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl text-center p-6 pt-16">
+          <button 
+              onClick={() => setView(View.REPORT)} 
+              className="absolute top-4 right-4 w-10 h-10 rounded-full text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center transition-colors z-10"
+              aria-label="Close modal"
+          >
+              <i className="fa-solid fa-times text-xl"></i>
+          </button>
+
+          <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex items-center justify-center h-24 w-24 rounded-full bg-gradient-to-br from-purple-400 via-indigo-500 to-indigo-600 shadow-lg shadow-indigo-500/40 animate-float">
+              <i className="fa-solid fa-clone text-5xl text-white"></i>
+          </div>
+          
+          <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
+              Target Otomatis Terisi!
+          </h3>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
+              Kami telah mengisi target bulan ini berdasarkan data bulan lalu. Anda dapat mengubahnya, melihat saja, atau kembali.
+          </p>
+          
+          <div className="flex flex-col gap-3">
+              <button
+                  type="button"
+                  onClick={() => {
+                      setIsLocked(false);
+                      setShowPreFillModal(false);
+                      setIsJustSaved(false);
+                  }}
+                  className="w-full bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+              >
+                  Ubah & Sesuaikan
+              </button>
+              <button
+                  type="button"
+                  onClick={() => setShowPreFillModal(false)}
+                  className="w-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-bold py-3 px-6 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              >
+                  Nanti Saja (Hanya Lihat)
+              </button>
+              <button
+                  type="button"
+                  onClick={() => setView(View.REPORT)}
+                  className="w-full bg-transparent text-gray-500 dark:text-gray-400 font-semibold py-3 px-6 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                  Kembali
+              </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Save confirmation modal */}
+      <Modal isOpen={showSaveConfirmModal} onClose={() => setShowSaveConfirmModal(false)}>
+        <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl text-center p-6 pt-16">
+           <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex items-center justify-center h-24 w-24 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 shadow-lg shadow-emerald-500/40 animate-float">
+              <i className="fa-solid fa-check-double text-5xl text-white"></i>
+          </div>
+          <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
+              Konfirmasi Target
+          </h3>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
+              Apakah Anda yakin data yang dimasukkan sudah benar?
+          </p>
+
+          <div className="text-left bg-gray-100 dark:bg-gray-700/50 p-4 rounded-lg mb-6 space-y-2 text-sm">
+             <div className="flex justify-between items-center">
+                <span className="font-medium text-gray-600 dark:text-gray-300">Total Pendapatan:</span>
+                <span className="font-bold text-green-600 dark:text-green-400">Rp {totalPendapatan.toLocaleString('id-ID')}</span>
+             </div>
+             <div className="flex justify-between items-center">
+                <span className="font-medium text-gray-600 dark:text-gray-300">Total Pengeluaran:</span>
+                <span className="font-bold text-red-600 dark:text-red-400">Rp {totalPengeluaran.toLocaleString('id-ID')}</span>
+             </div>
+             <div className="flex justify-between items-center border-t border-gray-200 dark:border-gray-600 pt-2 mt-2">
+                <span className="font-bold text-gray-700 dark:text-gray-200">Sisa Uang:</span>
+                <span className={`font-bold text-lg ${sisa >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-yellow-500'}`}>Rp {sisa.toLocaleString('id-ID')}</span>
+             </div>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <button
+                type="button"
+                onClick={handleConfirmSave}
+                className="w-full bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+            >
+                Ya, Sudah Benar
+            </button>
+            <button
+                type="button"
+                onClick={() => setShowSaveConfirmModal(false)}
+                className="w-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-bold py-3 px-6 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+            >
+                Batal, Cek Lagi
+            </button>
+          </div>
+        </div>
+      </Modal>
+    </>
   );
 };
 

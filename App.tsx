@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { View, Transaction, ArchivedMonthlyTarget, ArchivedActualReport, MonthlyTarget, AddTargetFormData, DebtItem, SavingsGoal } from './types';
 import { mockTransactions, mockArchivedTargets, mockArchivedActuals, mockDebts, mockSavingsGoals } from './data/mockData';
@@ -40,8 +41,32 @@ const App: React.FC = () => {
     const handleNextMonth = () => setDisplayDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
 
     const currentMonthYear = useMemo(() => `${displayDate.getFullYear()}-${String(displayDate.getMonth() + 1).padStart(2, '0')}`, [displayDate]);
-    const currentMonthlyTarget = useMemo(() => archivedTargets.find(t => t.monthYear === currentMonthYear)?.target || null, [archivedTargets, currentMonthYear]);
-    const isTargetForCurrentMonthSet = !!currentMonthlyTarget;
+    
+    const { currentMonthlyTarget, isPreFilled } = useMemo(() => {
+        const targetForCurrentMonth = archivedTargets.find(t => t.monthYear === currentMonthYear);
+        
+        if (targetForCurrentMonth) {
+            // A target exists for this specific month. It's not "pre-filled" from the past.
+            return { currentMonthlyTarget: targetForCurrentMonth.target, isPreFilled: false };
+        }
+
+        // No target for this month, let's find the most recent one from the past.
+        const pastArchives = archivedTargets.filter(t => t.monthYear < currentMonthYear);
+        if (pastArchives.length > 0) {
+            const sortedPastArchives = pastArchives.sort((a, b) => b.monthYear.localeCompare(a.monthYear));
+            const mostRecentArchive = sortedPastArchives[0];
+            
+            if (mostRecentArchive) {
+                // We found a past target to use as a template. This is a pre-fill.
+                return { currentMonthlyTarget: mostRecentArchive.target, isPreFilled: true };
+            }
+        }
+
+        // No target for this month and no past targets to copy from.
+        return { currentMonthlyTarget: null, isPreFilled: false };
+    }, [archivedTargets, currentMonthYear]);
+
+    const isTargetForCurrentMonthSet = !!archivedTargets.find(t => t.monthYear === currentMonthYear);
 
     const { activeDebts, paidDebts } = useMemo(() => {
         const active: DebtItem[] = [];
@@ -102,10 +127,11 @@ const App: React.FC = () => {
     };
     
     const handleSaveActuals = (data: { [key: string]: string }) => {
-        if (currentMonthlyTarget) {
+        const targetForActuals = archivedTargets.find(t => t.monthYear === currentMonthYear)?.target;
+        if (targetForActuals) {
             setArchivedActuals(prev => {
                 const existingIndex = prev.findIndex(a => a.monthYear === currentMonthYear);
-                const newActualReport: ArchivedActualReport = { monthYear: currentMonthYear, target: currentMonthlyTarget, actuals: data };
+                const newActualReport: ArchivedActualReport = { monthYear: currentMonthYear, target: targetForActuals, actuals: data };
                 if (existingIndex !== -1) {
                     const updated = [...prev];
                     updated[existingIndex] = newActualReport;
@@ -185,9 +211,17 @@ const App: React.FC = () => {
             case View.REPORT:
                 return <Report setView={setView} isTargetSet={isTargetForCurrentMonthSet} />;
             case View.ADD_TARGET:
-                return <AddTargetForm setView={setView} onSave={handleSaveTarget} savedTarget={currentMonthlyTarget} debts={debts} savingsGoals={savingsGoals} />;
+                return <AddTargetForm 
+                            setView={setView} 
+                            onSave={handleSaveTarget} 
+                            savedTarget={currentMonthlyTarget} 
+                            debts={debts} 
+                            savingsGoals={savingsGoals} 
+                            isPreFilled={isPreFilled}
+                        />;
             case View.ADD_ACTUAL:
-                return <AddTransaction setView={setView} onSave={handleSaveActuals} monthlyTarget={currentMonthlyTarget} />;
+                const targetForActuals = archivedTargets.find(t => t.monthYear === currentMonthYear)?.target || null;
+                return <AddTransaction setView={setView} onSave={handleSaveActuals} monthlyTarget={targetForActuals} />;
             case View.TARGET_HISTORY:
                 return <TargetHistory archives={archivedTargets} setView={setView} />;
             case View.ACTUALS_HISTORY:
