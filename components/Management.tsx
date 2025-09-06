@@ -19,6 +19,17 @@ interface ManagementProps {
   onResetGoals: () => void;
 }
 
+const SummaryCard: React.FC<{ title: string; amount: number; icon: string; gradient: string; }> = ({ title, amount, icon, gradient }) => (
+    <div className={`relative p-5 rounded-2xl shadow-lg overflow-hidden ${gradient}`}>
+        <div className="relative z-10">
+            <p className="text-white/80 font-semibold">{title}</p>
+            <p className="text-3xl font-bold text-white mt-1">Rp {amount.toLocaleString('id-ID')}</p>
+        </div>
+        <i className={`fa-solid ${icon} absolute -right-4 -bottom-4 text-8xl text-white/10 transform-gpu rotate-[-20deg]`}></i>
+    </div>
+);
+
+
 const Management: React.FC<ManagementProps> = ({ 
   setView, 
   debts, 
@@ -57,24 +68,18 @@ const Management: React.FC<ManagementProps> = ({
         
         {/* All-Time Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 p-4 rounded-2xl shadow-sm flex items-center space-x-4">
-              <div className="w-12 h-12 rounded-full flex items-center justify-center bg-green-500 text-white flex-shrink-0">
-                  <i className="fa-solid fa-landmark text-xl"></i>
-              </div>
-              <div>
-                  <p className="text-sm font-semibold text-green-800 dark:text-green-300">Total Aset Tabungan</p>
-                  <p className="text-2xl font-bold text-gray-800 dark:text-white">Rp {totalAllTimeSavings.toLocaleString('id-ID')}</p>
-              </div>
-          </div>
-          <div className="bg-gradient-to-br from-orange-50 to-red-100 dark:from-orange-900/30 dark:to-red-900/30 p-4 rounded-2xl shadow-sm flex items-center space-x-4">
-              <div className="w-12 h-12 rounded-full flex items-center justify-center bg-orange-500 text-white flex-shrink-0">
-                  <i className="fa-solid fa-file-invoice-dollar text-xl"></i>
-              </div>
-              <div>
-                  <p className="text-sm font-semibold text-orange-800 dark:text-orange-300">Total Riwayat Pinjaman</p>
-                  <p className="text-2xl font-bold text-gray-800 dark:text-white">Rp {totalAllTimeDebt.toLocaleString('id-ID')}</p>
-              </div>
-          </div>
+           <SummaryCard 
+                title="Total Aset Tabungan"
+                amount={totalAllTimeSavings}
+                icon="fa-landmark"
+                gradient="bg-gradient-to-br from-green-400 to-emerald-600"
+           />
+           <SummaryCard 
+                title="Total Riwayat Pinjaman"
+                amount={totalAllTimeDebt}
+                icon="fa-file-invoice-dollar"
+                gradient="bg-gradient-to-br from-orange-400 to-red-600"
+           />
         </div>
 
         <SavingsGoals 

@@ -1,9 +1,11 @@
+
 import React, { useState, useMemo } from 'react';
 import { ComposedChart, Area, Line, Bar, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer, Tooltip as RechartsTooltip, Cell, PieChart, Pie, Sector } from 'recharts';
 import { SummaryCardData, Transaction, ArchivedMonthlyTarget, ArchivedActualReport } from '../types';
-import { BalanceIcon, ExpenseIcon, IncomeIcon, SavingsIcon } from './icons';
 import SummaryCard from './SummaryCard';
 import FinancialInsight from './FinancialInsight';
+// FIX: Import missing icon components.
+import { IncomeIcon, ExpenseIcon, BalanceIcon, SavingsIcon } from './icons';
 
 interface DashboardProps {
     displayDate: Date;
@@ -19,6 +21,39 @@ interface CompositionData {
   value: number;
   category: 'expense' | 'debt' | 'savings';
 }
+
+const DashboardSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; rightContent?: React.ReactNode }> = ({ title, children, defaultOpen = true, rightContent }) => (
+    <details className="group/card relative bg-gray-800/80 rounded-2xl shadow-lg border border-white/10 overflow-hidden" open={defaultOpen}>
+        {/* Animated Background */}
+        <div 
+            className="absolute -top-1/2 -left-1/2 w-[200%] h-[200%] opacity-10 group-hover:opacity-20 transition-opacity duration-500 animate-spin-slow"
+            style={{
+                backgroundImage: `radial-gradient(circle at center, var(--primary-500) 0%, var(--secondary-600) 40%, transparent 70%)`
+            }}
+        ></div>
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-transparent to-black/30"></div>
+        <summary className="relative list-none p-6 cursor-pointer flex justify-between items-center">
+            <h3 className="text-xl font-bold text-white">{title}</h3>
+            <div className="flex items-center space-x-4">
+                {rightContent}
+                <i className="fa-solid fa-chevron-down text-gray-400 transition-transform duration-300 group-open/card:rotate-180"></i>
+            </div>
+        </summary>
+        <div className="relative border-t border-white/10 p-6">
+            {children}
+        </div>
+        <style>{`
+            @keyframes spin-slow {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+            .animate-spin-slow {
+                animation: spin-slow 20s linear infinite;
+            }
+        `}</style>
+    </details>
+);
+
 
 const getMetricsFromReport = (report: ArchivedActualReport | undefined) => {
     if (!report) return { income: 0, nonDebtExpenses: 0, debtInstallments: 0, totalExpenses: 0, savings: 0, netCashFlow: 0, composition: [], allOutflows: 0 };
@@ -93,24 +128,24 @@ const healthStatusDetails: { [key: string]: { icon: string; explanation: string;
 
 const healthStatusStyles = {
     "Sehat": {
-        gradient: "bg-gradient-to-br from-green-50 dark:from-green-900/30 to-transparent",
+        gradient: "bg-gradient-to-br from-green-900/30 to-transparent",
         iconBg: "bg-green-500",
-        text: "text-green-700 dark:text-green-300",
+        text: "text-green-300",
     },
     "Cukup Sehat": {
-        gradient: "bg-gradient-to-br from-yellow-50 dark:from-yellow-900/30 to-transparent",
+        gradient: "bg-gradient-to-br from-yellow-900/30 to-transparent",
         iconBg: "bg-yellow-500",
-        text: "text-yellow-700 dark:text-yellow-300",
+        text: "text-yellow-300",
     },
     "Perlu Perhatian": {
-        gradient: "bg-gradient-to-br from-red-50 dark:from-red-900/30 to-transparent",
+        gradient: "bg-gradient-to-br from-red-900/30 to-transparent",
         iconBg: "bg-red-500",
-        text: "text-red-700 dark:text-red-300",
+        text: "text-red-300",
     },
     "Data Tidak Cukup": {
-        gradient: "bg-gradient-to-br from-gray-100 dark:from-gray-800/30 to-transparent",
+        gradient: "bg-gradient-to-br from-gray-800/30 to-transparent",
         iconBg: "bg-gray-500",
-        text: "text-gray-700 dark:text-gray-300",
+        text: "text-gray-300",
     }
 };
 
@@ -119,7 +154,7 @@ const HealthAnalysisItem: React.FC<{ icon: string; iconColor: string; text: Reac
         <div className="w-5 h-5 flex-shrink-0 flex items-center justify-center pt-0.5">
             <i className={`fa-solid ${icon} ${iconColor} text-base`}></i>
         </div>
-        <p className="text-sm text-gray-600 dark:text-gray-300 flex-1">{text}</p>
+        <p className="text-sm text-gray-300 flex-1">{text}</p>
     </div>
 );
 
@@ -132,7 +167,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         const net = payload.find((p: any) => p.dataKey === 'netCashFlow')?.value;
 
         return (
-            <div className="bg-gray-800/80 dark:bg-gray-900/80 backdrop-blur-sm text-white p-4 rounded-lg shadow-xl border border-gray-700">
+            <div className="bg-gray-900/80 backdrop-blur-sm text-white p-4 rounded-lg shadow-xl border border-gray-700">
                 <p className="font-bold text-lg mb-2">{label}</p>
                 {income !== undefined && <p className="text-[var(--color-income)]">Pemasukan: Rp {income.toLocaleString('id-ID')}</p>}
                 {expense !== undefined && <p className="text-[var(--color-expense)]">Pengeluaran: Rp {expense.toLocaleString('id-ID')}</p>}
@@ -176,8 +211,6 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
     const [isTargetMode, setIsTargetMode] = useState(false);
     const [chartYear, setChartYear] = useState(new Date().getFullYear());
     const [activeCashFlowIndex, setActiveCashFlowIndex] = useState<number | null>(null);
-    // FIX: Changed state to use -1 as the indicator for no active index instead of null.
-    // This can help avoid potential type inference issues with some libraries.
     const [activePieIndex, setActivePieIndex] = useState<number>(-1);
 
     const monthYearFormatter = useMemo(() => new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' }), []);
@@ -235,17 +268,13 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
         const rasioSisaUang = income > 0 ? (netCashFlow / income) * 100 : 0;
         
         let status = "Data Tidak Cukup";
-        let statusColor = "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300";
         if (income > 0) {
             if (rasioHutang < 35 && rasioTabungan >= 10 && netCashFlow > 0) {
                 status = "Sehat";
-                statusColor = "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
             } else if (netCashFlow > 0) {
                 status = "Cukup Sehat";
-                statusColor = "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
             } else {
                 status = "Perlu Perhatian";
-                statusColor = "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
             }
         }
         
@@ -270,7 +299,6 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
                 rasioTabungan,
                 rasioSisaUang,
                 status,
-                statusColor,
                 styles: healthStatusStyles[status as keyof typeof healthStatusStyles],
                 isOverspent,
                 overspendingAmount,
@@ -356,23 +384,23 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
             <header className="flex justify-between items-center">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Dashboard</h1>
-                    <p className="text-gray-500 dark:text-gray-400">{monthYearFormatter.format(displayDate)}</p>
+                    <p className="text-gray-400">{monthYearFormatter.format(displayDate)}</p>
                 </div>
                 <div className="flex items-center space-x-2">
-                    <button onClick={handlePrevMonth} className="w-10 h-10 rounded-full bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 flex items-center justify-center transition-colors shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <button onClick={handlePrevMonth} className="w-10 h-10 rounded-full bg-gray-800 text-gray-300 flex items-center justify-center transition-colors shadow-sm hover:bg-gray-700">
                         <i className="fa-solid fa-chevron-left"></i>
                     </button>
-                    <button onClick={handleNextMonth} disabled={isNextMonthDisabled} className="w-10 h-10 rounded-full bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <button onClick={handleNextMonth} disabled={isNextMonthDisabled} className="w-10 h-10 rounded-full bg-gray-800 text-gray-300 flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:bg-gray-700">
                         <i className="fa-solid fa-chevron-right"></i>
                     </button>
                 </div>
             </header>
 
-            <div className="flex items-center justify-center space-x-2 p-1 bg-gray-200 dark:bg-gray-800 rounded-full w-full max-w-xs mx-auto">
-                <button onClick={() => setIsTargetMode(false)} className={`px-4 py-2 rounded-full w-1/2 text-sm font-semibold transition-all ${!isTargetMode ? 'bg-[var(--primary-600)] text-white shadow-md' : 'text-gray-600 dark:text-gray-300'}`}>
+            <div className="flex items-center justify-center space-x-2 p-1 bg-gray-800/80 backdrop-blur-sm border border-white/10 rounded-full w-full max-w-xs mx-auto">
+                <button onClick={() => setIsTargetMode(false)} className={`px-4 py-2 rounded-full w-1/2 text-sm font-semibold transition-all ${!isTargetMode ? 'bg-[var(--primary-600)] text-white shadow-md' : 'text-gray-300'}`}>
                     Aktual
                 </button>
-                <button onClick={() => setIsTargetMode(true)} className={`px-4 py-2 rounded-full w-1/2 text-sm font-semibold transition-all ${isTargetMode ? 'bg-[var(--primary-600)] text-white shadow-md' : 'text-gray-600 dark:text-gray-300'}`}>
+                <button onClick={() => setIsTargetMode(true)} className={`px-4 py-2 rounded-full w-1/2 text-sm font-semibold transition-all ${isTargetMode ? 'bg-[var(--primary-600)] text-white shadow-md' : 'text-gray-300'}`}>
                     Target
                 </button>
             </div>
@@ -383,20 +411,15 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
                 ))}
             </div>
             
-             <details className="group/card bg-white dark:bg-gray-800 rounded-2xl shadow-md open:shadow-lg transition-shadow" open>
-                <summary className="p-6 cursor-pointer list-none flex justify-between items-center">
-                    <div className="flex items-center space-x-4">
-                        <h3 className="text-xl font-bold text-gray-800 dark:text-white">Analisis & Kesehatan Keuangan</h3>
-                        <span className={`hidden sm:inline-block text-xs font-bold px-2.5 py-1 rounded-full ${financialSummary.statusColor}`}>
-                            {financialSummary.status}
-                        </span>
-                    </div>
-                    <i className="fa-solid fa-chevron-down text-gray-500 transition-transform duration-300 group-open/card:rotate-180"></i>
-                </summary>
-                <div className="border-t border-gray-200 dark:border-gray-700 p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+             <DashboardSection title="Analisis & Kesehatan Keuangan" rightContent={
+                <span className={`hidden sm:inline-block text-xs font-bold px-2.5 py-1 rounded-full bg-black/20 text-white/80`}>
+                    {financialSummary.status}
+                </span>
+             }>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-6">
                        <div>
-                           <h4 className="font-bold text-lg text-gray-700 dark:text-gray-200 mb-3">Alokasi Dana dari Pendapatan</h4>
+                           <h4 className="font-bold text-lg text-gray-200 mb-3">Alokasi Dana dari Pendapatan</h4>
                            {isDataAvailable ? (
                             <div className="space-y-2">
                                <div className="w-full h-10 flex relative">
@@ -436,15 +459,15 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
                                     })}
                                </div>
                                {isOverspent && (
-                                    <p className="text-xs text-red-500 font-semibold text-center animate-pulse">
+                                    <p className="text-xs text-red-400 font-semibold text-center animate-pulse">
                                         <i className="fa-solid fa-triangle-exclamation mr-1"></i>
                                         Peringatan: Alokasi melebihi pendapatan sebesar <strong>Rp {financialSummary.overspendingAmount.toLocaleString('id-ID')}</strong>.
                                     </p>
                                )}
                             </div>
                            ) : (
-                            <div className="w-full h-10 flex items-center justify-center bg-gray-200 dark:bg-gray-700 rounded-full px-4">
-                                <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                            <div className="w-full h-10 flex items-center justify-center bg-gray-700/50 rounded-full px-4">
+                                <p className="text-sm text-gray-400 font-medium">
                                     <i className="fa-solid fa-info-circle mr-2"></i>
                                     Data pendapatan bulan ini belum diisi.
                                 </p>
@@ -485,169 +508,168 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
                            </div>
                            <div>
                             <p className={`text-sm font-semibold ${financialSummary.styles.text}`}>Status Anda:</p>
-                            <h4 className="font-bold text-2xl text-gray-800 dark:text-white">{financialSummary.status}</h4>
+                            <h4 className="font-bold text-2xl text-white">{financialSummary.status}</h4>
                            </div>
                         </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-300 mt-4">
+                        <p className="text-sm text-gray-300 mt-4">
                            {healthDetails.explanation}
                         </p>
-                        <div className="text-sm font-semibold text-gray-700 dark:text-gray-200 mt-4 p-4 bg-white/60 dark:bg-gray-900/40 rounded-lg backdrop-blur-sm">
+                        <div className="text-sm font-semibold text-gray-200 mt-4 p-4 bg-gray-900/40 rounded-lg backdrop-blur-sm">
                            <p className={`font-bold mb-1 ${financialSummary.styles.text}`}>Rekomendasi:</p>
                            <p className="font-normal">{healthDetails.recommendation}</p>
                         </div>
                     </div>
                 </div>
-            </details>
+            </DashboardSection>
 
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                <div className="lg:col-span-3 bg-white dark:bg-gray-800 rounded-2xl shadow-md p-4 flex flex-col">
-                    <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4 px-2">Arus Kas Tahunan</h3>
-                    <div className="flex-grow h-80">
-                         <ResponsiveContainer width="100%" height="100%">
-                            <ComposedChart 
-                                data={cashFlowData} 
-                                margin={{ top: 5, right: 5, left: -25, bottom: 5 }}
-                                onMouseMove={(state) => {
-                                    if (state.isTooltipActive && state.activeTooltipIndex != null) {
-                                        const numericIndex = Number(state.activeTooltipIndex);
-                                        setActiveCashFlowIndex(isNaN(numericIndex) ? null : numericIndex);
-                                    } else {
-                                        setActiveCashFlowIndex(null);
-                                    }
-                                }}
-                                onMouseLeave={() => {
-                                    setActiveCashFlowIndex(null);
-                                }}
-                            >
-                                <defs>
-                                    <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="var(--color-income)" stopOpacity={0.8}/>
-                                        <stop offset="95%" stopColor="var(--color-income)" stopOpacity={0}/>
-                                    </linearGradient>
-                                    <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="var(--color-expense)" stopOpacity={0.8}/>
-                                        <stop offset="95%" stopColor="var(--color-expense)" stopOpacity={0}/>
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
-                                <XAxis dataKey="month" tick={{ fill: '#9CA3AF' }} />
-                                <YAxis tickFormatter={(value) => `${value/1000000} Jt`} tick={{ fill: '#9CA3AF' }} />
-                                <RechartsTooltip content={<CustomTooltip />} />
-                                <Legend />
-                                <Area type="monotone" dataKey="income" name="Pemasukan" stroke="var(--color-income)" fillOpacity={1} fill="url(#colorIncome)" />
-                                <Area type="monotone" dataKey="expense" name="Pengeluaran" stroke="var(--color-expense)" fillOpacity={1} fill="url(#colorExpense)" />
-                                <Line type="monotone" dataKey="income" stroke="var(--color-income)" strokeWidth={2} dot={false} legendType="none" />
-                                <Line type="monotone" dataKey="expense" stroke="var(--color-expense)" strokeWidth={2} dot={false} legendType="none" />
-                                <Bar dataKey="netCashFlow" name="Arus Kas Bersih" barSize={20} fill="var(--color-net-positive)">
-                                    {cashFlowData.map((entry, index) => {
-                                        const isCurrentDisplayMonth = displayDate.getFullYear() === chartYear && index === displayDate.getMonth();
-                                        const opacity = activeCashFlowIndex === null || activeCashFlowIndex === index ? 1 : 0.5;
-                                        return (
-                                            <Cell 
-                                                key={`cell-${index}`} 
-                                                fill={entry.netCashFlow && entry.netCashFlow >= 0 ? 'var(--color-net-positive)' : 'var(--color-net-negative)'} 
-                                                fillOpacity={opacity}
-                                                stroke={isCurrentDisplayMonth ? 'var(--primary-500)' : 'none'}
-                                                strokeWidth={isCurrentDisplayMonth ? 3 : 0}
-                                            />
-                                        );
-                                    })}
-                                </Bar>
-                            </ComposedChart>
-                        </ResponsiveContainer>
-                    </div>
-                    <div className="flex justify-center mt-4">
-                        <div className="flex items-center space-x-2 bg-gray-100 dark:bg-gray-700/50 rounded-full px-2 py-1 shadow-sm">
+                <div className="lg:col-span-3">
+                    <DashboardSection title="Arus Kas Tahunan" rightContent={
+                        <div className="flex items-center space-x-2 bg-black/20 rounded-full px-2 py-1 shadow-sm">
                             <button 
                                 onClick={() => setChartYear(y => y - 1)} 
                                 disabled={isPrevYearDisabled}
-                                className="w-8 h-8 rounded-full text-gray-600 dark:text-gray-300 flex items-center justify-center transition-colors hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed">
+                                className="w-8 h-8 rounded-full text-gray-300 flex items-center justify-center transition-colors hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed">
                                 <i className="fa-solid fa-chevron-left"></i>
                             </button>
-                            <span className="font-semibold text-sm w-16 text-center text-gray-700 dark:text-gray-200">{chartYear}</span>
+                            <span className="font-semibold text-sm w-16 text-center text-gray-200">{chartYear}</span>
                             <button 
                                 onClick={() => setChartYear(y => y + 1)} 
                                 disabled={isNextYearDisabled}
-                                className="w-8 h-8 rounded-full text-gray-600 dark:text-gray-300 flex items-center justify-center transition-colors hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed">
+                                className="w-8 h-8 rounded-full text-gray-300 flex items-center justify-center transition-colors hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed">
                                 <i className="fa-solid fa-chevron-right"></i>
                             </button>
                         </div>
-                    </div>
-                </div>
-                <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl shadow-md p-6 flex flex-col">
-                     <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Komposisi Pengeluaran & Tabungan</h3>
-                    {pieChartData.length > 0 ? (
-                        <div className="flex-grow grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
-                            <div className="h-60 md:h-full">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie
-                                            data={pieChartData}
-                                            cx="50%"
-                                            cy="50%"
-                                            dataKey="value"
-                                            nameKey="name"
-                                            innerRadius={60}
-                                            outerRadius={80}
-                                            paddingAngle={2}
-                                            // FIX: Suppressing TypeScript error. The `activeIndex` prop is valid for recharts' Pie component
-                                            // but may not be present in the project's current type definitions, causing a build failure.
-                                            // @ts-ignore
-                                            activeIndex={activePieIndex}
-                                            activeShape={renderActiveShape}
-                                            onMouseEnter={(_, index) => setActivePieIndex(index)}
-                                            onMouseLeave={() => setActivePieIndex(-1)}
-                                        >
-                                            {pieChartData.map((entry, index) => (
+                    }>
+                        <div className="h-80">
+                             <ResponsiveContainer width="100%" height="100%">
+                                <ComposedChart 
+                                    data={cashFlowData} 
+                                    margin={{ top: 5, right: 5, left: -25, bottom: 5 }}
+                                    onMouseMove={(state) => {
+                                        if (state.isTooltipActive && state.activeTooltipIndex != null) {
+                                            const numericIndex = Number(state.activeTooltipIndex);
+                                            setActiveCashFlowIndex(isNaN(numericIndex) ? null : numericIndex);
+                                        } else {
+                                            setActiveCashFlowIndex(null);
+                                        }
+                                    }}
+                                    onMouseLeave={() => {
+                                        setActiveCashFlowIndex(null);
+                                    }}
+                                >
+                                    <defs>
+                                        <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="var(--color-income)" stopOpacity={0.8}/>
+                                            <stop offset="95%" stopColor="var(--color-income)" stopOpacity={0}/>
+                                        </linearGradient>
+                                        <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="var(--color-expense)" stopOpacity={0.8}/>
+                                            <stop offset="95%" stopColor="var(--color-expense)" stopOpacity={0}/>
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
+                                    <XAxis dataKey="month" tick={{ fill: '#9CA3AF' }} />
+                                    <YAxis tickFormatter={(value) => `${value/1000000} Jt`} tick={{ fill: '#9CA3AF' }} />
+                                    <RechartsTooltip content={<CustomTooltip />} />
+                                    <Legend wrapperStyle={{ color: '#E5E7EB' }}/>
+                                    <Area type="monotone" dataKey="income" name="Pemasukan" stroke="var(--color-income)" fillOpacity={1} fill="url(#colorIncome)" />
+                                    <Area type="monotone" dataKey="expense" name="Pengeluaran" stroke="var(--color-expense)" fillOpacity={1} fill="url(#colorExpense)" />
+                                    <Line type="monotone" dataKey="income" stroke="var(--color-income)" strokeWidth={2} dot={false} legendType="none" />
+                                    <Line type="monotone" dataKey="expense" stroke="var(--color-expense)" strokeWidth={2} dot={false} legendType="none" />
+                                    <Bar dataKey="netCashFlow" name="Arus Kas Bersih" barSize={20} fill="var(--color-net-positive)">
+                                        {cashFlowData.map((entry, index) => {
+                                            const isCurrentDisplayMonth = displayDate.getFullYear() === chartYear && index === displayDate.getMonth();
+                                            const opacity = activeCashFlowIndex === null || activeCashFlowIndex === index ? 1 : 0.5;
+                                            return (
                                                 <Cell 
                                                     key={`cell-${index}`} 
-                                                    fill={PIE_CHART_COLORS[entry.category]} 
-                                                    className="stroke-transparent focus:outline-none"
+                                                    fill={entry.netCashFlow && entry.netCashFlow >= 0 ? 'var(--color-net-positive)' : 'var(--color-net-negative)'} 
+                                                    fillOpacity={opacity}
+                                                    stroke={isCurrentDisplayMonth ? 'var(--primary-500)' : 'none'}
+                                                    strokeWidth={isCurrentDisplayMonth ? 3 : 0}
                                                 />
-                                            ))}
-                                        </Pie>
-                                         <RechartsTooltip formatter={(value: number, name: string) => [`Rp ${value.toLocaleString('id-ID')}`, name]} />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                            </div>
-                            <div className="space-y-2 overflow-y-auto max-h-60 pr-2">
-                                {sortedPieData.map((entry, index) => {
-                                    const originalIndex = pieChartData.findIndex(p => p.name === entry.name);
-                                    const color = PIE_CHART_COLORS[entry.category];
-                                    const percentage = totalOutflowsForPie > 0 ? (entry.value / totalOutflowsForPie) * 100 : 0;
-                                    return (
-                                        <div 
-                                            key={entry.name} 
-                                            className={`p-2 rounded-lg flex items-center justify-between text-sm transition-colors duration-200 cursor-pointer ${activePieIndex === originalIndex ? 'bg-gray-100 dark:bg-gray-700/50' : 'bg-transparent'}`}
-                                            onMouseEnter={() => setActivePieIndex(originalIndex)}
-                                            onMouseLeave={() => setActivePieIndex(-1)}
-                                        >
-                                            <div className="flex items-center space-x-3 truncate">
-                                                <span 
-                                                    className="w-3 h-3 rounded-sm flex-shrink-0" 
-                                                    style={{ backgroundColor: color }}
-                                                ></span>
-                                                <span className="text-gray-600 dark:text-gray-300 truncate" title={entry.name}>{entry.name}</span>
-                                            </div>
-                                            <div className="text-right flex-shrink-0 pl-2">
-                                                <p className="font-semibold text-gray-800 dark:text-white">
-                                                    Rp {entry.value.toLocaleString('id-ID')}
-                                                </p>
-                                                <p className="text-xs text-gray-400">
-                                                    {percentage.toFixed(1)}%
-                                                </p>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
+                                            );
+                                        })}
+                                    </Bar>
+                                </ComposedChart>
+                            </ResponsiveContainer>
                         </div>
-                    ) : (
-                        <div className="h-full flex flex-col items-center justify-center">
-                            <i className="fa-solid fa-chart-pie text-4xl text-gray-400 mb-4"></i>
-                            <p className="text-center text-gray-500">Data pengeluaran tidak tersedia untuk bulan ini.</p>
-                        </div>
-                    )}
+                    </DashboardSection>
+                </div>
+                <div className="lg:col-span-2">
+                    <DashboardSection title="Komposisi Pengeluaran & Tabungan">
+                        {pieChartData.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4 items-center">
+                                <div className="h-60 md:h-full lg:h-60">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                            <Pie
+                                                data={pieChartData}
+                                                cx="50%"
+                                                cy="50%"
+                                                dataKey="value"
+                                                nameKey="name"
+                                                innerRadius={60}
+                                                outerRadius={80}
+                                                paddingAngle={2}
+                                                // @ts-ignore
+                                                activeIndex={activePieIndex}
+                                                activeShape={renderActiveShape}
+                                                onMouseEnter={(_, index) => setActivePieIndex(index)}
+                                                onMouseLeave={() => setActivePieIndex(-1)}
+                                            >
+                                                {pieChartData.map((entry, index) => (
+                                                    <Cell 
+                                                        key={`cell-${index}`} 
+                                                        fill={PIE_CHART_COLORS[entry.category]} 
+                                                        className="stroke-transparent focus:outline-none"
+                                                    />
+                                                ))}
+                                            </Pie>
+                                             <RechartsTooltip formatter={(value: number, name: string) => [`Rp ${value.toLocaleString('id-ID')}`, name]} />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                </div>
+                                <div className="space-y-2 overflow-y-auto max-h-60 pr-2">
+                                    {sortedPieData.map((entry, index) => {
+                                        const originalIndex = pieChartData.findIndex(p => p.name === entry.name);
+                                        const color = PIE_CHART_COLORS[entry.category];
+                                        const percentage = totalOutflowsForPie > 0 ? (entry.value / totalOutflowsForPie) * 100 : 0;
+                                        return (
+                                            <div 
+                                                key={entry.name} 
+                                                className={`p-2 rounded-lg flex items-center justify-between text-sm transition-colors duration-200 cursor-pointer ${activePieIndex === originalIndex ? 'bg-gray-700/50' : 'bg-transparent'}`}
+                                                onMouseEnter={() => setActivePieIndex(originalIndex)}
+                                                onMouseLeave={() => setActivePieIndex(-1)}
+                                            >
+                                                <div className="flex items-center space-x-3 truncate">
+                                                    <span 
+                                                        className="w-3 h-3 rounded-sm flex-shrink-0" 
+                                                        style={{ backgroundColor: color }}
+                                                    ></span>
+                                                    <span className="text-gray-300 truncate" title={entry.name}>{entry.name}</span>
+                                                </div>
+                                                <div className="text-right flex-shrink-0 pl-2">
+                                                    <p className="font-semibold text-white">
+                                                        Rp {entry.value.toLocaleString('id-ID')}
+                                                    </p>
+                                                    <p className="text-xs text-gray-400">
+                                                        {percentage.toFixed(1)}%
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="h-full flex flex-col items-center justify-center min-h-[20rem]">
+                                <i className="fa-solid fa-chart-pie text-4xl text-gray-500 mb-4"></i>
+                                <p className="text-center text-gray-400">Data pengeluaran tidak tersedia untuk bulan ini.</p>
+                            </div>
+                        )}
+                    </DashboardSection>
                 </div>
             </div>
             

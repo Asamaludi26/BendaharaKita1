@@ -7,6 +7,60 @@ interface ReportProps {
     isTargetSet: boolean;
 }
 
+const ManagementCard: React.FC<{
+    title: string;
+    description: string;
+    icon: string;
+    gradientFrom: string;
+    gradientTo: string;
+    onCardClick: () => void;
+    onHistoryClick: () => void;
+}> = ({ title, description, icon, gradientFrom, gradientTo, onCardClick, onHistoryClick }) => (
+    <div className="group relative bg-gray-800/50 dark:bg-gray-800 rounded-2xl shadow-lg border border-white/10 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:border-white/20">
+        {/* Animated Background Element */}
+        <div 
+            className={`absolute -top-1/2 -right-1/2 w-full h-full opacity-30 group-hover:opacity-40 transition-opacity duration-500`}
+            style={{
+                backgroundImage: `radial-gradient(circle at center, ${gradientFrom} 0%, ${gradientTo} 40%, transparent 70%)`
+            }}
+        ></div>
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-transparent to-black/20"></div>
+
+        {/* Main Content Area (Clickable) */}
+        <div onClick={onCardClick} className="relative p-6 cursor-pointer">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-5">
+                    {/* Icon */}
+                    <div className="w-16 h-16 rounded-2xl bg-black/20 flex items-center justify-center backdrop-blur-sm border border-white/10 flex-shrink-0">
+                        <i className={`fa-solid ${icon} text-4xl bg-clip-text text-transparent`} style={{ backgroundImage: `linear-gradient(to right, ${gradientFrom}, ${gradientTo})`}}></i>
+                    </div>
+                    {/* Text */}
+                    <div>
+                        <h3 className="text-xl font-bold text-white">{title}</h3>
+                        <p className="text-gray-400 text-sm">{description}</p>
+                    </div>
+                </div>
+                {/* Arrow Icon */}
+                <div className="text-gray-600 group-hover:text-white transition-colors duration-300">
+                    <i className="fa-solid fa-chevron-right text-2xl transform-gpu transition-transform duration-300 group-hover:translate-x-1"></i>
+                </div>
+            </div>
+        </div>
+
+        {/* Divider and History Button Area */}
+        <div className="relative bg-black/20 backdrop-blur-sm px-6 py-3 border-t border-white/10 flex justify-end">
+            <button
+                onClick={onHistoryClick}
+                className="text-sm font-semibold text-gray-400 hover:text-white transition-colors duration-300 flex items-center space-x-2"
+            >
+                <i className="fa-solid fa-history"></i>
+                <span>Lihat Riwayat</span>
+            </button>
+        </div>
+    </div>
+);
+
+
 const Report: React.FC<ReportProps> = ({ setView, isTargetSet }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -20,58 +74,32 @@ const Report: React.FC<ReportProps> = ({ setView, isTargetSet }) => {
 
     return (
         <>
-            <div className="p-4 md:p-6 space-y-4">
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">Manajemen</h1>
-                <div className="space-y-4">
-                    <button
-                        onClick={handleActualReportClick}
-                        className="w-full flex items-center p-6 bg-white dark:bg-gray-800 rounded-2xl border-2 border-transparent hover:border-[var(--primary-500)] transition-all duration-300 transform hover:-translate-y-1 shadow-md hover:shadow-lg"
-                    >
-                        <div className="w-16 h-16 rounded-2xl bg-[var(--primary-100)] dark:bg-[var(--primary-900)] flex items-center justify-center mr-6">
-                            <i className="fa-solid fa-file-invoice-dollar text-[var(--primary-500)] text-4xl"></i>
-                        </div>
-                        <div className="text-left flex-grow">
-                            <p className="text-xl font-bold text-gray-800 dark:text-white">Manajemen Laporan</p>
-                            <p className="text-base text-gray-500 dark:text-gray-400">Isi laporan realisasi bulanan.</p>
-                        </div>
-                         <div className="ml-4">
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setView(View.ACTUALS_HISTORY);
-                                }}
-                                className="flex items-center space-x-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-bold px-4 py-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-300"
-                            >
-                                <i className="fa-solid fa-history"></i>
-                                <span>Riwayat</span>
-                            </button>
-                        </div>
-                    </button>
+            <div className="p-4 md:p-6 space-y-6">
+                <div className="flex justify-between items-center">
+                    <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Manajemen</h1>
+                    {/* Settings Button can go here if needed in the future */}
+                </div>
+                
+                <div className="space-y-6">
+                    <ManagementCard 
+                        title="Manajemen Laporan"
+                        description="Isi realisasi keuangan bulanan Anda."
+                        icon="fa-file-invoice-dollar"
+                        gradientFrom="var(--primary-400)"
+                        gradientTo="var(--secondary-500)"
+                        onCardClick={handleActualReportClick}
+                        onHistoryClick={() => setView(View.ACTUALS_HISTORY)}
+                    />
 
-                    <button
-                        onClick={() => setView(View.ADD_TARGET)}
-                        className="w-full flex items-center p-6 bg-white dark:bg-gray-800 rounded-2xl border-2 border-transparent hover:border-[var(--secondary-500)] transition-all duration-300 transform hover:-translate-y-1 shadow-md hover:shadow-lg"
-                    >
-                        <div className="w-16 h-16 rounded-2xl bg-[var(--secondary-500)]/20 flex items-center justify-center mr-6">
-                           <i className="fa-solid fa-bullseye text-[var(--secondary-500)] text-4xl"></i>
-                        </div>
-                        <div className="text-left flex-grow">
-                            <p className="text-xl font-bold text-gray-800 dark:text-white">Manajemen Target</p>
-                            <p className="text-base text-gray-500 dark:text-gray-400">Buat anggaran & target.</p>
-                        </div>
-                         <div className="ml-4">
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setView(View.TARGET_HISTORY);
-                                }}
-                                className="flex items-center space-x-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-bold px-4 py-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-300"
-                            >
-                                <i className="fa-solid fa-history"></i>
-                                <span>Riwayat</span>
-                            </button>
-                        </div>
-                    </button>
+                    <ManagementCard 
+                        title="Manajemen Target"
+                        description="Buat anggaran & target bulanan."
+                        icon="fa-bullseye"
+                        gradientFrom="#F472B6" // pink-400
+                        gradientTo="#F97316" // orange-500
+                        onCardClick={() => setView(View.ADD_TARGET)}
+                        onHistoryClick={() => setView(View.TARGET_HISTORY)}
+                    />
                 </div>
             </div>
 

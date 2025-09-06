@@ -17,35 +17,34 @@ const SummaryCard: React.FC<SummaryCardProps> = ({ data, isComparisonMode }) => 
   const progressPercentage = target ? (amount / target) * 100 : 0;
   
   const mainColor = `var(--color-${color})`;
-  const lightBgColor = `var(--color-${color})`;
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-4 flex flex-col justify-between transform hover:scale-105 transition-transform duration-300">
+    <div className="bg-gray-800/50 backdrop-blur-md border border-white/10 rounded-2xl shadow-lg p-4 flex flex-col justify-between transform hover:scale-105 hover:border-white/20 transition-all duration-300">
       <div>
         <div className="flex items-center justify-between mb-2">
-          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</p>
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center bg-opacity-10`} style={{ backgroundColor: mainColor, opacity: 0.2 }}>
+          <p className="text-sm font-medium text-gray-400">{title}</p>
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center`} style={{ backgroundColor: mainColor, opacity: 0.2 }}>
               <Icon className={`w-5 h-5`} style={{ color: mainColor }}/>
           </div>
         </div>
         {isComparisonMode && target ? (
           <div>
-            <p className="text-lg font-bold text-gray-800 dark:text-white">{formatCurrency(amount)}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">/ {formatCurrency(target)}</p>
+            <p className="text-lg font-bold text-white">{formatCurrency(amount)}</p>
+            <p className="text-xs text-gray-400">/ {formatCurrency(target)}</p>
           </div>
         ) : (
-          <p className="text-2xl font-bold text-gray-800 dark:text-white">{formatCurrency(amount)}</p>
+          <p className="text-2xl font-bold text-white">{formatCurrency(amount)}</p>
         )}
       </div>
       <div>
         {isComparisonMode && target ? (
           <div className="mt-4">
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+            <div className="w-full bg-gray-700 rounded-full h-1.5">
               <div className="h-1.5 rounded-full" style={{ width: `${Math.min(progressPercentage, 100)}%`, backgroundColor: mainColor }}></div>
             </div>
           </div>
         ) : (
-          <div className={`text-xs font-medium flex items-center mt-2 ${isPositiveChange ? 'text-green-500' : 'text-red-500'}`}>
+          <div className={`text-xs font-medium flex items-center mt-2 ${isPositiveChange ? 'text-green-400' : 'text-red-400'}`}>
             {percentageChange !== 0 && (
                 <i className={`fa-solid fa-arrow-${percentageChange > 0 ? 'up' : 'down'} mr-1`}></i>
             )}

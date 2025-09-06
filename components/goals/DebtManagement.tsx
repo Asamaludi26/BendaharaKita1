@@ -19,35 +19,49 @@ const DebtManagement: React.FC<DebtManagementProps> = ({ debts, onSelectDebt, on
   }, 0);
 
   return (
-    <>
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md transition-shadow duration-300 hover:shadow-lg">
+    <div className="group relative bg-gray-800/80 rounded-2xl shadow-lg border border-white/10 overflow-hidden">
+      {/* Animated Background */}
+      <div 
+          className="absolute -top-1/2 -left-1/2 w-[200%] h-[200%] opacity-20 group-hover:opacity-30 transition-opacity duration-500 animate-spin-slow"
+          style={{
+              backgroundImage: `radial-gradient(circle at center, #F97316 0%, #EF4444 40%, transparent 70%)`
+          }}
+      ></div>
+      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-transparent to-black/30"></div>
+
+      <div className="relative">
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="w-full flex justify-between items-center p-6 text-left"
           aria-expanded={isOpen}
         >
-          <div className="flex items-center">
-              <i className="fa-solid fa-wallet mr-3 text-xl text-gray-400 dark:text-gray-500"></i>
-              <h2 className="text-xl font-bold text-gray-800 dark:text-white">Manajemen Utang</h2>
+          <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 rounded-xl bg-black/20 flex items-center justify-center backdrop-blur-sm border border-white/10 flex-shrink-0">
+                  <i className="fa-solid fa-wallet text-2xl text-orange-300"></i>
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">Manajemen Utang</h2>
+                <p className="text-sm text-gray-400">Lacak dan kelola semua pinjaman Anda.</p>
+              </div>
           </div>
           <div className="flex items-center space-x-4">
               <div className="hidden md:flex items-center space-x-2">
                 <button
                   onClick={(e) => { e.stopPropagation(); onViewHistory(); }}
-                  className="flex items-center space-x-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-bold px-4 py-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-300"
+                  className="flex items-center space-x-2 bg-black/20 text-gray-300 text-xs font-bold px-4 py-2 rounded-full hover:bg-black/40 transition-colors"
                 >
                   <i className="fa-solid fa-history"></i>
                   <span>Riwayat</span>
                 </button>
                 <button 
                   onClick={(e) => { e.stopPropagation(); onAddDebt(); }}
-                  className="flex items-center space-x-2 bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white text-xs font-bold px-4 py-2 rounded-full shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300"
+                  className="flex items-center space-x-2 bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-bold px-4 py-2 rounded-full shadow-md hover:shadow-lg transform hover:scale-105 transition-all"
                 >
                   <i className="fa-solid fa-plus"></i>
                   <span>Catat Pinjaman</span>
                 </button>
               </div>
-              <i className={`fa-solid fa-chevron-down text-gray-500 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}></i>
+              <i className={`fa-solid fa-chevron-down text-gray-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}></i>
           </div>
         </button>
 
@@ -56,9 +70,9 @@ const DebtManagement: React.FC<DebtManagementProps> = ({ debts, onSelectDebt, on
           ${isOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}
         `}>
           <div className="px-6 pb-6">
-            <div className="border-t border-gray-200 dark:border-gray-700 pt-6 mb-6">
-              <p className="text-sm text-gray-500 dark:text-gray-400">Total Sisa Utang Aktif</p>
-              <p className="text-3xl font-bold text-red-500">Rp {totalRemainingDebt.toLocaleString('id-ID')}</p>
+            <div className="border-t border-white/10 pt-6 mb-6">
+              <p className="text-sm text-gray-400">Total Sisa Utang Aktif</p>
+              <p className="text-3xl font-bold text-red-400">Rp {totalRemainingDebt.toLocaleString('id-ID')}</p>
             </div>
             <div className="space-y-4">
               {debts.length > 0 ? (
@@ -66,19 +80,28 @@ const DebtManagement: React.FC<DebtManagementProps> = ({ debts, onSelectDebt, on
                   <DebtItemCard key={debt.id} debt={debt} onSelect={onSelectDebt} />
                 ))
               ) : (
-                <div className="text-center py-10 px-4 bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl">
-                    <div className="w-24 h-24 mx-auto bg-gradient-to-br from-yellow-300 via-amber-400 to-yellow-500 rounded-full flex items-center justify-center mb-4 shadow-lg shadow-yellow-500/20">
+                <div className="text-center py-10 px-4 bg-gradient-to-br from-green-900/20 to-emerald-900/30 rounded-xl border border-white/10">
+                    <div className="w-24 h-24 mx-auto bg-gradient-to-br from-emerald-400 to-green-500 rounded-full flex items-center justify-center mb-4 shadow-lg shadow-green-500/20">
                         <i className="fa-solid fa-trophy text-5xl text-white drop-shadow-lg"></i>
                     </div>
-                    <p className="font-bold text-xl text-green-800 dark:text-green-200 mt-6">Anda Bebas Utang!</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xs mx-auto">Kerja bagus! Terus pertahankan kondisi finansial yang sehat ini.</p>
+                    <p className="font-bold text-xl text-white mt-6">Anda Bebas Utang!</p>
+                    <p className="text-sm text-gray-400 max-w-xs mx-auto">Kerja bagus! Terus pertahankan kondisi finansial yang sehat ini.</p>
                 </div>
               )}
             </div>
           </div>
         </div>
       </div>
-    </>
+       <style>{`
+            @keyframes spin-slow {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+            .animate-spin-slow {
+                animation: spin-slow 20s linear infinite;
+            }
+        `}</style>
+    </div>
   );
 };
 
