@@ -1,176 +1,174 @@
-import { Transaction, TransactionType, CashFlowData, DebtItem, SavingsGoal, MonthlyTarget, ArchivedMonthlyTarget, ArchivedActualReport, DebtCategory, SavingsGoalCategory, TargetFormField } from '../types';
+import { Transaction, TransactionType, ArchivedMonthlyTarget, ArchivedActualReport, MonthlyTarget, DebtItem, SavingsGoal } from '../types';
 
-// Helper function to create dates in different months
-const createDate = (monthOffset: number, day: number): Date => {
+export const mockTransactions: Transaction[] = [
+  { id: 'tx1', date: new Date(new Date().setDate(1)).toISOString(), description: 'Gaji Bulanan', amount: 8000000, type: TransactionType.INCOME, category: 'Gaji' },
+  { id: 'tx2', date: new Date(new Date().setDate(2)).toISOString(), description: 'Bayar Kos', amount: 1500000, type: TransactionType.EXPENSE, category: 'Sewa' },
+  { id: 'tx3', date: new Date(new Date().setDate(5)).toISOString(), description: 'Belanja Bulanan', amount: 1000000, type: TransactionType.EXPENSE, category: 'Kebutuhan' },
+  { id: 'tx4', date: new Date(new Date().setDate(10)).toISOString(), description: 'Cicilan Motor', amount: 800000, type: TransactionType.EXPENSE, category: 'Utang' },
+  { id: 'tx5', date: new Date(new Date().setDate(15)).toISOString(), description: 'Makan di Luar', amount: 250000, type: TransactionType.EXPENSE, category: 'Jajan' },
+  { id: 'tx6', date: new Date(new Date().setDate(20)).toISOString(), description: 'Freelance Project', amount: 1200000, type: TransactionType.INCOME, category: 'Pendapatan Lain' },
+];
+
+const lastMonth = new Date();
+lastMonth.setMonth(lastMonth.getMonth() - 1);
+const lastMonthYear = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
+
+const baseTarget: MonthlyTarget = {
+  pendapatan: [{ id: 'pendapatan-1', name: 'Gaji', amount: '8000000' }],
+  cicilanUtang: [{ id: 'cicilanUtang-1', name: 'Cicilan Motor', amount: '800000' }],
+  pengeluaranUtama: [{ id: 'pengeluaranUtama-1', name: 'Sewa Kos', amount: '1500000' }],
+  kebutuhan: [{ id: 'kebutuhan-1', name: 'Belanja Dapur', amount: '1200000' }],
+  penunjang: [{ id: 'penunjang-1', name: 'Transportasi', amount: '400000' }],
+  pendidikan: [{ id: 'pendidikan-1', name: 'Kursus Online', amount: '250000' }],
+  tabungan: [{ id: 'tabungan-1', name: 'Dana Darurat', amount: '1000000' }],
+};
+
+export const mockArchivedTargets: ArchivedMonthlyTarget[] = [
+  {
+    monthYear: lastMonthYear,
+    target: baseTarget,
+  },
+];
+
+export const mockArchivedActuals: ArchivedActualReport[] = [
+  {
+    monthYear: lastMonthYear,
+    target: baseTarget,
+    actuals: {
+      'pendapatan-1': '8000000',
+      'cicilanUtang-1': '800000',
+      'pengeluaranUtama-1': '1500000',
+      'kebutuhan-1': '1350000',
+      'penunjang-1': '450000',
+      'pendidikan-1': '250000',
+      'tabungan-1': '1000000',
+    },
+  },
+];
+
+// --- GOALS DUMMY DATA ---
+
+const today = new Date();
+
+// Helper to create past dates for payments
+const pastDate = (monthsAgo: number, dayOfMonth: number = 15): string => {
   const date = new Date();
-  date.setMonth(date.getMonth() - monthOffset, day);
-  return date;
+  date.setMonth(date.getMonth() - monthsAgo);
+  date.setDate(dayOfMonth);
+  return date.toISOString();
 };
 
-// --- BASE TARGETS & ACTUALS ---
-// These will be used to generate consistent historical data.
+// 1. Debt that is due soon
+const dueSoonDate = new Date(today);
+dueSoonDate.setDate(today.getDate() + 3);
+const dueSoonDay = dueSoonDate.getDate();
 
-// FIX: Added missing 'cicilanUtang' property to satisfy the Omit<MonthlyTarget, ...> type.
-const baseTargetTemplate: Omit<MonthlyTarget, 'pendapatan' | 'pengeluaranUtama' | 'kebutuhan' | 'penunjang' | 'tabungan' | 'pendidikan'> = {
-    cicilanUtang: []
-};
+export const mockDebts: DebtItem[] = [
+    // --- ACTIVE DEBTS ---
+    { 
+        id: 'debt-1', 
+        name: 'Cicilan iPhone 15 Pro', 
+        source: 'Kredivo', 
+        totalAmount: 21000000, 
+        monthlyInstallment: 1750000, 
+        tenor: 12, 
+        dueDate: dueSoonDay, // Dynamically set to be due soon to trigger warning
+        payments: Array.from({ length: 4 }, (_, i) => ({
+            date: pastDate(4 - i),
+            amount: 1750000
+        }))
+    },
+    { 
+        id: 'debt-2', 
+        name: 'DP Rumah KPR', 
+        source: 'Bank BCA', 
+        totalAmount: 50000000, 
+        monthlyInstallment: 4166667, 
+        tenor: 12, 
+        dueDate: 1, 
+        payments: [] // A brand new debt with 0% progress
+    },
+    { 
+        id: 'debt-3', 
+        name: 'Pinjaman Renovasi Dapur', 
+        source: 'Bank Mandiri', 
+        totalAmount: 10000000, 
+        monthlyInstallment: 1000000, 
+        tenor: 10, 
+        dueDate: 10, 
+        payments: Array.from({ length: 9 }, (_, i) => ({ // Almost paid off (9 of 10)
+            date: pastDate(9 - i),
+            amount: 1000000
+        }))
+    },
 
-const generateTarget = (monthOffset: number, variations: Partial<MonthlyTarget> = {}): ArchivedMonthlyTarget => {
-    const date = createDate(monthOffset, 1);
-    const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-    
-    const baseTarget: MonthlyTarget = {
-        pendapatan: [{ id: `pendapatan-${monthYear}-1`, name: 'Gaji', amount: '6000000' }],
-        cicilanUtang: [
-            { id: `cicilanUtang-${monthYear}-1`, name: 'Kredivo', amount: '350000' },
-            { id: `cicilanUtang-${monthYear}-2`, name: 'Cicilan Laptop', amount: '800000' }
-        ],
-        pengeluaranUtama: [{ id: `pengeluaranUtama-${monthYear}-1`, name: 'Sewa Rumah', amount: '1200000' }],
-        kebutuhan: [
-            { id: `kebutuhan-${monthYear}-1`, name: 'Belanja Bulanan', amount: '800000' },
-            { id: `kebutuhan-${monthYear}-2`, name: 'Makan Harian', amount: '700000' }
-        ],
-        penunjang: [
-            { id: `penunjang-${monthYear}-1`, name: 'Transportasi', amount: '300000' },
-            { id: `penunjang-${monthYear}-2`, name: 'Hiburan', amount: '250000' }
-        ],
-        pendidikan: [
-            { id: `pendidikan-${monthYear}-1`, name: 'Kursus Online', amount: '200000' }
-        ],
-        tabungan: [
-            { id: `tabungan-${monthYear}-1`, name: 'Dana Darurat', amount: '500000' },
-            { id: `tabungan-${monthYear}-2`, name: 'Liburan ke Bali', amount: '300000' },
-            { id: `tabungan-${monthYear}-3`, name: 'DP Rumah', amount: '1500000' },
-        ],
-        ...variations,
-    };
-    
-    return { monthYear, target: baseTarget };
-};
-
-const generateActuals = (targetArchive: ArchivedMonthlyTarget): ArchivedActualReport => {
-    const { monthYear, target } = targetArchive;
-    const actuals: { [key: string]: string } = {};
-
-    const varyAmount = (amountStr: string, variance = 0.1) => {
-        const amount = parseInt(amountStr);
-        const randomVariance = (Math.random() - 0.5) * 2 * variance; // -variance to +variance
-        return Math.round(amount * (1 + randomVariance)).toString();
-    };
-
-    Object.keys(target).forEach(sectionKey => {
-        const section = target[sectionKey as keyof MonthlyTarget];
-        section.forEach(item => {
-            actuals[item.id] = varyAmount(item.amount);
-        });
-    });
-    
-    // Make some more intentional variations
-    actuals[target.kebutuhan[1].id] = varyAmount(target.kebutuhan[1].amount, 0.2); // Makan Harian varies more
-    actuals[target.penunjang[1].id] = varyAmount(target.penunjang[1].amount, 0.3); // Hiburan varies more
-
-    return { monthYear, actuals, target };
-};
+    // --- PAID OFF DEBTS (FOR HISTORY) ---
+    { 
+        id: 'debt-4', 
+        name: 'Cicilan Kursi Gaming', 
+        source: 'ShopeePay Later', 
+        totalAmount: 3000000, 
+        monthlyInstallment: 500000, 
+        tenor: 6, 
+        dueDate: 15, 
+        payments: Array.from({ length: 6 }, (_, i) => ({ // Fully paid off. Last payment was ~1 month ago.
+            date: pastDate(6 - i),
+            amount: 500000
+        }))
+    },
+    { 
+        id: 'debt-5', 
+        name: 'Pinjaman Pendidikan', 
+        source: 'Lainnya', // Custom source example
+        totalAmount: 5000000, 
+        monthlyInstallment: 1250000, 
+        tenor: 4, 
+        dueDate: 20, 
+        payments: Array.from({ length: 4 }, (_, i) => ({ // Fully paid off. Last payment was ~3 months ago for grouping.
+            date: pastDate(6 - i),
+            amount: 1250000
+        }))
+    },
+];
 
 
-// --- GENERATE 24 MONTHS OF HISTORICAL DATA ---
-
-const historicalTargets: ArchivedMonthlyTarget[] = [];
-const historicalActuals: ArchivedActualReport[] = [];
-
-// Generate data for the last 24 months, up to the previous month.
-for (let i = 1; i <= 24; i++) {
-    const target = generateTarget(i);
-    const actuals = generateActuals(target);
-    historicalTargets.push(target);
-    historicalActuals.push(actuals);
+// Helper to create future/past dates for deadlines
+const deadlineDate = (monthsFromNow: number): string => {
+    const date = new Date();
+    date.setMonth(date.getMonth() + monthsFromNow);
+    return date.toISOString();
 }
 
-// Reverse to have chronological order (oldest first)
-export const mockArchivedTargets: ArchivedMonthlyTarget[] = historicalTargets.reverse();
-export const mockArchivedActuals: ArchivedActualReport[] = historicalActuals.reverse();
+export const mockSavingsGoals: SavingsGoal[] = [
+    // --- ACTIVE GOALS ---
+    { 
+        id: 'sg-1', 
+        name: 'Dana Darurat', 
+        targetAmount: 25000000, 
+        currentAmount: 3500000, // Just starting
+        deadline: deadlineDate(24) // Far future
+    },
+    { 
+        id: 'sg-2', 
+        name: 'Liburan ke Jepang', 
+        targetAmount: 30000000, 
+        currentAmount: 18500000, // Well underway
+        deadline: deadlineDate(8) // Relatively soon
+    },
 
-
-// --- GENERATE TRANSACTIONS FROM HISTORICAL ACTUALS ---
-
-let allTransactions: Transaction[] = [];
-mockArchivedActuals.forEach(report => {
-    const { monthYear, actuals, target } = report;
-    const [year, month] = monthYear.split('-').map(Number);
-    
-    const findSection = (id: string): keyof MonthlyTarget | null => {
-        for (const section of Object.keys(target) as (keyof MonthlyTarget)[]) {
-            if (target[section].some(item => item.id === id)) {
-                return section;
-            }
-        }
-        return null;
-    };
-
-    Object.entries(actuals).forEach(([id, amountStr], index) => {
-        const section = findSection(id);
-        const item = section ? target[section].find(i => i.id === id) : null;
-        if (!item || !amountStr) return;
-
-        const amount = parseInt(amountStr);
-        if (isNaN(amount) || amount === 0) return;
-
-        const type = section === 'pendapatan' ? TransactionType.INCOME : TransactionType.EXPENSE;
-        
-        allTransactions.push({
-            id: `tx-${monthYear}-${index}`,
-            date: new Date(year, month - 1, Math.floor(Math.random() * 28) + 1).toISOString(),
-            amount: amount,
-            description: item.name,
-            category: section === 'tabungan' ? 'Tabungan' : (section === 'cicilanUtang' ? 'Cicilan Utang' : (section === 'pengeluaranUtama' ? 'Utama' : (item.name.includes('Makan') ? 'Makanan' : item.name))),
-            type: type,
-        });
-    });
-});
-
-export const mockTransactions: Transaction[] = allTransactions;
-
-
-// --- CALCULATE DEBT & SAVINGS PROGRESS BASED ON TRANSACTIONS ---
-
-let mockDebts: DebtItem[] = [
-  { id: 'd1', name: 'Cicilan Laptop', totalAmount: 12000000, paidAmount: 3000000, category: 'Konsumtif' },
-  { id: 'd2', name: 'Modal Usaha', totalAmount: 25000000, paidAmount: 5000000, category: 'Produktif' },
-];
-
-let mockSavingsGoals: SavingsGoal[] = [
-  { id: 's1', name: 'Dana Darurat', targetAmount: 15000000, savedAmount: 0, category: 'Dana Darurat', icon: 'shield-halved' },
-  { id: 's2', name: 'Liburan ke Bali', targetAmount: 8000000, savedAmount: 0, category: 'Jangka Pendek', icon: 'plane-departure' },
-  { id: 's3', name: 'DP Rumah', targetAmount: 100000000, savedAmount: 0, category: 'Jangka Panjang', icon: 'house-chimney' },
-  { id: 's4', name: 'Gadget Baru', targetAmount: 10000000, savedAmount: 9200000, category: 'Jangka Pendek', icon: 'mobile-screen-button' }, // Nearing completion
-  { id: 's5', name: 'Kursus Online', targetAmount: 5000000, savedAmount: 5000000, category: 'Jangka Pendek', icon: 'graduation-cap' }, // Completed
-];
-
-// Simulate progress
-const savingsTransactions = allTransactions.filter(t => t.category === 'Tabungan');
-savingsTransactions.forEach(tx => {
-    const goal = mockSavingsGoals.find(g => g.name === tx.description);
-    if (goal) {
-        goal.savedAmount += tx.amount;
-    }
-});
-// Ensure saved amount doesn't exceed target for initial setup
-mockSavingsGoals.forEach(g => {
-    if (g.name !== 'Kursus Online') { // Allow completed goal to exceed
-       g.savedAmount = Math.min(g.savedAmount, g.targetAmount);
-    }
-});
-
-
-export { mockDebts, mockSavingsGoals };
-
-
-// --- MISC MOCK DATA ---
-export const mockMonthlyData: CashFlowData[] = [
-    { month: 'Mar', income: 6000000, expense: 4800000 },
-    { month: 'Apr', income: 6200000, expense: 5100000 },
-    { month: 'Mei', income: 5800000, expense: 4900000 },
-    { month: 'Jun', income: 6500000, expense: 5500000 },
-    { month: 'Jul', income: 6000000, expense: 5200000 },
-    { month: 'Agu', income: 7000000, expense: 5900000 },
+    // --- COMPLETED GOALS (FOR HISTORY) ---
+    { 
+        id: 'sg-3', 
+        name: 'Upgrade PC Gaming', 
+        targetAmount: 15000000, 
+        currentAmount: 15500000, // Achieved (can be > target)
+        deadline: deadlineDate(-2) // Deadline was 2 months ago
+    },
+    { 
+        id: 'sg-4', 
+        name: 'Membeli Motor Baru', 
+        targetAmount: 20000000, 
+        currentAmount: 20000000, // Achieved (exactly at target)
+        deadline: deadlineDate(-5) // Deadline was 5 months ago for grouping
+    },
 ];

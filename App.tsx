@@ -1,262 +1,205 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { View, Transaction, TransactionType, DebtItem, SavingsGoal, MonthlyTarget, ArchivedMonthlyTarget, ArchivedActualReport } from './types';
-// FIX: Removed mockMonthlyData as it's no longer used.
-import { mockTransactions, mockDebts, mockSavingsGoals, mockArchivedTargets, mockArchivedActuals } from './data/mockData';
-
-// Import components
-import BottomNav from './components/BottomNav';
+import React, { useState, useMemo } from 'react';
+import { View, Transaction, ArchivedMonthlyTarget, ArchivedActualReport, MonthlyTarget, AddTargetFormData, DebtItem, SavingsGoal } from './types';
+import { mockTransactions, mockArchivedTargets, mockArchivedActuals, mockDebts, mockSavingsGoals } from './data/mockData';
 import Dashboard from './components/Dashboard';
 import Transactions from './components/Transactions';
+import BottomNav from './components/BottomNav';
 import Profile from './components/Profile';
-import Management from './components/Management';
-import SavingsGoals from './components/goals/SavingsGoals';
-import SavingsGoalDetail from './components/goals/SavingsGoalDetail';
-import DebtManagement from './components/goals/DebtManagement';
-import DebtDetail from './components/goals/DebtDetail';
+import Report from './components/Report';
+import AddTargetForm from './components/AddTargetForm';
+import AddTransaction from './components/AddTransaction';
 import TargetHistory from './components/history/TargetHistory';
 import ActualsHistory from './components/history/ActualsHistory';
-import Report from './components/Report';
-import AddTransaction from './components/AddTransaction';
-import AddTargetForm from './components/AddTargetForm';
-import AddEditSavingsGoalModal from './components/modals/AddEditSavingsGoalModal';
-import AddEditDebtModal from './components/modals/AddEditDebtModal';
+import Management from './components/Management';
+import DebtDetail from './components/goals/DebtDetail';
+import SavingsGoalDetail from './components/goals/SavingsGoalDetail';
 import Toast from './components/Toast';
-
-interface ToastState {
-  show: boolean;
-  message: string;
-  type: 'success' | 'error';
-}
-
+import AddDebtForm from './components/AddDebtForm';
+import AddSavingsGoalForm from './components/AddSavingsGoalForm';
+import DebtHistory from './components/history/DebtHistory';
+import SavingsGoalHistory from './components/history/SavingsGoalHistory';
 
 const App: React.FC = () => {
-    // State management
-    const [activeView, setActiveView] = useState<View>(View.DASHBOARD);
-    const [selectedItem, setSelectedItem] = useState<DebtItem | SavingsGoal | null>(null);
-    const [displayDate, setDisplayDate] = useState(new Date()); // State for Dashboard month
+    const [view, setView] = useState<View>(View.DASHBOARD);
+    const [activeGoalId, setActiveGoalId] = useState<string | null>(null);
 
     const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
+    const [archivedTargets, setArchivedTargets] = useState<ArchivedMonthlyTarget[]>(mockArchivedTargets);
+    const [archivedActuals, setArchivedActuals] = useState<ArchivedActualReport[]>(mockArchivedActuals);
     const [debts, setDebts] = useState<DebtItem[]>(mockDebts);
     const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>(mockSavingsGoals);
 
-    const [archivedTargets, setArchivedTargets] = useState<ArchivedMonthlyTarget[]>(mockArchivedTargets);
-    const [archivedActuals, setArchivedActuals] = useState<ArchivedActualReport[]>(mockArchivedActuals);
+    const [displayDate, setDisplayDate] = useState(new Date());
 
-    // Modal states
-    const [editingGoal, setEditingGoal] = useState<SavingsGoal | null>(null);
-    const [editingDebt, setEditingDebt] = useState<DebtItem | null>(null);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-    // Toast state
-    const [toast, setToast] = useState<ToastState>({ show: false, message: '', type: 'success' });
+    const handlePrevMonth = () => setDisplayDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+    const handleNextMonth = () => setDisplayDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+
+    const currentMonthYear = useMemo(() => `${displayDate.getFullYear()}-${String(displayDate.getMonth() + 1).padStart(2, '0')}`, [displayDate]);
+    const currentMonthlyTarget = useMemo(() => archivedTargets.find(t => t.monthYear === currentMonthYear)?.target || null, [archivedTargets, currentMonthYear]);
+    const isTargetForCurrentMonthSet = !!currentMonthlyTarget;
+
+    const { activeDebts, paidDebts } = useMemo(() => {
+        const active: DebtItem[] = [];
+        const paid: DebtItem[] = [];
+        debts.forEach(debt => {
+            const paidAmount = debt.payments.reduce((sum, p) => sum + p.amount, 0);
+            if ((debt.totalAmount - paidAmount) <= 0) {
+                paid.push(debt);
+            } else {
+                active.push(debt);
+            }
+        });
+        return { activeDebts: active, paidDebts: paid };
+    }, [debts]);
     
-    // Handlers
-    const showToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
-        setToast({ show: true, message, type });
-    }, []);
+    const { activeSavingsGoals, completedSavingsGoals } = useMemo(() => {
+        const active: SavingsGoal[] = [];
+        const completed: SavingsGoal[] = [];
+        savingsGoals.forEach(goal => {
+            if (goal.currentAmount >= goal.targetAmount) {
+                completed.push(goal);
+            } else {
+                active.push(goal);
+            }
+        });
+        return { activeSavingsGoals: active, completedSavingsGoals: completed };
+    }, [savingsGoals]);
 
-    const setView = useCallback((view: View, item?: DebtItem | SavingsGoal) => {
-        setActiveView(view);
-        if (item) {
-            setSelectedItem(item);
-        } else {
-            setSelectedItem(null);
-        }
-    }, []);
+    const totalAllTimeSavings = useMemo(() => {
+        return savingsGoals.reduce((sum, goal) => sum + goal.currentAmount, 0);
+    }, [savingsGoals]);
 
-    const handlePrevMonth = () => setDisplayDate(prev => { const d = new Date(prev); d.setMonth(d.getMonth() - 1); return d; });
-    const handleNextMonth = () => setDisplayDate(prev => { const d = new Date(prev); d.setMonth(d.getMonth() + 1); return d; });
+    const totalAllTimeDebt = useMemo(() => {
+        return debts.reduce((sum, debt) => sum + debt.totalAmount, 0);
+    }, [debts]);
 
-    const handleSaveTarget = (data: MonthlyTarget) => {
-        const now = new Date();
-        const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-        const newArchive: ArchivedMonthlyTarget = { monthYear, target: data };
-        setArchivedTargets(prev => [...prev.filter(a => a.monthYear !== monthYear), newArchive]);
+
+    const handleSaveTarget = (data: AddTargetFormData) => {
+        setArchivedTargets(prev => {
+            const existingIndex = prev.findIndex(t => t.monthYear === currentMonthYear);
+            const newTarget: ArchivedMonthlyTarget = { monthYear: currentMonthYear, target: data };
+            if (existingIndex !== -1) {
+                const updated = [...prev];
+                updated[existingIndex] = newTarget;
+                return updated;
+            }
+            return [...prev, newTarget];
+        });
+        setToast({ message: 'Target bulanan berhasil disimpan!', type: 'success' });
         setView(View.REPORT);
-        showToast("Target bulanan berhasil disimpan!");
     };
-
+    
     const handleSaveActuals = (data: { [key: string]: string }) => {
-        const now = new Date();
-        const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-        
-        const currentTarget = archivedTargets.find(a => a.monthYear === monthYear)?.target;
-
-        if (!currentTarget) {
-            showToast("Gagal: Target bulanan tidak ditemukan.", "error");
-            return;
-        };
-
-        // 1. Archive the actual report
-        const newArchivedActual: ArchivedActualReport = { monthYear, actuals: data, target: currentTarget };
-        setArchivedActuals(prev => [...prev.filter(a => a.monthYear !== monthYear), newArchivedActual]);
-
-        // 2. Generate transactions from the report
-        const newTransactions: Transaction[] = Object.entries(data).flatMap(([id, amountStr]) => {
-            const amount = parseInt(amountStr);
-            if (!amountStr || isNaN(amount) || amount === 0) return [];
-
-            let item: { name: string; } | undefined;
-            let sectionType: TransactionType = TransactionType.EXPENSE;
-            
-            for (const section of Object.keys(currentTarget) as (keyof MonthlyTarget)[]) {
-                const foundItem = currentTarget[section].find(i => i.id === id);
-                if (foundItem) {
-                    item = foundItem;
-                    if (section === 'pendapatan') sectionType = TransactionType.INCOME;
-                    break;
+        if (currentMonthlyTarget) {
+            setArchivedActuals(prev => {
+                const existingIndex = prev.findIndex(a => a.monthYear === currentMonthYear);
+                const newActualReport: ArchivedActualReport = { monthYear: currentMonthYear, target: currentMonthlyTarget, actuals: data };
+                if (existingIndex !== -1) {
+                    const updated = [...prev];
+                    updated[existingIndex] = newActualReport;
+                    return updated;
                 }
-            }
-            
-            if (!item) return [];
-
-            return [{
-                id: `tx-${id}-${Date.now()}`,
-                date: now.toISOString(),
-                amount: amount,
-                description: item.name,
-                category: item.name,
-                type: sectionType
-            }];
-        });
-
-        setTransactions(prev => [...prev, ...newTransactions]);
-        setView(View.REPORT);
-        showToast("Laporan aktual berhasil disimpan!");
-    };
-
-    const handleSaveGoal = (goal: SavingsGoal) => {
-        setSavingsGoals(prev => {
-            const index = prev.findIndex(g => g.id === goal.id);
-            if (index > -1) {
-                const newGoals = [...prev];
-                newGoals[index] = goal;
-                return newGoals;
-            }
-            return [...prev, { ...goal, id: `goal-${Date.now()}` }];
-        });
-        setEditingGoal(null);
-        showToast("Tujuan tabungan berhasil disimpan!");
-    };
-
-    const handleDeleteGoal = (id: string) => {
-        setSavingsGoals(prev => prev.filter(g => g.id !== id));
-        setView(View.SAVINGS_GOALS);
-        showToast("Tujuan tabungan telah dihapus.", 'error');
+                return [...prev, newActualReport];
+            });
+            setToast({ message: 'Laporan aktual berhasil disimpan!', type: 'success' });
+            setView(View.REPORT);
+        } else {
+            setToast({ message: 'Target bulanan tidak ditemukan!', type: 'error' });
+        }
     };
     
-    const handleSaveDebt = (debt: DebtItem) => {
-        setDebts(prev => {
-            const index = prev.findIndex(d => d.id === debt.id);
-            if (index > -1) {
-                const newDebts = [...prev];
-                newDebts[index] = debt;
-                return newDebts;
-            }
-            return [...prev, { ...debt, id: `debt-${Date.now()}` }];
-        });
-        setEditingDebt(null);
-        showToast("Data utang berhasil disimpan!");
+    const handleSaveDebt = (newDebtData: Omit<DebtItem, 'id' | 'payments'>) => {
+        const newDebt: DebtItem = {
+            ...newDebtData,
+            id: `debt-${Date.now()}`,
+            payments: [],
+        };
+        setDebts(prev => [...prev, newDebt]);
+        setToast({ message: 'Pinjaman baru berhasil dicatat!', type: 'success' });
+        setView(View.MANAGEMENT);
     };
 
-    const handleDeleteDebt = (id: string) => {
-        setDebts(prev => prev.filter(d => d.id !== id));
-        setView(View.DEBT_MANAGEMENT);
-        showToast("Data utang telah dihapus.", 'error');
+    const handleSaveSavingsGoal = (newGoalData: Omit<SavingsGoal, 'id' | 'currentAmount'>) => {
+        const newGoal: SavingsGoal = {
+            ...newGoalData,
+            id: `sg-${Date.now()}`,
+            currentAmount: 0,
+        };
+        setSavingsGoals(prev => [...prev, newGoal]);
+        setToast({ message: 'Tujuan tabungan baru berhasil dibuat!', type: 'success' });
+        setView(View.MANAGEMENT);
     };
 
-    const monthlyTargetForActuals = useMemo(() => {
-        const currentMonthYear = `${displayDate.getFullYear()}-${String(displayDate.getMonth() + 1).padStart(2, '0')}`;
-        return archivedTargets.find(a => a.monthYear === currentMonthYear)?.target ?? null;
-    }, [displayDate, archivedTargets]);
+    const handleSelectDebt = (id: string) => {
+      setActiveGoalId(id);
+      setView(View.DEBT_DETAIL);
+    };
 
-    const currentMonthTargetForEditing = useMemo(() => {
-        const now = new Date();
-        const currentMonthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-        return archivedTargets.find(a => a.monthYear === currentMonthYear)?.target ?? null;
-    }, [archivedTargets]);
+    const handleSelectSavingsGoal = (id: string) => {
+      setActiveGoalId(id);
+      setView(View.SAVINGS_GOAL_DETAIL);
+    };
 
     const renderView = () => {
-        switch (activeView) {
+        switch (view) {
             case View.DASHBOARD:
-                return <Dashboard 
-                    displayDate={displayDate}
-                    handlePrevMonth={handlePrevMonth}
-                    handleNextMonth={handleNextMonth}
-                    archivedTargets={archivedTargets}
-                    archivedActuals={archivedActuals}
-                    transactions={transactions} // For Gemini insight
-                />;
+                return <Dashboard displayDate={displayDate} handlePrevMonth={handlePrevMonth} handleNextMonth={handleNextMonth} archivedTargets={archivedTargets} archivedActuals={archivedActuals} transactions={transactions} />;
             case View.TRANSACTIONS:
                 return <Transactions transactions={transactions} />;
             case View.REPORT:
-                return <Report setView={setView} />;
-            case View.ADD_ACTUAL:
-                return <AddTransaction 
-                    setView={setView}
-                    onSave={handleSaveActuals}
-                    monthlyTarget={monthlyTargetForActuals}
-                />;
+                return <Report setView={setView} isTargetSet={isTargetForCurrentMonthSet} />;
             case View.ADD_TARGET:
-                return <AddTargetForm 
-                    setView={setView}
-                    onSave={handleSaveTarget}
-                    savedTarget={currentMonthTargetForEditing}
-                />;
-            case View.MANAGEMENT:
-                return <Management setView={setView} />;
-            case View.PROFILE:
-                return <Profile />;
-            case View.SAVINGS_GOALS:
-                return <SavingsGoals goals={savingsGoals} setView={setView} onAdd={() => setEditingGoal({} as SavingsGoal)} />;
-            case View.SAVINGS_GOAL_DETAIL:
-                if (!selectedItem || !('targetAmount' in selectedItem)) return null;
-                return <SavingsGoalDetail goal={selectedItem as SavingsGoal} setView={setView} onEdit={setEditingGoal} onDelete={handleDeleteGoal}/>;
-            case View.DEBT_MANAGEMENT:
-                return <DebtManagement debts={debts} setView={setView} onAdd={() => setEditingDebt({} as DebtItem)} />;
-            case View.DEBT_DETAIL:
-                 if (!selectedItem || !('totalAmount' in selectedItem)) return null;
-                return <DebtDetail debt={selectedItem as DebtItem} setView={setView} onEdit={setEditingDebt} onDelete={handleDeleteDebt}/>;
+                return <AddTargetForm setView={setView} onSave={handleSaveTarget} savedTarget={currentMonthlyTarget} debts={debts} savingsGoals={savingsGoals} />;
+            case View.ADD_ACTUAL:
+                return <AddTransaction setView={setView} onSave={handleSaveActuals} monthlyTarget={currentMonthlyTarget} />;
             case View.TARGET_HISTORY:
-                 return <TargetHistory archives={archivedTargets} setView={setView} />;
+                return <TargetHistory archives={archivedTargets} setView={setView} />;
             case View.ACTUALS_HISTORY:
                 return <ActualsHistory archives={archivedActuals} setView={setView} />;
-            default:
-                return <Dashboard 
-                    displayDate={new Date()}
-                    handlePrevMonth={() => {}}
-                    handleNextMonth={() => {}}
-                    archivedTargets={[]}
-                    archivedActuals={[]}
-                    transactions={[]} 
+            case View.MANAGEMENT:
+                return <Management 
+                    setView={setView} 
+                    debts={activeDebts} 
+                    savingsGoals={activeSavingsGoals} 
+                    onSelectDebt={handleSelectDebt} 
+                    onSelectSavingsGoal={handleSelectSavingsGoal} 
+                    onAddDebt={() => setView(View.ADD_DEBT)} 
+                    onAddSavingsGoal={() => setView(View.ADD_SAVINGS_GOAL)} 
+                    onViewHistory={() => setView(View.DEBT_HISTORY)} 
+                    onViewSavingsHistory={() => setView(View.SAVINGS_GOAL_HISTORY)}
+                    totalAllTimeSavings={totalAllTimeSavings}
+                    totalAllTimeDebt={totalAllTimeDebt}
                 />;
+            case View.ADD_DEBT:
+                return <AddDebtForm setView={setView} onSave={handleSaveDebt} />;
+            case View.ADD_SAVINGS_GOAL:
+                return <AddSavingsGoalForm setView={setView} onSave={handleSaveSavingsGoal} />;
+            case View.DEBT_HISTORY:
+                return <DebtHistory paidDebts={paidDebts} setView={setView} onSelectDebt={handleSelectDebt} />;
+             case View.SAVINGS_GOAL_HISTORY:
+                return <SavingsGoalHistory completedGoals={completedSavingsGoals} setView={setView} onSelectSavingsGoal={handleSelectSavingsGoal} />;
+            case View.DEBT_DETAIL:
+                const debt = debts.find(d => d.id === activeGoalId);
+                return debt ? <DebtDetail debt={debt} setView={setView} /> : <p>Debt not found</p>;
+            case View.SAVINGS_GOAL_DETAIL:
+                const goal = savingsGoals.find(g => g.id === activeGoalId);
+                return goal ? <SavingsGoalDetail goal={goal} setView={setView} /> : <p>Goal not found</p>;
+            case View.PROFILE:
+                return <Profile />;
+            default:
+                return <Dashboard displayDate={displayDate} handlePrevMonth={handlePrevMonth} handleNextMonth={handleNextMonth} archivedTargets={archivedTargets} archivedActuals={archivedActuals} transactions={transactions} />;
         }
     };
 
     return (
-        <div className="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-white min-h-screen font-sans">
-            {toast.show && (
-                <Toast
-                    message={toast.message}
-                    type={toast.type}
-                    onClose={() => setToast({ show: false, message: '', type: 'success' })}
-                />
-            )}
+        <div className="bg-gray-100 dark:bg-gray-900 min-h-screen text-gray-900 dark:text-gray-100 font-sans">
+            {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
             <main className="pb-24">
                 {renderView()}
             </main>
-            
-            {editingGoal && <AddEditSavingsGoalModal 
-                goal={editingGoal.id ? editingGoal : null}
-                onClose={() => setEditingGoal(null)}
-                onSave={handleSaveGoal}
-            />}
-            {editingDebt && <AddEditDebtModal 
-                debt={editingDebt.id ? editingDebt : null}
-                onClose={() => setEditingDebt(null)}
-                onSave={handleSaveDebt}
-            />}
-
-            <BottomNav activeView={activeView} setView={setView} />
+            <BottomNav activeView={view} setView={setView} />
         </div>
     );
 };

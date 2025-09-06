@@ -1,11 +1,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { AddTargetFormData, TargetFormField, View, MonthlyTarget } from '../types';
+import { AddTargetFormData, TargetFormField, View, MonthlyTarget, DebtItem, SavingsGoal } from '../types';
 import { AccordionSection } from './AccordionSection';
 
 interface AddTargetFormProps {
   setView: (view: View) => void;
   onSave: (data: AddTargetFormData) => void;
   savedTarget: MonthlyTarget | null;
+  debts: DebtItem[];
+  savingsGoals: SavingsGoal[];
 }
 
 const initialFormData: AddTargetFormData = {
@@ -28,7 +30,7 @@ const sectionAccentColors: { [key in keyof AddTargetFormData]: string } = {
   tabungan: 'border-l-[var(--color-savings)]',
 };
 
-const AddTargetForm: React.FC<AddTargetFormProps> = ({ setView, onSave, savedTarget }) => {
+const AddTargetForm: React.FC<AddTargetFormProps> = ({ setView, onSave, savedTarget, debts, savingsGoals }) => {
   const [formData, setFormData] = useState<AddTargetFormData>(() => {
     if (savedTarget) {
       return savedTarget;
@@ -39,10 +41,48 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({ setView, onSave, savedTar
             return JSON.parse(savedDraft);
         } catch (error) {
             console.error("Failed to parse target form draft from localStorage", error);
-            return initialFormData;
         }
     }
-    return initialFormData;
+    
+    // Pre-populate if it's a new form
+    const prePopulatedData = { ...initialFormData };
+
+    prePopulatedData.cicilanUtang = debts.length > 0 
+        ? debts.map(debt => ({ id: `cicilanUtang-pre-${debt.id}`, name: debt.name, amount: String(debt.monthlyInstallment) }))
+        : initialFormData.cicilanUtang;
+
+    prePopulatedData.tabungan = savingsGoals.length > 0
+        ? savingsGoals.map(goal => {
+            const now = new Date();
+            now.setHours(0, 0, 0, 0);
+            const deadline = new Date(goal.deadline);
+            deadline.setHours(0, 0, 0, 0);
+
+            let suggestedAmount = 0;
+
+            if (deadline >= now && goal.currentAmount < goal.targetAmount) {
+                const amountRemaining = goal.targetAmount - goal.currentAmount;
+                
+                const yearDiff = deadline.getFullYear() - now.getFullYear();
+                const monthDiff = deadline.getMonth() - now.getMonth();
+                const monthsRemaining = yearDiff * 12 + monthDiff;
+
+                if (monthsRemaining > 0) {
+                    suggestedAmount = Math.ceil(amountRemaining / monthsRemaining);
+                } else if (monthsRemaining === 0) { // Deadline is this month
+                    suggestedAmount = amountRemaining;
+                }
+            }
+            
+            return {
+              id: `tabungan-pre-${goal.id}`,
+              name: goal.name,
+              amount: String(suggestedAmount)
+            };
+        })
+        : initialFormData.tabungan;
+
+    return prePopulatedData;
   });
 
   useEffect(() => {
@@ -89,10 +129,9 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({ setView, onSave, savedTar
   
   const totals = useMemo(() => {
     const calculatedTotals: { [key in keyof AddTargetFormData]?: number } = {};
-    for (const sectionKey in formData) {
-      const key = sectionKey as keyof AddTargetFormData;
+    (Object.keys(formData) as Array<keyof AddTargetFormData>).forEach(key => {
       calculatedTotals[key] = formData[key].reduce((sum, item) => sum + (parseInt(item.amount) || 0), 0);
-    }
+    });
     return calculatedTotals;
   }, [formData]);
 

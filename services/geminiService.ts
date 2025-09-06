@@ -1,6 +1,7 @@
 
+
 import { GoogleGenAI, Type } from "@google/genai";
-import type { FinancialInsight, Transaction } from '../types';
+import type { FinancialInsight, Transaction } from './types';
 
 // FIX: Aligned with @google/genai guidelines to assume API_KEY is always present.
 // The API key is now passed directly to the constructor without intermediate variables or checks.

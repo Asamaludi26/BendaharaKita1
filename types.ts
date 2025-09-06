@@ -1,4 +1,22 @@
-import React from 'react';
+import { View as PreviousView } from './types';
+
+export enum View {
+  DASHBOARD = 'DASHBOARD',
+  TRANSACTIONS = 'TRANSACTIONS',
+  REPORT = 'REPORT',
+  ADD_TARGET = 'ADD_TARGET',
+  ADD_ACTUAL = 'ADD_ACTUAL',
+  TARGET_HISTORY = 'TARGET_HISTORY',
+  ACTUALS_HISTORY = 'ACTUALS_HISTORY',
+  MANAGEMENT = 'MANAGEMENT', // For goals
+  PROFILE = 'PROFILE',
+  DEBT_DETAIL = 'DEBT_DETAIL',
+  SAVINGS_GOAL_DETAIL = 'SAVINGS_GOAL_DETAIL',
+  ADD_DEBT = 'ADD_DEBT',
+  ADD_SAVINGS_GOAL = 'ADD_SAVINGS_GOAL',
+  DEBT_HISTORY = 'DEBT_HISTORY',
+  SAVINGS_GOAL_HISTORY = 'SAVINGS_GOAL_HISTORY',
+}
 
 export enum TransactionType {
   INCOME = 'income',
@@ -7,43 +25,16 @@ export enum TransactionType {
 
 export interface Transaction {
   id: string;
-  date: string; // ISO string
-  amount: number;
+  date: string;
   description: string;
-  category: string;
+  amount: number;
   type: TransactionType;
+  category: string;
 }
 
 export interface FinancialInsight {
   title: string;
   description: string;
-  icon: string;
-}
-
-export interface CashFlowData {
-  month: string;
-  income: number;
-  expense: number;
-}
-
-export type DebtCategory = 'Konsumtif' | 'Produktif';
-
-export interface DebtItem {
-  id: string;
-  name: string;
-  totalAmount: number;
-  paidAmount: number;
-  category: DebtCategory;
-}
-
-export type SavingsGoalCategory = 'Jangka Pendek' | 'Jangka Panjang' | 'Dana Darurat';
-
-export interface SavingsGoal {
-  id: string;
-  name: string;
-  targetAmount: number;
-  savedAmount: number;
-  category: SavingsGoalCategory;
   icon: string;
 }
 
@@ -53,24 +44,8 @@ export interface SummaryCardData {
   previousAmount: number;
   target?: number;
   icon: React.FC<React.SVGProps<SVGSVGElement>>;
-  color: string;
+  color: 'income' | 'expense' | 'balance' | 'savings';
   type: 'income' | 'expense' | 'balance' | 'savings';
-}
-
-export enum View {
-  DASHBOARD,
-  TRANSACTIONS,
-  REPORT,
-  MANAGEMENT,
-  PROFILE,
-  SAVINGS_GOALS,
-  SAVINGS_GOAL_DETAIL,
-  DEBT_MANAGEMENT,
-  DEBT_DETAIL,
-  TARGET_HISTORY,
-  ACTUALS_HISTORY,
-  ADD_TARGET,
-  ADD_ACTUAL,
 }
 
 export interface TargetFormField {
@@ -79,7 +54,7 @@ export interface TargetFormField {
   amount: string;
 }
 
-export type AddTargetFormData = {
+export interface MonthlyTarget {
   pendapatan: TargetFormField[];
   cicilanUtang: TargetFormField[];
   pengeluaranUtama: TargetFormField[];
@@ -87,9 +62,9 @@ export type AddTargetFormData = {
   penunjang: TargetFormField[];
   pendidikan: TargetFormField[];
   tabungan: TargetFormField[];
-};
+}
 
-export type MonthlyTarget = AddTargetFormData;
+export type AddTargetFormData = MonthlyTarget;
 
 export interface ArchivedMonthlyTarget {
   monthYear: string; // "YYYY-MM"
@@ -98,6 +73,25 @@ export interface ArchivedMonthlyTarget {
 
 export interface ArchivedActualReport {
   monthYear: string; // "YYYY-MM"
-  actuals: { [key: string]: string };
   target: MonthlyTarget;
+  actuals: { [key: string]: string }; // key is TargetFormField id
+}
+
+export interface DebtItem {
+  id: string;
+  name: string;
+  source: string;
+  totalAmount: number;
+  monthlyInstallment: number;
+  tenor: number; // in months
+  dueDate: number; // Day of the month
+  payments: { date: string; amount: number }[];
+}
+
+export interface SavingsGoal {
+  id: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  deadline: string; // ISO date string
 }
