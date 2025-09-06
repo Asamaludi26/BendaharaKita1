@@ -66,10 +66,12 @@ const DebtManagement: React.FC<DebtManagementProps> = ({ debts, onSelectDebt, on
                   <DebtItemCard key={debt.id} debt={debt} onSelect={onSelectDebt} />
                 ))
               ) : (
-                <div className="text-center py-8 px-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl">
-                    <i className="fa-solid fa-shield-check text-4xl text-green-500 mb-3"></i>
-                    <p className="font-semibold text-gray-700 dark:text-gray-200">Tidak Ada Pinjaman Aktif</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Kerja bagus! Anda tidak memiliki utang yang sedang berjalan.</p>
+                <div className="text-center py-10 px-4 bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl">
+                    <div className="w-24 h-24 mx-auto bg-gradient-to-br from-yellow-300 via-amber-400 to-yellow-500 rounded-full flex items-center justify-center mb-4 shadow-lg shadow-yellow-500/20">
+                        <i className="fa-solid fa-trophy text-5xl text-white drop-shadow-lg"></i>
+                    </div>
+                    <p className="font-bold text-xl text-green-800 dark:text-green-200 mt-6">Anda Bebas Utang!</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xs mx-auto">Kerja bagus! Terus pertahankan kondisi finansial yang sehat ini.</p>
                 </div>
               )}
             </div>

@@ -60,11 +60,16 @@ const SavingsGoals: React.FC<SavingsGoalsProps> = ({ savingsGoals, onSelectSavin
                 <SavingsGoalItemCard key={goal.id} goal={goal} onSelect={onSelectSavingsGoal} />
               ))
             ) : (
-              <div className="text-center py-8 px-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl">
-                    <i className="fa-solid fa-paper-plane text-4xl text-blue-500 mb-3"></i>
-                    <p className="font-semibold text-gray-700 dark:text-gray-200">Tidak Ada Tujuan Aktif</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Mulai tabungan untuk tujuan finansial Anda selanjutnya!</p>
-                </div>
+                <button
+                    onClick={onAddSavingsGoal}
+                    className="w-full text-center py-10 px-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:border-blue-500 dark:hover:border-blue-500 transition-all duration-300 group"
+                >
+                    <div className="w-16 h-16 mx-auto bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50 transition-colors duration-300">
+                        <i className="fa-solid fa-plus text-3xl text-gray-500 dark:text-gray-400 group-hover:text-blue-500 transition-colors duration-300"></i>
+                    </div>
+                    <p className="font-bold text-lg text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">Buat Tujuan Pertamamu</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Klik di sini untuk mulai menabung demi impian Anda.</p>
+                </button>
             )}
           </div>
         </div>

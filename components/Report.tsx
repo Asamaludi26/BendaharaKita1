@@ -30,17 +30,20 @@ const Report: React.FC<ReportProps> = ({ setView, isTargetSet }) => {
                         <div className="w-16 h-16 rounded-2xl bg-[var(--primary-100)] dark:bg-[var(--primary-900)] flex items-center justify-center mr-6">
                             <i className="fa-solid fa-file-invoice-dollar text-[var(--primary-500)] text-4xl"></i>
                         </div>
-                        <div className="text-left">
-                            <p className="text-xl font-bold text-gray-800 dark:text-white">Laporan Aktual</p>
+                        <div className="text-left flex-grow">
+                            <p className="text-xl font-bold text-gray-800 dark:text-white">Manajemen Laporan</p>
                             <p className="text-base text-gray-500 dark:text-gray-400">Isi laporan realisasi bulanan.</p>
+                        </div>
+                         <div className="ml-4">
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setView(View.ACTUALS_HISTORY);
                                 }}
-                                className="text-sm font-semibold text-[var(--primary-500)] hover:underline mt-2 inline-block"
+                                className="flex items-center space-x-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-bold px-4 py-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-300"
                             >
-                                Lihat Riwayat <i className="fa-solid fa-arrow-right-long text-xs"></i>
+                                <i className="fa-solid fa-history"></i>
+                                <span>Riwayat</span>
                             </button>
                         </div>
                     </button>
@@ -52,17 +55,20 @@ const Report: React.FC<ReportProps> = ({ setView, isTargetSet }) => {
                         <div className="w-16 h-16 rounded-2xl bg-[var(--secondary-500)]/20 flex items-center justify-center mr-6">
                            <i className="fa-solid fa-bullseye text-[var(--secondary-500)] text-4xl"></i>
                         </div>
-                        <div className="text-left">
-                            <p className="text-xl font-bold text-gray-800 dark:text-white">Target Bulanan</p>
+                        <div className="text-left flex-grow">
+                            <p className="text-xl font-bold text-gray-800 dark:text-white">Manajemen Target</p>
                             <p className="text-base text-gray-500 dark:text-gray-400">Buat anggaran & target.</p>
+                        </div>
+                         <div className="ml-4">
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setView(View.TARGET_HISTORY);
                                 }}
-                                className="text-sm font-semibold text-[var(--secondary-500)] hover:underline mt-2 inline-block"
+                                className="flex items-center space-x-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-bold px-4 py-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-300"
                             >
-                                Lihat Riwayat <i className="fa-solid fa-arrow-right-long text-xs"></i>
+                                <i className="fa-solid fa-history"></i>
+                                <span>Riwayat</span>
                             </button>
                         </div>
                     </button>
