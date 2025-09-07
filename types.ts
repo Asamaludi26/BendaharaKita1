@@ -91,6 +91,7 @@ export interface DebtItem {
 export interface SavingsGoal {
   id: string;
   name: string;
+  source: string;
   targetAmount: number;
   currentAmount: number;
   deadline: string; // ISO date string

@@ -9,9 +9,9 @@ interface FinancialInsightProps {
 }
 
 const InsightCard: React.FC<{ insight: Insight }> = ({ insight }) => (
-    <div className="bg-gray-800/50 backdrop-blur-md border border-white/10 rounded-2xl shadow-lg p-4 flex items-start space-x-4 transform hover:scale-105 transition-all duration-300">
-        <div className="w-12 h-12 rounded-xl bg-black/20 flex items-center justify-center backdrop-blur-sm border border-white/10 flex-shrink-0">
-            <i className={`fa-solid fa-${insight.icon} text-[var(--primary-400)] text-xl`}></i>
+    <div className="bg-black/20 backdrop-blur-lg border border-white/10 rounded-2xl p-4 flex items-start space-x-4 transition-all duration-300 hover:border-[var(--primary-glow)]/50 hover:bg-black/30">
+        <div className="w-12 h-12 rounded-xl bg-black/30 flex items-center justify-center border border-white/10 flex-shrink-0">
+            <i className={`fa-solid fa-${insight.icon} text-[var(--primary-glow)] text-xl`}></i>
         </div>
         <div>
             <h4 className="font-bold text-white">{insight.title}</h4>
@@ -45,8 +45,8 @@ const FinancialInsight: React.FC<FinancialInsightProps> = ({ transactions, incom
       <h3 className="text-xl font-bold text-white mb-4">Financial Insights</h3>
       
       {isLoading ? (
-        <div className="text-center p-8 bg-gray-800/50 backdrop-blur-md rounded-2xl shadow-md border border-white/10">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--primary-500)] mx-auto"></div>
+        <div className="text-center p-8 bg-black/20 backdrop-blur-lg rounded-2xl border border-white/10">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--primary-glow)] mx-auto"></div>
             <p className="mt-4 text-gray-300 font-semibold">Menganalisis data Anda...</p>
         </div>
       ) : insights.length > 0 ? (
@@ -56,10 +56,10 @@ const FinancialInsight: React.FC<FinancialInsightProps> = ({ transactions, incom
           ))}
         </div>
       ) : (
-        <div className="text-center p-6 bg-gray-800/50 backdrop-blur-md rounded-2xl shadow-md border border-white/10">
+        <div className="text-center p-6 bg-black/20 backdrop-blur-lg rounded-2xl border border-white/10">
           <button
             onClick={handleGetInsights}
-            className="bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-600)] text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+            className="bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl hover:shadow-[var(--primary-glow)]/30 transform hover:scale-105 transition-all duration-300"
             disabled={isLoading}
           >
             Dapatkan Insight Finansial ✨

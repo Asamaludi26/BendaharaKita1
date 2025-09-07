@@ -26,9 +26,9 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
       role="dialog"
       aria-modal="true"
     >
-        <div className={`fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity duration-300 ease-in-out ${isOpen ? 'opacity-100' : 'opacity-0'}`}></div>
+        <div className={`fixed inset-0 bg-black/70 backdrop-blur-md transition-opacity duration-300 ease-in-out ${isOpen ? 'opacity-100' : 'opacity-0'}`}></div>
         <div 
-            className={`relative w-full max-w-sm m-4 transform transition-all duration-300 ease-in-out ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
+            className={`relative w-full max-w-sm m-4 transform transition-all duration-300 ease-[cubic-bezier(0.25,1.5,0.5,1)] ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
             onClick={e => e.stopPropagation()}
         >
           {children}

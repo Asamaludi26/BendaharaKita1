@@ -20,7 +20,8 @@ interface ManagementProps {
 }
 
 const SummaryCard: React.FC<{ title: string; amount: number; icon: string; gradient: string; }> = ({ title, amount, icon, gradient }) => (
-    <div className={`relative p-5 rounded-2xl shadow-lg overflow-hidden ${gradient}`}>
+    <div className={`relative p-5 rounded-2xl shadow-lg overflow-hidden bg-black/20 backdrop-blur-lg border border-white/10 ${gradient}`}>
+        <div className="absolute -inset-px rounded-2xl opacity-30" style={{backgroundImage: gradient}}></div>
         <div className="relative z-10">
             <p className="text-white/80 font-semibold">{title}</p>
             <p className="text-3xl font-bold text-white mt-1">Rp {amount.toLocaleString('id-ID')}</p>
@@ -53,12 +54,12 @@ const Management: React.FC<ManagementProps> = ({
 
   return (
     <>
-      <div className="p-4 md:p-6 space-y-6 pb-24">
+      <div className="p-4 md:p-6 space-y-6 animate-fade-in">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Tujuan Finansial</h1>
+          <h1 className="text-3xl font-bold text-white">Tujuan Finansial</h1>
            <button 
             onClick={() => setIsResetModalOpen(true)}
-            className="w-10 h-10 rounded-full bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 flex items-center justify-center transition-colors shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700"
+            className="w-10 h-10 rounded-full bg-black/20 text-gray-400 flex items-center justify-center transition-colors shadow-sm hover:bg-white/10 border border-white/10"
             aria-label="Atur Ulang Data Awal"
             title="Atur Ulang Data Awal"
           >
@@ -72,13 +73,13 @@ const Management: React.FC<ManagementProps> = ({
                 title="Total Aset Tabungan"
                 amount={totalAllTimeSavings}
                 icon="fa-landmark"
-                gradient="bg-gradient-to-br from-green-400 to-emerald-600"
+                gradient="linear-gradient(to right bottom, var(--color-income), var(--secondary-500))"
            />
            <SummaryCard 
                 title="Total Riwayat Pinjaman"
                 amount={totalAllTimeDebt}
                 icon="fa-file-invoice-dollar"
-                gradient="bg-gradient-to-br from-orange-400 to-red-600"
+                gradient="linear-gradient(to right bottom, var(--color-debt), var(--color-expense))"
            />
         </div>
 
@@ -97,10 +98,10 @@ const Management: React.FC<ManagementProps> = ({
       </div>
 
        <Modal isOpen={isResetModalOpen} onClose={() => setIsResetModalOpen(false)}>
-        <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl text-center p-6 pt-16">
+        <div className="relative bg-gray-800/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-xl text-center p-6 pt-16">
           <button 
               onClick={() => setIsResetModalOpen(false)} 
-              className="absolute top-4 right-4 w-10 h-10 rounded-full text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center transition-colors z-10"
+              className="absolute top-4 right-4 w-10 h-10 rounded-full text-gray-400 hover:bg-white/10 flex items-center justify-center transition-colors z-10"
               aria-label="Close modal"
           >
               <i className="fa-solid fa-times text-xl"></i>
@@ -110,13 +111,13 @@ const Management: React.FC<ManagementProps> = ({
               <i className="fa-solid fa-triangle-exclamation text-5xl text-white"></i>
           </div>
           
-          <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
+          <h3 className="text-2xl font-bold text-white mb-2">
               Anda Yakin?
           </h3>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">
+          <p className="text-gray-300 mb-6">
               Tindakan ini akan <strong>menghapus semua data</strong> pinjaman dan tujuan tabungan Anda saat ini. Anda akan dipandu untuk memasukkannya kembali.
               <br/><br/>
-              <span className="font-semibold text-gray-500 dark:text-gray-400">Data transaksi tidak akan terpengaruh.</span>
+              <span className="font-semibold text-gray-400">Data transaksi tidak akan terpengaruh.</span>
           </p>
           
           <div className="flex flex-col gap-3">
@@ -130,7 +131,7 @@ const Management: React.FC<ManagementProps> = ({
               <button
                   type="button"
                   onClick={() => setIsResetModalOpen(false)}
-                  className="w-full bg-transparent text-gray-500 dark:text-gray-400 font-semibold py-3 px-6 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  className="w-full bg-transparent text-gray-400 font-semibold py-3 px-6 rounded-full hover:bg-white/10 transition-colors"
               >
                   Batal
               </button>

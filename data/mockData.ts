@@ -65,24 +65,24 @@ export const mockDebts: DebtItem[] = [
 export const mockSavingsGoals: SavingsGoal[] = [
     // --- ACTIVE GOALS ---
     { 
-        id: 'sg-1', name: 'Dana Darurat', 
+        id: 'sg-1', name: 'Dana Darurat', source: 'Bank BCA',
         targetAmount: 25000000, currentAmount: 3500000, 
         deadline: relativeDate(365 * 2) // 2 years from now
     },
     { 
-        id: 'sg-2', name: 'Liburan ke Jepang', 
+        id: 'sg-2', name: 'Liburan ke Jepang', source: 'Bibit',
         targetAmount: 30000000, currentAmount: 18500000, 
         deadline: relativeDate(30 * 8) // 8 months from now
     },
 
     // --- COMPLETED GOALS (FOR HISTORY) ---
     { 
-        id: 'sg-3', name: 'Upgrade PC Gaming', 
+        id: 'sg-3', name: 'Upgrade PC Gaming', source: 'Lainnya',
         targetAmount: 15000000, currentAmount: 15500000, // Achieved (over target)
         deadline: relativeDate(-30 * 2) // Deadline was 2 months ago
     },
     { 
-        id: 'sg-4', name: 'Membeli Motor Baru', 
+        id: 'sg-4', name: 'Membeli Motor Baru', source: 'Bank Mandiri',
         targetAmount: 20000000, currentAmount: 20000000, // Achieved (at target)
         deadline: relativeDate(-30 * 5) // Deadline was 5 months ago
     },

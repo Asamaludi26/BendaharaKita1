@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
-import { View, SavingsGoal } from '../types';
+import React, { useState, useMemo, useEffect } from 'react';
+import { SavingsGoal } from '../../types';
 
 interface AddSavingsGoalFormProps {
-    setView: (view: View) => void;
+    onClose: () => void;
     onSave: (goal: Omit<SavingsGoal, 'id'>) => void;
 }
 
@@ -14,7 +14,7 @@ const ProgressBar: React.FC<{ currentStep: number }> = ({ currentStep }) => {
     ];
 
     return (
-        <div className="flex items-center justify-between w-full max-w-md mx-auto mb-8">
+        <div className="flex items-center justify-between w-full mx-auto mb-8">
             {steps.map((step, index) => {
                 const stepNumber = index + 1;
                 const isCompleted = currentStep > stepNumber;
@@ -23,13 +23,13 @@ const ProgressBar: React.FC<{ currentStep: number }> = ({ currentStep }) => {
                 return (
                     <React.Fragment key={step.name}>
                         <div className="flex flex-col items-center text-center">
-                            <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${isCompleted ? 'bg-[var(--primary-600)] text-white' : isActive ? 'bg-gradient-to-br from-[var(--primary-500)] to-[var(--secondary-500)] text-white scale-110 shadow-lg' : 'bg-gray-200 dark:bg-gray-700 text-gray-400'}`}>
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${isCompleted ? 'bg-[var(--primary-600)] text-white' : isActive ? 'bg-gradient-to-br from-[var(--primary-500)] to-[var(--secondary-500)] text-white scale-110 shadow-lg' : 'bg-black/20 text-gray-400'}`}>
                                 <i className={`fa-solid ${step.icon} text-xl`}></i>
                             </div>
-                            <p className={`mt-2 text-xs font-bold transition-colors ${isActive || isCompleted ? 'text-[var(--primary-500)] dark:text-[var(--primary-400)]' : 'text-gray-500'}`}>{step.name}</p>
+                            <p className={`mt-2 text-xs font-bold transition-colors ${isActive || isCompleted ? 'text-[var(--primary-glow)]' : 'text-gray-400'}`}>{step.name}</p>
                         </div>
                         {stepNumber < steps.length && (
-                             <div className={`flex-1 h-1 mx-2 transition-colors duration-500 ${isCompleted ? 'bg-[var(--primary-600)]' : 'bg-gray-200 dark:bg-gray-700'}`}></div>
+                             <div className={`flex-1 h-1 mx-2 transition-colors duration-500 ${isCompleted ? 'bg-[var(--primary-600)]' : 'bg-black/20'}`}></div>
                         )}
                     </React.Fragment>
                 );
@@ -38,15 +38,30 @@ const ProgressBar: React.FC<{ currentStep: number }> = ({ currentStep }) => {
     );
 };
 
+// FIX: Added list of popular savers for source selection.
+const popularSavers = [
+    'Bank BCA', 'Bank Mandiri', 'GoPay Tabungan', 'OVO', 'Bibit', 'Ajaib'
+];
 
-const AddSavingsGoalForm: React.FC<AddSavingsGoalFormProps> = ({ setView, onSave }) => {
+const AddSavingsGoalForm: React.FC<AddSavingsGoalFormProps> = ({ onClose, onSave }) => {
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({
         name: '',
+        // FIX: Added 'source' to the form state to align with the SavingsGoal type.
+        source: '',
         targetAmount: '',
         deadline: '',
-        currentAmount: '', // New field for existing savings
+        currentAmount: '',
     });
+    // FIX: Added state for custom source input.
+    const [customSource, setCustomSource] = useState('');
+    
+    useEffect(() => {
+        setStep(1);
+        // FIX: Reset 'source' field on component mount.
+        setFormData({ name: '', source: '', targetAmount: '', deadline: '', currentAmount: '' });
+        setCustomSource('');
+    }, []);
 
     const handleInputChange = (field: keyof typeof formData, value: string) => {
          const isNumeric = ['targetAmount', 'currentAmount'].includes(field);
@@ -54,12 +69,25 @@ const AddSavingsGoalForm: React.FC<AddSavingsGoalFormProps> = ({ setView, onSave
          setFormData(prev => ({ ...prev, [field]: processedValue }));
     };
 
+    // FIX: Added handler for source selection buttons.
+    const handleSourceSelection = (sourceName: string) => {
+        setFormData(prev => ({...prev, source: sourceName }));
+        if (sourceName !== 'Lainnya') {
+            setCustomSource('');
+        }
+    };
+
     const isStepValid = useMemo(() => {
-        if (step === 1) return formData.name.trim() !== '';
+        // FIX: Updated step 1 validation to include the 'source' field.
+        if (step === 1) {
+            const isNameValid = formData.name.trim() !== '';
+            const isSourceValid = formData.source.trim() !== '' && (formData.source !== 'Lainnya' || customSource.trim() !== '');
+            return isNameValid && isSourceValid;
+        }
         if (step === 2) return formData.targetAmount.trim() !== '' && parseInt(formData.targetAmount) > 0;
         if (step === 3) return formData.deadline.trim() !== '';
         return false;
-    }, [step, formData]);
+    }, [step, formData, customSource]);
 
     const handleNext = () => {
         if (isStepValid) setStep(s => s + 1);
@@ -71,16 +99,11 @@ const AddSavingsGoalForm: React.FC<AddSavingsGoalFormProps> = ({ setView, onSave
     
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!isStepValid) {
-            alert("Harap lengkapi semua data pada langkah ini.");
-            return;
-        }
-        
-        // The onSave prop expects Omit<SavingsGoal, 'id' | 'currentAmount'>
-        // But we are now handling currentAmount. We will pass it differently or adjust App.tsx
-        // Let's pass the full object and let App.tsx handle it.
+        if (!isStepValid) return;
+        // FIX: Included 'source' in the saved data object to resolve the type error.
         onSave({
             name: formData.name,
+            source: formData.source === 'Lainnya' ? customSource : formData.source,
             targetAmount: parseInt(formData.targetAmount),
             deadline: new Date(formData.deadline).toISOString(),
             currentAmount: parseInt(formData.currentAmount || '0'),
@@ -91,68 +114,84 @@ const AddSavingsGoalForm: React.FC<AddSavingsGoalFormProps> = ({ setView, onSave
         switch(step) {
             case 1:
                 return (
-                    <div className="space-y-6">
+                    // FIX: Added UI for selecting the source of funds in step 1.
+                     <div className="space-y-6">
                          <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nama Tujuan</label>
-                            <input type="text" placeholder="Contoh: Liburan ke Bali" value={formData.name} onChange={e => handleInputChange('name', e.target.value)} className="w-full p-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-[var(--primary-500)] focus:border-transparent" />
-                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Apa yang ingin Anda capai dengan tabungan ini?</p>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">Nama Tujuan</label>
+                            <input type="text" placeholder="Contoh: Liburan ke Bali" value={formData.name} onChange={e => handleInputChange('name', e.target.value)} className="w-full p-3 bg-black/20 border border-white/10 rounded-md focus:ring-2 focus:ring-[var(--primary-glow)] focus:border-transparent" />
                          </div>
-                    </div>
+                         <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">Sumber Dana</label>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                {popularSavers.map(saver => (
+                                    <button key={saver} type="button" onClick={() => handleSourceSelection(saver)} className={`p-3 border rounded-lg text-sm font-semibold transition-all duration-200 ${formData.source === saver ? 'bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white border-transparent shadow-md' : 'bg-black/20 border-white/10 hover:border-[var(--primary-glow)]'}`}>{saver}</button>
+                                ))}
+                                <button type="button" onClick={() => handleSourceSelection('Lainnya')} className={`p-3 border rounded-lg text-sm font-semibold transition-all duration-200 ${formData.source === 'Lainnya' ? 'bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white border-transparent shadow-md' : 'bg-black/20 border-white/10 hover:border-[var(--primary-glow)]'}`}>Lainnya...</button>
+                            </div>
+                            {formData.source === 'Lainnya' && (<input type="text" placeholder="Masukkan sumber dana lain" value={customSource} onChange={e => setCustomSource(e.target.value)} className="w-full p-3 mt-3 bg-black/20 border border-white/10 rounded-md focus:ring-2 focus:ring-[var(--primary-glow)] focus:border-transparent" />)}
+                         </div>
+                     </div>
                 );
             case 2:
                 return (
-                     <div className="space-y-6">
-                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Target Dana</label>
-                            <div className="relative">
-                                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">Rp</span>
-                                <input type="text" inputMode="numeric" placeholder="5.000.000" value={formData.targetAmount ? parseInt(formData.targetAmount).toLocaleString('id-ID') : ''} onChange={e => handleInputChange('targetAmount', e.target.value)} className="w-full p-3 pl-9 bg-gray-50 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-[var(--primary-500)] focus:border-transparent text-right" />
-                            </div>
-                             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Jumlah total uang yang ingin Anda kumpulkan.</p>
-                         </div>
+                     <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Target Dana</label>
+                        <div className="relative">
+                            <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">Rp</span>
+                            <input type="text" inputMode="numeric" placeholder="5.000.000" value={formData.targetAmount ? parseInt(formData.targetAmount).toLocaleString('id-ID') : ''} onChange={e => handleInputChange('targetAmount', e.target.value)} className="w-full p-3 pl-9 bg-black/20 border border-white/10 rounded-md focus:ring-2 focus:ring-[var(--primary-glow)] focus:border-transparent text-right" />
+                        </div>
                      </div>
                 );
             case 3:
                  return (
                      <div className="space-y-6">
                          <div>
-                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tenggat Waktu</label>
-                             <input type="date" value={formData.deadline} onChange={e => handleInputChange('deadline', e.target.value)} className="w-full p-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-[var(--primary-500)] focus:border-transparent" />
-                             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Kapan Anda ingin tujuan ini tercapai?</p>
+                             <label className="block text-sm font-medium text-gray-300 mb-2">Tanggal Target Menabung</label>
+                             <input type="date" value={formData.deadline} onChange={e => handleInputChange('deadline', e.target.value)} className="w-full p-3 bg-black/20 border border-white/10 rounded-md focus:ring-2 focus:ring-[var(--primary-glow)] focus:border-transparent" />
                          </div>
                          <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Dana Terkumpul Saat Ini (Opsional)</label>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">Dana Terkumpul Saat Ini (Opsional)</label>
                             <div className="relative">
-                                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">Rp</span>
-                                <input type="text" inputMode="numeric" placeholder="0" value={formData.currentAmount ? parseInt(formData.currentAmount).toLocaleString('id-ID') : ''} onChange={e => handleInputChange('currentAmount', e.target.value)} className="w-full p-3 pl-9 bg-gray-50 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-[var(--primary-500)] focus:border-transparent text-right" />
+                                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">Rp</span>
+                                <input type="text" inputMode="numeric" placeholder="0" value={formData.currentAmount ? parseInt(formData.currentAmount).toLocaleString('id-ID') : ''} onChange={e => handleInputChange('currentAmount', e.target.value)} className="w-full p-3 pl-9 bg-black/20 border border-white/10 rounded-md focus:ring-2 focus:ring-[var(--primary-glow)] focus:border-transparent text-right" />
                             </div>
-                             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Isi jika Anda sudah memiliki tabungan untuk tujuan ini.</p>
                          </div>
                      </div>
                 );
-            default:
-                return null;
+            default: return null;
         }
     }
 
     return (
-        <div className="p-4 md:p-6 space-y-6 pb-24">
-            <header className="flex items-center space-x-4">
-                <button onClick={() => setView(View.MANAGEMENT)} className="text-gray-500 dark:text-gray-400">
-                    <i className="fa-solid fa-arrow-left text-xl"></i>
+        <div className="bg-gray-800/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-6 w-full max-w-lg">
+            <header className="flex items-center justify-between space-x-4 mb-6">
+                <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 rounded-xl bg-black/30 flex items-center justify-center border border-white/10 flex-shrink-0">
+                      <i className="fa-solid fa-piggy-bank text-2xl text-cyan-300"></i>
+                    </div>
+                    <div>
+                      <h1 className="text-xl font-bold text-white">Buat Tujuan Tabungan</h1>
+                      <p className="text-sm text-gray-400">Langkah {step} dari 3</p>
+                    </div>
+                </div>
+                 <button 
+                    onClick={onClose} 
+                    className="w-8 h-8 rounded-full bg-black/20 text-gray-400 hover:bg-white/10 hover:text-white flex items-center justify-center transition-colors"
+                    aria-label="Close"
+                >
+                    <i className="fa-solid fa-times text-lg"></i>
                 </button>
-                <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Buat Tujuan Tabungan Baru</h1>
             </header>
 
             <ProgressBar currentStep={step} />
 
-            <form onSubmit={handleSubmit}>
-                <div key={step} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md animate-fade-in">
+            <form onSubmit={handleSubmit} className="mt-8">
+                <div key={step} className="animate-fade-in">
                     {renderStepContent()}
                 </div>
 
                 <div className="mt-8 flex items-center justify-between">
-                    <button type="button" onClick={handlePrev} disabled={step === 1} className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold py-3 px-6 rounded-full disabled:opacity-50 transition-opacity">
+                    <button type="button" onClick={handlePrev} disabled={step === 1} className="bg-black/20 border border-white/10 text-gray-300 font-bold py-3 px-6 rounded-full disabled:opacity-50 transition-opacity">
                         Kembali
                     </button>
                     {step < 3 ? (
@@ -161,7 +200,7 @@ const AddSavingsGoalForm: React.FC<AddSavingsGoalFormProps> = ({ setView, onSave
                         </button>
                     ) : (
                          <button type="submit" disabled={!isStepValid} className="w-auto bg-gradient-to-r from-[var(--secondary-600)] to-[var(--primary-500)] text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300">
-                            Simpan Tujuan Tabungan
+                            Simpan Tujuan
                         </button>
                     )}
                 </div>

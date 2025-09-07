@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BendaharaKita</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <script type="importmap">
 {
@@ -20,87 +23,124 @@
 </script>
 <style>
   :root {
-    /* Brand Colors */
-    --primary-50: #EEF2FF;
-    --primary-100: #E0E7FF;
-    --primary-300: #A5B4FC;
-    --primary-400: #818CF8;
-    --primary-500: #6366F1;
-    --primary-600: #4F46E5;
-    --primary-700: #4338CA;
-    --primary-900: #312E81;
-    --secondary-500: #8B5CF6;
-    --secondary-600: #7C3AED;
+    /* Main Theme Colors */
+    --bg-start: #0F0C29;
+    --bg-mid: #302B63;
+    --bg-end: #24243E;
+
+    /* Accent & Brand Colors */
+    --primary-glow: #7c4dff; /* A vibrant purple */
+    --secondary-glow: #00e5ff; /* A bright cyan */
+    --primary-500: #6D28D9;
+    --primary-600: #5B21B6;
+    --secondary-500: #14B8A6;
+    --secondary-600: #0D9488;
     
-    /* Semantic Financial & Chart Colors */
-    --color-income: #10B981;
-    --color-expense: #EF4444;
-    --color-debt: #F97316;
-    --color-savings: #3B82F6;
-    --color-balance: #6366F1;
-    --color-net-positive: #22D3EE;
-    --color-net-negative: #F97316;
+    /* Semantic Colors */
+    --color-income: #22c55e; /* green-500 */
+    --color-expense: #ef4444; /* red-500 */
+    --color-debt: #f97316; /* orange-500 */
+    --color-savings: #3b82f6; /* blue-500 */
+    --color-balance: #8b5cf6; /* violet-500 */
+    --color-net-positive: #67e8f9; /* cyan-300 */
+    --color-net-negative: #fb923c; /* orange-300 */
 
-    /* Accordion Header Colors (Light Mode) */
-    --color-header-income-bg: #E7F7F1;
-    --color-header-income-text: #059669;
-    --color-header-debt-bg: #FFF4EC;
-    --color-header-debt-text: #F97316;
-    --color-header-expense-bg: #FEEEEE;
-    --color-header-expense-text: #EF4444;
-    --color-header-savings-bg: #EFF6FF;
-    --color-header-savings-text: #3B82F6;
-
-    /* Form Total Row Colors (Light Mode) */
-    --color-total-success-bg: #D1FAE5; /* green-100 */
-    --color-total-fail-bg: #FEE2E2;    /* red-100 */
-  }
-  html.dark {
-     /* Accordion Header Colors (Dark Mode) */
-    --color-header-income-bg: rgba(16, 185, 129, 0.15);
-    --color-header-income-text: #34D399;
-    --color-header-debt-bg: rgba(249, 115, 22, 0.15);
-    --color-header-debt-text: #FBBF24;
-    --color-header-expense-bg: rgba(239, 68, 68, 0.15);
-    --color-header-expense-text: #F87171;
-    --color-header-savings-bg: rgba(59, 130, 246, 0.15);
-    --color-header-savings-text: #93C5FD;
-    
-    /* Form Total Row Colors (Dark Mode) */
-    --color-total-success-bg: rgba(16, 185, 129, 0.2);
-    --color-total-fail-bg: rgba(239, 68, 68, 0.2);
+    --font-sans: 'Inter', sans-serif;
   }
 
-  @keyframes float {
-    0% {
-      transform: translateY(0px);
-    }
-    50% {
-      transform: translateY(-8px);
-    }
-    100% {
-      transform: translateY(0px);
+  body {
+    font-family: var(--font-sans);
+    background-color: #111827; /* Fallback */
+    color: #E5E7EB; /* text-gray-200 */
+    overflow: hidden; /* Prevent body scroll, main content will scroll */
+  }
+
+  /* Responsive Typography */
+  html {
+    font-size: 15px; /* Base for mobile */
+  }
+  @media (min-width: 768px) { /* md breakpoint */
+    html {
+      font-size: 16px; /* Standard for desktop */
     }
   }
-  .animate-float {
-    animation: float 3s ease-in-out infinite;
+
+  /* Animated Aurora Background */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 15% 25%, var(--primary-glow), transparent 30%),
+                radial-gradient(circle at 85% 75%, var(--secondary-glow), transparent 40%),
+                var(--bg-start);
+    background-blend-mode: screen;
+    will-change: transform;
+    animation: aurora 20s linear infinite alternate;
+    z-index: -1;
+    opacity: 0.3;
   }
-  @keyframes fade-in {
-      from {
-        opacity: 0;
-        transform: scale(0.98);
-      }
-      to {
-        opacity: 1;
-        transform: scale(1);
-      }
-    }
-  .animate-fade-in {
-      animation: fade-in 0.3s ease-out forwards;
+
+  @keyframes aurora {
+    0% { transform: translate(0%, 0%) rotate(0deg) scale(1.2); }
+    50% { transform: translate(5%, -10%) rotate(10deg) scale(1.5); }
+    100% { transform: translate(-5%, 5%) rotate(-10deg) scale(1.2); }
+  }
+
+  /* Main App Container */
+  #root > div {
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden; /* Prevents horizontal scroll during slide animations */
+    scroll-behavior: smooth;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.25); }
+
+  /* Global smooth transitions */
+  button, a, input, [tabindex], summary { transition: all 0.2s ease-in-out; }
+  input:focus-visible { outline: none; }
+
+  /* Keyframe animations */
+  @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes fade-in-up {
+      from { opacity: 0; transform: translateY(20px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes slide-in-from-right {
+    from { opacity: 0; transform: translateX(30px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes slide-in-from-left {
+    from { opacity: 0; transform: translateX(-30px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes pulse-glow-red {
+    0%, 100% { filter: drop-shadow(0 0 8px var(--color-expense)); opacity: 1; }
+    50% { filter: drop-shadow(0 0 16px var(--color-expense)); opacity: 0.8; }
+  }
+  .animate-pulse-glow-red {
+      animation: pulse-glow-red 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .animate-fade-in { animation: fade-in 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+  .animate-fade-in-up { animation: fade-in-up 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+  .animate-slide-in-from-right { animation: slide-in-from-right 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+  .animate-slide-in-from-left { animation: slide-in-from-left 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+
+  /* Staggered animation support */
+  .stagger-children > * {
+    opacity: 0;
+    animation: fade-in-up 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
   }
 </style>
 </head>
-  <body class="bg-gray-100 dark:bg-gray-900">
+  <body>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

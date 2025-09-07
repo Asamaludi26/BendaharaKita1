@@ -33,6 +33,7 @@ const SavingsGoalItemCard: React.FC<SavingsGoalItemCardProps> = ({ goal, onSelec
             <div className="flex justify-between items-start mb-2">
                 <div>
                     <p className="font-bold text-gray-800 dark:text-white">{goal.name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{goal.source}</p>
                 </div>
                 {isAchieved && (
                      <div className="flex-shrink-0 ml-2 text-xs font-bold text-green-700 bg-green-100 dark:bg-green-900/50 dark:text-green-300 px-2.5 py-1.5 rounded-full">
