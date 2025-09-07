@@ -1,29 +1,34 @@
-
-import React, { useState, useMemo, useEffect } from 'react';
-import { AddTargetFormData, TargetFormField, View, MonthlyTarget, DebtItem, SavingsGoal } from '../types';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { v4 as uuidv4 } from 'uuid';
+// FIX: Import 'View' as a value, not just a type, as it's an enum used at runtime.
+import { View } from '../types';
+import type { MonthlyTarget, TargetFormField, ArchivedMonthlyTarget, DebtItem, SavingsGoal } from '../types';
 import { AccordionSection } from './AccordionSection';
 import Modal from './Modal';
 
 interface AddTargetFormProps {
   setView: (view: View) => void;
-  onSave: (data: AddTargetFormData) => void;
-  savedTarget: MonthlyTarget | null;
-  debts: DebtItem[];
-  savingsGoals: SavingsGoal[];
-  isPreFilled: boolean;
+  onSave: (data: MonthlyTarget) => void;
+  initialData: MonthlyTarget | null;
+  archivedTargets: ArchivedMonthlyTarget[];
+  currentMonthYear: string;
+  activeDebts: DebtItem[];
+  activeSavingsGoals: SavingsGoal[];
+  onAddDebt: () => void;
+  onAddSavingsGoal: () => void;
 }
 
-const initialFormData: AddTargetFormData = {
-  pendapatan: [{ id: `pendapatan-${Date.now()}`, name: 'Gaji', amount: '' }],
-  cicilanUtang: [{ id: `cicilanUtang-${Date.now()}`, name: 'Cicilan Motor', amount: '' }],
-  pengeluaranUtama: [{ id: `pengeluaranUtama-${Date.now()}`, name: 'Sewa Rumah', amount: '' }],
-  kebutuhan: [{ id: `kebutuhan-${Date.now()}`, name: 'Makan Harian', amount: '' }],
-  penunjang: [{ id: `penunjang-${Date.now()}`, name: 'Transportasi', amount: '' }],
-  pendidikan: [{ id: `pendidikan-${Date.now()}`, name: 'Kursus', amount: '' }],
-  tabungan: [{ id: `tabungan-${Date.now()}`, name: 'Dana Darurat', amount: '' }],
+const emptyForm: MonthlyTarget = {
+  pendapatan: [{ id: uuidv4(), name: 'Gaji Utama', amount: '' }],
+  cicilanUtang: [],
+  pengeluaranUtama: [{ id: uuidv4(), name: 'Sewa Kos/Rumah', amount: '' }],
+  kebutuhan: [{ id: uuidv4(), name: 'Belanja Dapur', amount: '' }],
+  penunjang: [{ id: uuidv4(), name: 'Transportasi', amount: '' }],
+  pendidikan: [],
+  tabungan: [],
 };
 
-const sectionAccentColors: { [key in keyof AddTargetFormData]: string } = {
+const sectionAccentColors: { [key in keyof MonthlyTarget]: string } = {
   pendapatan: 'border-l-[var(--color-income)]',
   cicilanUtang: 'border-l-[var(--color-debt)]',
   pengeluaranUtama: 'border-l-[var(--color-expense)]',
@@ -33,400 +38,367 @@ const sectionAccentColors: { [key in keyof AddTargetFormData]: string } = {
   tabungan: 'border-l-[var(--color-savings)]',
 };
 
-const AddTargetForm: React.FC<AddTargetFormProps> = ({ setView, onSave, savedTarget, debts, savingsGoals, isPreFilled }) => {
-  const [isLocked, setIsLocked] = useState(isPreFilled);
-  const [showPreFillModal, setShowPreFillModal] = useState(isPreFilled);
-  const [showSaveConfirmModal, setShowSaveConfirmModal] = useState(false);
-  const [isJustSaved, setIsJustSaved] = useState(false);
 
-
-  const [formData, setFormData] = useState<AddTargetFormData>(() => {
-    if (savedTarget) {
-      // If a target is saved for the current month (not pre-filled from past), it should be locked initially.
-      // isPreFilled being false here means a definitive target for this month exists.
-      if (!isPreFilled) {
-        setIsJustSaved(true);
-        setIsLocked(true);
-      }
-      return savedTarget;
-    }
-    const savedDraft = localStorage.getItem('bendaharaKita-targetFormDraft');
-    if (savedDraft) {
-        try {
-            return JSON.parse(savedDraft);
-        } catch (error) {
-            console.error("Failed to parse target form draft from localStorage", error);
-        }
-    }
-    
-    // Pre-populate if it's a new form
-    const prePopulatedData = { ...initialFormData };
-
-    const activeDebts = debts.filter(debt => {
-        const paidAmount = debt.payments.reduce((sum, p) => sum + p.amount, 0);
-        return (debt.totalAmount - paidAmount) > 0;
-    });
-
-    prePopulatedData.cicilanUtang = activeDebts.length > 0 
-        ? activeDebts.map(debt => ({ id: `cicilanUtang-pre-${debt.id}`, name: debt.name, amount: String(debt.monthlyInstallment) }))
-        : initialFormData.cicilanUtang;
-
-    const activeGoals = savingsGoals.filter(goal => goal.currentAmount < goal.targetAmount);
-
-    prePopulatedData.tabungan = activeGoals.length > 0
-        ? activeGoals.map(goal => {
-            const now = new Date();
-            now.setHours(0, 0, 0, 0);
-            const deadline = new Date(goal.deadline);
-            deadline.setHours(0, 0, 0, 0);
-
-            let suggestedAmount = 0;
-
-            if (deadline >= now && goal.currentAmount < goal.targetAmount) {
-                const amountRemaining = goal.targetAmount - goal.currentAmount;
-                
-                const yearDiff = deadline.getFullYear() - now.getFullYear();
-                const monthDiff = deadline.getMonth() - now.getMonth();
-                const monthsRemaining = yearDiff * 12 + monthDiff;
-
-                if (monthsRemaining > 0) {
-                    suggestedAmount = Math.ceil(amountRemaining / monthsRemaining);
-                } else if (monthsRemaining === 0) { // Deadline is this month
-                    suggestedAmount = amountRemaining;
-                }
-            }
-            
-            return {
-              id: `tabungan-pre-${goal.id}`,
-              name: goal.name,
-              amount: String(suggestedAmount > 0 ? suggestedAmount : 0)
-            };
-        })
-        : initialFormData.tabungan;
-
-    return prePopulatedData;
-  });
+const AddTargetForm: React.FC<AddTargetFormProps> = ({
+  setView,
+  onSave,
+  initialData,
+  archivedTargets,
+  currentMonthYear,
+  activeDebts,
+  activeSavingsGoals,
+  onAddDebt,
+  onAddSavingsGoal,
+}) => {
+  const [formData, setFormData] = useState<MonthlyTarget>(initialData || emptyForm);
+  const [isReadOnly, setIsReadOnly] = useState(!!initialData);
+  const [originalData, setOriginalData] = useState<MonthlyTarget | null>(initialData);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showEditOptionsModal, setShowEditOptionsModal] = useState(false);
 
   useEffect(() => {
-    if (!isLocked) {
-        localStorage.setItem('bendaharaKita-targetFormDraft', JSON.stringify(formData));
-    }
-  }, [formData, isLocked]);
+      const dataToSet = initialData || emptyForm;
+      setFormData(dataToSet);
+      setOriginalData(dataToSet);
+      setIsReadOnly(!!initialData);
+  }, [initialData]);
 
-  const handleFieldChange = (
-    section: keyof AddTargetFormData, 
-    index: number, 
-    field: 'name' | 'amount', 
-    value: string
-  ) => {
-    const updatedSection = [...formData[section]];
-    const itemToUpdate = { ...updatedSection[index] };
-    if (field === 'name') {
-        itemToUpdate.name = value;
-    } else if (field === 'amount') {
-        itemToUpdate.amount = value.replace(/[^0-9]/g, '');
-    }
-    updatedSection[index] = itemToUpdate;
-    setFormData(prev => ({ ...prev, [section]: updatedSection }));
+  const handleFieldChange = (section: keyof MonthlyTarget, id: string, field: 'name' | 'amount', value: string) => {
+    // FIX: Reverted to parseInt for currency formatting to resolve a type error and maintain consistency.
+    const numericValue = field === 'amount' ? value.replace(/[^0-9]/g, '') : value;
+    setFormData(prev => ({
+      ...prev,
+      [section]: prev[section].map(item =>
+        item.id === id ? { ...item, [field]: numericValue } : item
+      ),
+    }));
   };
 
-  const addField = (section: keyof AddTargetFormData) => {
-    const newField: TargetFormField = {
-      id: `${section}-${Date.now()}`,
-      name: '',
-      amount: '',
-    };
-    setFormData(prev => ({ ...prev, [section]: [...prev[section], newField] }));
-  };
-
-  const removeField = (section: keyof AddTargetFormData, index: number) => {
-    if (formData[section].length <= 1) return;
-    const updatedSection = formData[section].filter((_, i) => i !== index);
-    setFormData(prev => ({ ...prev, [section]: updatedSection }));
+  const addField = (section: keyof MonthlyTarget) => {
+    setFormData(prev => ({
+      ...prev,
+      [section]: [...prev[section], { id: uuidv4(), name: '', amount: '' }],
+    }));
   };
   
+  const removeField = (section: keyof MonthlyTarget, id: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [section]: prev[section].filter(item => item.id !== id),
+    }));
+  };
+
+  const handleEdit = (mode: 'adjust' | 'blank' | 'copy') => {
+    setShowEditOptionsModal(false);
+
+    if (mode === 'adjust') {
+      setIsReadOnly(false);
+    } else if (mode === 'blank') {
+      const syncedEmptyForm = prePopulateGoals(emptyForm);
+      setFormData(syncedEmptyForm);
+      setIsReadOnly(false);
+    } else if (mode === 'copy') {
+      const lastMonth = new Date();
+      lastMonth.setMonth(lastMonth.getMonth() - 1);
+      const lastMonthYear = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
+      const lastTarget = archivedTargets.find(t => t.monthYear === lastMonthYear);
+      if (lastTarget) {
+        const syncedForm = prePopulateGoals(lastTarget.target);
+        setFormData(syncedForm);
+        setIsReadOnly(false);
+      }
+    }
+  };
+
+  const handleCancel = () => {
+    setFormData(originalData || emptyForm);
+    setIsReadOnly(true);
+  };
+  
+  const calculateTotal = useCallback((items: TargetFormField[]) => {
+    return items.reduce((sum, item) => sum + (parseInt(item.amount) || 0), 0);
+  }, []);
+  
+  const totalPendapatan = useMemo(() => calculateTotal(formData.pendapatan), [formData.pendapatan, calculateTotal]);
+  const totalPengeluaran = useMemo(() => 
+      calculateTotal(formData.cicilanUtang) +
+      calculateTotal(formData.pengeluaranUtama) +
+      calculateTotal(formData.kebutuhan) +
+      calculateTotal(formData.penunjang) +
+      calculateTotal(formData.pendidikan), 
+  [formData, calculateTotal]);
+  const totalTabungan = useMemo(() => calculateTotal(formData.tabungan), [formData.tabungan, calculateTotal]);
+  const sisa = useMemo(() => totalPendapatan - totalPengeluaran - totalTabungan, [totalPendapatan, totalPengeluaran, totalTabungan]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setShowSaveConfirmModal(true);
+    setShowConfirmModal(true);
   };
 
   const handleConfirmSave = () => {
-      onSave(formData);
-      localStorage.removeItem('bendaharaKita-targetFormDraft');
-      setShowSaveConfirmModal(false);
-      setIsLocked(true);
-      setIsJustSaved(true);
+    onSave(formData);
+    setShowConfirmModal(false);
+    setIsReadOnly(true);
+    setOriginalData(formData);
   };
   
-  const totals = useMemo(() => {
-    const calculatedTotals: { [key in keyof AddTargetFormData]?: number } = {};
-    (Object.keys(formData) as Array<keyof AddTargetFormData>).forEach(key => {
-      calculatedTotals[key] = formData[key].reduce((sum, item) => sum + (parseInt(item.amount) || 0), 0);
+  const prePopulateGoals = (baseForm: MonthlyTarget): MonthlyTarget => {
+    const newForm = JSON.parse(JSON.stringify(baseForm));
+
+    // Sync Debts
+    newForm.cicilanUtang = activeDebts.map(debt => ({
+      id: `debt-${debt.id}`,
+      name: debt.name,
+      amount: String(debt.monthlyInstallment)
+    }));
+
+    // Sync Savings
+    const savingsMap = new Map(newForm.tabungan.map((item: TargetFormField) => [item.name, item]));
+    activeSavingsGoals.forEach(goal => {
+      const remainingAmount = goal.targetAmount - goal.currentAmount;
+      if (remainingAmount > 0 && !savingsMap.has(goal.name)) {
+        const deadline = new Date(goal.deadline);
+        const now = new Date();
+        const monthsRemaining = Math.max(1, (deadline.getFullYear() - now.getFullYear()) * 12 + deadline.getMonth() - now.getMonth());
+        const suggestedAmount = Math.ceil(remainingAmount / monthsRemaining);
+        
+        savingsMap.set(goal.name, {
+          id: `sg-${goal.id}`,
+          name: goal.name,
+          amount: String(suggestedAmount > 0 ? suggestedAmount : 0)
+        });
+      }
     });
-    return calculatedTotals;
-  }, [formData]);
-
-  const totalPendapatan = totals.pendapatan || 0;
-  const totalPengeluaran = (totals.cicilanUtang || 0) + (totals.pengeluaranUtama || 0) + (totals.kebutuhan || 0) + (totals.penunjang || 0) + (totals.pendidikan || 0) + (totals.tabungan || 0);
-  const sisa = totalPendapatan - totalPengeluaran;
-
-  const renderSection = (section: keyof AddTargetFormData, title: string) => (
-    <AccordionSection title={title} isOpen={section === 'pendapatan'} headerClassName={`border-l-4 ${sectionAccentColors[section]}`}>
-      <div className="space-y-3">
-        {formData[section].map((field, index) => (
-          <div key={field.id} className="grid grid-cols-12 gap-2 items-center">
-            <input 
-              type="text" 
-              placeholder="Nama Item" 
-              value={field.name}
-              onChange={(e) => handleFieldChange(section, index, 'name', e.target.value)}
-              className="col-span-7 p-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-[var(--primary-500)] focus:border-transparent disabled:bg-gray-100 dark:disabled:bg-gray-700/50 disabled:cursor-not-allowed"
-              disabled={isLocked}
-            />
-            <input
-              type="text"
-              inputMode="numeric"
-              placeholder="0"
-              value={field.amount ? parseInt(field.amount).toLocaleString('id-ID') : ''}
-              onChange={(e) => handleFieldChange(section, index, 'amount', e.target.value)}
-              className="col-span-4 p-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-[var(--primary-500)] focus:border-transparent text-right disabled:bg-gray-100 dark:disabled:bg-gray-700/50 disabled:cursor-not-allowed"
-              disabled={isLocked}
-            />
-             <button
-              type="button"
-              onClick={() => removeField(section, index)}
-              className={`col-span-1 text-gray-400 hover:text-red-500 disabled:opacity-50 disabled:cursor-not-allowed`}
-              disabled={isLocked || formData[section].length <= 1}
-            >
-              <i className="fa-solid fa-trash-can"></i>
-            </button>
-          </div>
-        ))}
-        <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <button 
-                type="button" 
-                onClick={() => addField(section)} 
-                className="text-sm font-semibold text-[var(--primary-500)] hover:text-[var(--primary-600)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={isLocked}
-            >
-                <i className="fa-solid fa-plus mr-2"></i>Tambah Item
-            </button>
-            <div className="font-bold text-gray-700 dark:text-gray-200">
-                <span>TOTAL: </span>
-                <span className="text-lg text-gray-800 dark:text-white">Rp {totals[section]?.toLocaleString('id-ID') || 0}</span>
-            </div>
-        </div>
-      </div>
-    </AccordionSection>
-  );
-
-  const Banner = () => {
-    if (!isLocked || showPreFillModal) return null;
-
-    const bannerConfig = {
-      saved: {
-        icon: "fa-check-circle",
-        iconColor: "text-green-400",
-        title: "Target Disimpan",
-        description: "Target bulan ini telah diatur. Klik 'Ubah Lagi' jika ada perubahan.",
-        buttonText: "Ubah Lagi",
-        onButtonClick: () => setIsLocked(false),
-      },
-      prefill: {
-        icon: "fa-eye",
-        iconColor: "text-[var(--primary-400)]",
-        title: "Mode Lihat Saja",
-        description: "Target ini disalin dari bulan lalu. Klik 'Ubah Target' untuk menyesuaikannya.",
-        buttonText: "Ubah Target",
-        onButtonClick: () => setShowPreFillModal(true),
-      },
-    };
-
-    const config = isJustSaved || !isPreFilled ? bannerConfig.saved : bannerConfig.prefill;
-
-    return (
-        <div className="bg-gray-800/50 backdrop-blur-sm border border-[var(--primary-500)]/50 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 animate-fade-in">
-            <div className="flex items-center space-x-4">
-                <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-[var(--primary-500)]/20 rounded-full">
-                    <i className={`fa-solid ${config.icon} ${config.iconColor} text-xl`}></i>
-                </div>
-                <div>
-                    <h4 className="font-bold text-white">{config.title}</h4>
-                    <p className="text-sm text-gray-300">{config.description}</p>
-                </div>
-            </div>
-            <button
-                onClick={config.onButtonClick}
-                className="w-full sm:w-auto flex-shrink-0 bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white font-bold py-2 px-5 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 text-sm"
-            >
-                <i className="fa-solid fa-pencil-alt mr-2"></i>
-                {config.buttonText}
-            </button>
-        </div>
-    );
+    newForm.tabungan = Array.from(savingsMap.values());
+    
+    return newForm;
   };
 
+  const lastMonthTarget = useMemo(() => {
+    if (archivedTargets.length === 0) return null;
+    const lastMonth = new Date();
+    lastMonth.setMonth(lastMonth.getMonth() - 1);
+    const lastMonthYear = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
+    return archivedTargets.find(t => t.monthYear === lastMonthYear);
+  }, [archivedTargets]);
 
+  const lastMonthSummary = useMemo(() => {
+    if (!lastMonthTarget) return null;
+    const totalPendapatan = calculateTotal(lastMonthTarget.target.pendapatan);
+    const totalPengeluaran = calculateTotal(lastMonthTarget.target.cicilanUtang) +
+                           calculateTotal(lastMonthTarget.target.pengeluaranUtama) +
+                           calculateTotal(lastMonthTarget.target.kebutuhan) +
+                           calculateTotal(lastMonthTarget.target.penunjang) +
+                           calculateTotal(lastMonthTarget.target.pendidikan);
+    return { totalPendapatan, totalPengeluaran };
+  }, [lastMonthTarget, calculateTotal]);
+  
+
+  const renderSection = (sectionKey: keyof MonthlyTarget, title: string) => {
+    const items = formData[sectionKey];
+    const sectionTotal = calculateTotal(items);
+    const allowAdd = !['cicilanUtang', 'tabungan'].includes(sectionKey);
+    
+    const hasItems = items.length > 0;
+    const hasActiveGoals = (sectionKey === 'cicilanUtang' && activeDebts.length > 0) || (sectionKey === 'tabungan' && activeSavingsGoals.length > 0);
+    const showEmptyStateButton = !hasItems && !hasActiveGoals && ['cicilanUtang', 'tabungan'].includes(sectionKey);
+
+    return (
+      <AccordionSection title={title} isOpen={sectionKey === 'pendapatan'} headerClassName={`border-l-4 ${sectionAccentColors[sectionKey]}`}>
+        <div className="space-y-3">
+            {items.map((field) => (
+              <div key={field.id} className="grid grid-cols-12 gap-2 items-center">
+                {isReadOnly ? (
+                  <>
+                    <p className="col-span-7 p-2 text-gray-300 truncate">{field.name}</p>
+                    <p className="col-span-5 p-2 text-white text-right font-semibold">Rp {parseInt(field.amount || '0').toLocaleString('id-ID')}</p>
+                  </>
+                ) : (
+                  <>
+                    <input
+                      type="text"
+                      placeholder="Nama item"
+                      value={field.name}
+                      readOnly={field.id.startsWith('debt-') || field.id.startsWith('sg-')}
+                      onChange={e => handleFieldChange(sectionKey, field.id, 'name', e.target.value)}
+                      className="col-span-7 p-2 bg-black/20 border border-white/10 rounded-md focus:ring-2 focus:ring-[var(--primary-glow)] focus:border-transparent read-only:bg-black/30 read-only:text-gray-400"
+                    />
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Jumlah (Rp)"
+                      value={field.amount ? parseInt(field.amount).toLocaleString('id-ID') : ''}
+                      onChange={e => handleFieldChange(sectionKey, field.id, 'amount', e.target.value)}
+                      className="col-span-4 p-2 bg-black/20 border border-white/10 rounded-md focus:ring-2 focus:ring-[var(--primary-glow)] focus:border-transparent text-right"
+                    />
+                    {allowAdd ? (
+                        <button
+                        type="button"
+                        onClick={() => removeField(sectionKey, field.id)}
+                        className="col-span-1 text-gray-400 hover:text-red-500 transition-colors"
+                        aria-label={`Hapus ${field.name}`}
+                        >
+                        <i className="fa-solid fa-trash-can"></i>
+                        </button>
+                    ) : <div className="col-span-1"></div>}
+                  </>
+                )}
+              </div>
+            ))}
+            
+            {showEmptyStateButton && (
+                 <button
+                    type="button"
+                    onClick={sectionKey === 'cicilanUtang' ? onAddDebt : onAddSavingsGoal}
+                    className="w-full text-center py-6 px-4 border-2 border-dashed border-gray-600 rounded-xl hover:bg-white/5 hover:border-[var(--primary-glow)] transition-all duration-300 group"
+                  >
+                      <p className="font-semibold text-gray-300 group-hover:text-[var(--primary-glow)] transition-colors duration-300">
+                        {sectionKey === 'cicilanUtang' 
+                            ? "Belum ada utang tercatat. Klik untuk mulai." 
+                            : "Anda belum punya tujuan. Klik untuk wujudkan impianmu!"
+                        }
+                      </p>
+                  </button>
+            )}
+
+            {!isReadOnly && allowAdd && (
+                <button 
+                  type="button" 
+                  onClick={() => addField(sectionKey)} 
+                  className="w-full border-2 border-dashed border-gray-600 rounded-lg py-2 text-sm font-semibold text-gray-400 hover:border-[var(--primary-glow)] hover:text-[var(--primary-glow)] transition-all duration-300"
+                >
+                    <i className="fa-solid fa-plus mr-2"></i>Tambah Item
+                </button>
+            )}
+
+            {hasItems && (
+                 <div className="flex justify-between items-center mt-3 pt-3 border-t border-white/10">
+                     <span className="font-bold text-gray-300">TOTAL</span>
+                     <span className="text-lg font-bold text-white">Rp {sectionTotal.toLocaleString('id-ID')}</span>
+                 </div>
+            )}
+        </div>
+      </AccordionSection>
+    );
+  };
+  
   return (
-    <>
-      <div className="p-4 md:p-6 space-y-6">
-        <header className="flex items-center space-x-4">
-          <button onClick={() => setView(View.REPORT)} className="text-gray-500 dark:text-gray-400">
-              <i className="fa-solid fa-arrow-left text-xl"></i>
-          </button>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Target Bulanan</h1>
-        </header>
+    <div className="p-4 md:p-6 space-y-6">
+      <header className="flex items-center space-x-4">
+        <button onClick={() => setView(View.REPORT)} className="text-gray-300">
+            <i className="fa-solid fa-arrow-left text-xl"></i>
+        </button>
+        <h1 className="text-2xl font-bold text-white">Target Bulanan</h1>
+      </header>
+      
+        <div className="sticky top-0 z-20 p-4 bg-black/30 backdrop-blur-lg border border-white/10 rounded-2xl shadow-2xl">
+            <h3 className="font-bold text-white mb-3 text-lg">Ringkasan Target</h3>
+            <div className="space-y-2 text-sm">
+                <div className="flex justify-between items-center"><span className="flex items-center"><div className="w-2.5 h-2.5 rounded-sm bg-[var(--color-income)] mr-2"></div>Pemasukan</span><span className="font-bold text-green-400">Rp {totalPendapatan.toLocaleString('id-ID')}</span></div>
+                <div className="flex justify-between items-center"><span className="flex items-center"><div className="w-2.5 h-2.5 rounded-sm bg-[var(--color-expense)] mr-2"></div>Pengeluaran</span><span className="font-bold text-red-400">Rp {totalPengeluaran.toLocaleString('id-ID')}</span></div>
+                <div className="flex justify-between items-center"><span className="flex items-center"><div className="w-2.5 h-2.5 rounded-sm bg-[var(--color-savings)] mr-2"></div>Tabungan</span><span className="font-bold text-blue-400">Rp {totalTabungan.toLocaleString('id-ID')}</span></div>
+                <div className="border-t border-white/10 my-2"></div>
+                <div className="flex justify-between items-center pt-1">
+                    <span className="font-bold text-gray-300">Potensi Sisa Uang</span>
+                    <span className={`font-bold text-lg ${sisa >= 0 ? 'text-white' : 'text-orange-400'}`}>
+                        {sisa < 0 && <i className="fa-solid fa-triangle-exclamation mr-2"></i>}
+                        Rp {sisa.toLocaleString('id-ID')}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-6">
+            {renderSection('pendapatan', 'Pemasukan')}
+            {renderSection('cicilanUtang', 'Hutang')}
+            {renderSection('tabungan', 'Tabungan')}
+            {renderSection('pengeluaranUtama', 'Pengeluaran Utama')}
+            {renderSection('kebutuhan', 'Kebutuhan')}
+            {renderSection('penunjang', 'Penunjang')}
+            {renderSection('pendidikan', 'Pendidikan')}
+        </div>
         
-        <Banner />
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-6">
-              <div>
-                  <h2 className="text-lg font-semibold text-gray-500 dark:text-gray-400 mb-2 border-b border-gray-200 dark:border-gray-700 pb-2">1. Pendapatan Bulanan</h2>
-                  {renderSection('pendapatan', 'Rincian Pendapatan')}
-              </div>
-              <div>
-                  <h2 className="text-lg font-semibold text-gray-500 dark:text-gray-400 mb-2 border-b border-gray-200 dark:border-gray-700 pb-2">2. Rincian Utang Bulanan (Pembayaran Cicilan)</h2>
-                  {renderSection('cicilanUtang', 'Rincian Cicilan Utang')}
-              </div>
-              <div>
-                  <h2 className="text-lg font-semibold text-gray-500 dark:text-gray-400 mb-2 border-b border-gray-200 dark:border-gray-700 pb-2">3. Rincian Pengeluaran Bulanan (Non-Utang)</h2>
-                  <div className="space-y-3">
-                    {renderSection('pengeluaranUtama', 'Pengeluaran Utama')}
-                    {renderSection('kebutuhan', 'Kebutuhan')}
-                    {renderSection('penunjang', 'Penunjang')}
-                    {renderSection('pendidikan', 'Pendidikan')}
-                  </div>
-              </div>
-              <div>
-                  <h2 className="text-lg font-semibold text-gray-500 dark:text-gray-400 mb-2 border-b border-gray-200 dark:border-gray-700 pb-2">4. Rincian Tabungan Bulanan</h2>
-                  {renderSection('tabungan', 'Tujuan Tabungan')}
-              </div>
-          </div>
+        <div className="pt-4 pb-20 flex gap-3">
+            {isReadOnly ? (
+                 <button type="button" onClick={() => setShowEditOptionsModal(true)} className="w-full bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white font-bold py-4 px-6 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all">
+                    Ubah Target
+                </button>
+            ) : (
+                <>
+                    <button type="button" onClick={handleCancel} className="w-full bg-black/20 border border-white/10 text-gray-300 font-bold py-4 px-6 rounded-full hover:bg-white/10 transition-colors">
+                        Batal
+                    </button>
+                    <button type="submit" className="w-full bg-gradient-to-r from-[var(--secondary-600)] to-[var(--primary-500)] text-white font-bold py-4 px-6 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all">
+                        Simpan Perubahan
+                    </button>
+                </>
+            )}
+        </div>
+      </form>
 
-          <div className="sticky bottom-24 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm p-4 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 grid grid-cols-3 gap-4 items-center">
-              <div className="text-center">
-                  <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Total Pendapatan</p>
-                  <p className="text-lg font-bold text-green-500">Rp {totalPendapatan.toLocaleString('id-ID')}</p>
-              </div>
-              <div className="text-center">
-                  <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Total Pengeluaran</p>
-                  <p className="text-lg font-bold text-red-500">Rp {totalPengeluaran.toLocaleString('id-ID')}</p>
-              </div>
-              <div className="text-center">
-                  <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Sisa Uang</p>
-                  <p className={`text-lg font-bold ${sisa >= 0 ? 'text-blue-500' : 'text-yellow-500'}`}>Rp {sisa.toLocaleString('id-ID')}</p>
-              </div>
-          </div>
-          
-          <div className="pt-4 pb-20"> {/* Padding bottom to clear bottom nav */}
-              <button type="submit" className="w-full bg-gradient-to-r from-[var(--secondary-600)] to-[var(--primary-500)] text-white font-bold py-4 px-6 rounded-full shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100" disabled={isLocked}>
-                  Simpan Target Bulanan
-              </button>
-          </div>
-        </form>
-      </div>
-
-      {/* Pre-fill confirmation modal */}
-      <Modal isOpen={showPreFillModal} onClose={() => setView(View.REPORT)}>
-        <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl text-center p-6 pt-16">
-          <button 
-              onClick={() => setView(View.REPORT)} 
-              className="absolute top-4 right-4 w-10 h-10 rounded-full text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center transition-colors z-10"
-              aria-label="Close modal"
-          >
-              <i className="fa-solid fa-times text-xl"></i>
-          </button>
-
-          <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex items-center justify-center h-24 w-24 rounded-full bg-gradient-to-br from-purple-400 via-indigo-500 to-indigo-600 shadow-lg shadow-indigo-500/40 animate-float">
-              <i className="fa-solid fa-clone text-5xl text-white"></i>
-          </div>
-          
-          <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
-              Target Otomatis Terisi!
-          </h3>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">
-              Kami telah mengisi target bulan ini berdasarkan data bulan lalu. Anda dapat mengubahnya, melihat saja, atau kembali.
-          </p>
-          
-          <div className="flex flex-col gap-3">
-              <button
-                  type="button"
-                  onClick={() => {
-                      setIsLocked(false);
-                      setShowPreFillModal(false);
-                      setIsJustSaved(false);
-                  }}
-                  className="w-full bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
-              >
-                  Ubah & Sesuaikan
-              </button>
-              <button
-                  type="button"
-                  onClick={() => setShowPreFillModal(false)}
-                  className="w-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-bold py-3 px-6 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-              >
-                  Nanti Saja (Hanya Lihat)
-              </button>
-              <button
-                  type="button"
-                  onClick={() => setView(View.REPORT)}
-                  className="w-full bg-transparent text-gray-500 dark:text-gray-400 font-semibold py-3 px-6 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              >
-                  Kembali
-              </button>
-          </div>
+      {/* Confirmation Modal */}
+      <Modal isOpen={showConfirmModal} onClose={() => setShowConfirmModal(false)}>
+        <div className="text-center p-6">
+            <h3 className="text-xl font-bold text-white mb-4">Simpan Perubahan?</h3>
+            {/* Summary can be added here */}
+            <div className="flex gap-3 mt-6">
+                <button onClick={() => setShowConfirmModal(false)} className="w-full bg-black/30 text-gray-300 py-2 rounded-full">Batal</button>
+                <button onClick={handleConfirmSave} className="w-full bg-[var(--primary-600)] text-white font-bold py-2 rounded-full">Ya, Simpan</button>
+            </div>
         </div>
       </Modal>
 
-      {/* Save confirmation modal */}
-      <Modal isOpen={showSaveConfirmModal} onClose={() => setShowSaveConfirmModal(false)}>
-        <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl text-center p-6 pt-16">
-           <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex items-center justify-center h-24 w-24 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 shadow-lg shadow-emerald-500/40 animate-float">
-              <i className="fa-solid fa-check-double text-5xl text-white"></i>
-          </div>
-          <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
-              Konfirmasi Target
-          </h3>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">
-              Apakah Anda yakin data yang dimasukkan sudah benar?
-          </p>
+      {/* Edit Options Modal */}
+       <Modal isOpen={showEditOptionsModal} onClose={() => setShowEditOptionsModal(false)}>
+        <div className="p-4">
+            <h3 className="text-2xl font-bold text-white mb-4 text-center">Ubah Target</h3>
+            <div className="space-y-3">
+                
+                {/* Adjust Current Card */}
+                <button onClick={() => handleEdit('adjust')} className="w-full text-left p-4 bg-black/20 hover:border-[var(--primary-glow)] rounded-xl transition-all duration-300 border border-white/10 group">
+                    <div className="flex items-start space-x-4">
+                        <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-black/30 rounded-lg text-[var(--primary-glow)] border border-white/10"><i className="fa-solid fa-sliders text-xl"></i></div>
+                        <div>
+                            <p className="font-bold text-gray-200">Sesuaikan Target Saat Ini</p>
+                            <p className="text-sm text-gray-400">Ubah angka-angka dari target yang ditampilkan.</p>
+                        </div>
+                    </div>
+                </button>
+                
+                {/* Start Blank Card */}
+                <button onClick={() => handleEdit('blank')} className="w-full text-left p-4 bg-black/20 hover:border-[var(--primary-glow)] rounded-xl transition-all duration-300 border border-white/10 group">
+                     <div className="flex items-start space-x-4">
+                        <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-black/30 rounded-lg text-[var(--primary-glow)] border border-white/10"><i className="fa-solid fa-file text-xl"></i></div>
+                        <div>
+                            <p className="font-bold text-gray-200">Mulai dari Awal (Kosong)</p>
+                            <p className="text-sm text-gray-400">Buat target baru dari formulir kosong.</p>
+                        </div>
+                    </div>
+                </button>
 
-          <div className="text-left bg-gray-100 dark:bg-gray-700/50 p-4 rounded-lg mb-6 space-y-2 text-sm">
-             <div className="flex justify-between items-center">
-                <span className="font-medium text-gray-600 dark:text-gray-300">Total Pendapatan:</span>
-                <span className="font-bold text-green-600 dark:text-green-400">Rp {totalPendapatan.toLocaleString('id-ID')}</span>
-             </div>
-             <div className="flex justify-between items-center">
-                <span className="font-medium text-gray-600 dark:text-gray-300">Total Pengeluaran:</span>
-                <span className="font-bold text-red-600 dark:text-red-400">Rp {totalPengeluaran.toLocaleString('id-ID')}</span>
-             </div>
-             <div className="flex justify-between items-center border-t border-gray-200 dark:border-gray-600 pt-2 mt-2">
-                <span className="font-bold text-gray-700 dark:text-gray-200">Sisa Uang:</span>
-                <span className={`font-bold text-lg ${sisa >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-yellow-500'}`}>Rp {sisa.toLocaleString('id-ID')}</span>
-             </div>
-          </div>
-
-          <div className="flex flex-col gap-3">
-            <button
-                type="button"
-                onClick={handleConfirmSave}
-                className="w-full bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
-            >
-                Ya, Sudah Benar
-            </button>
-            <button
-                type="button"
-                onClick={() => setShowSaveConfirmModal(false)}
-                className="w-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-bold py-3 px-6 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-            >
-                Batal, Cek Lagi
-            </button>
-          </div>
+                {/* Copy from Last Month Card */}
+                {lastMonthTarget && (
+                    <button onClick={() => handleEdit('copy')} className="w-full text-left p-4 bg-black/20 hover:border-[var(--primary-glow)] rounded-xl transition-all duration-300 border border-white/10 group">
+                         <div className="flex items-start space-x-4">
+                            <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-black/30 rounded-lg text-[var(--primary-glow)] border border-white/10"><i className="fa-solid fa-copy text-xl"></i></div>
+                            <div>
+                                <p className="font-bold text-gray-200">Salin dari Bulan Lalu</p>
+                                <p className="text-sm text-gray-400">Gunakan data bulan sebelumnya sebagai dasar.</p>
+                                {lastMonthSummary && (
+                                     <div className="mt-2 text-xs flex space-x-4 text-gray-500 border-t border-white/10 pt-2">
+                                         <span>Pemasukan: <strong className="text-green-400/80">Rp {lastMonthSummary.totalPendapatan.toLocaleString('id-ID')}</strong></span>
+                                         <span>Pengeluaran: <strong className="text-red-400/80">Rp {lastMonthSummary.totalPengeluaran.toLocaleString('id-ID')}</strong></span>
+                                     </div>
+                                )}
+                            </div>
+                        </div>
+                    </button>
+                )}
+            </div>
         </div>
       </Modal>
-    </>
+    </div>
   );
 };
-
 export default AddTargetForm;

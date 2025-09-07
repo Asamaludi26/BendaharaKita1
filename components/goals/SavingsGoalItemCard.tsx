@@ -11,6 +11,11 @@ const SavingsGoalItemCard: React.FC<SavingsGoalItemCardProps> = ({ goal, onSelec
     const progress = isAchieved ? 100 : (goal.targetAmount > 0 ? Math.min((goal.currentAmount / goal.targetAmount) * 100, 100) : 0);
     const remainingAmount = isAchieved ? 0 : goal.targetAmount - goal.currentAmount;
     
+    const completionDate = isAchieved && goal.contributions.length > 0
+        ? new Date(Math.max(...goal.contributions.map(c => new Date(c.date).getTime())))
+        : null;
+    const completionDateFormatted = completionDate?.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+
     const cardClasses = `p-4 rounded-xl cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1.5 border dark:border-gray-700/50 ${
         isAchieved
         ? 'bg-green-50/50 dark:bg-green-900/20 border-green-500/50 dark:border-green-500/50 hover:bg-green-50 dark:hover:bg-green-900/30' 
@@ -74,12 +79,20 @@ const SavingsGoalItemCard: React.FC<SavingsGoalItemCardProps> = ({ goal, onSelec
                         <p className="text-sm font-bold text-gray-800 dark:text-white">{deadlineFormatted}</p>
                     </div>
                 </div>
-                {!isAchieved && (
+                {!isAchieved ? (
                      <div className="flex items-start space-x-2 col-span-2">
                         <i className="fa-solid fa-coins text-base text-gray-400 mt-0.5"></i>
                         <div>
                             <p className="text-xs text-gray-500 dark:text-gray-400">Sisa Dibutuhkan</p>
                             <p className="text-sm font-bold text-gray-800 dark:text-white">Rp {remainingAmount.toLocaleString('id-ID')}</p>
+                        </div>
+                    </div>
+                ) : completionDateFormatted && (
+                    <div className="flex items-start space-x-2 col-span-2">
+                        <i className="fa-solid fa-calendar-check text-base text-green-400 mt-0.5"></i>
+                        <div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Tercapai Pada</p>
+                            <p className="text-sm font-bold text-gray-800 dark:text-white">{completionDateFormatted}</p>
                         </div>
                     </div>
                 )}

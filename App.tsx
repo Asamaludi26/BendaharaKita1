@@ -1,299 +1,317 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { View, Transaction, ArchivedMonthlyTarget, ArchivedActualReport, MonthlyTarget, AddTargetFormData, DebtItem, SavingsGoal } from './types';
-import { mockTransactions, mockArchivedTargets, mockArchivedActuals, mockDebts, mockSavingsGoals } from './data/mockData';
+// This is the main application component. It manages all state, views, and data persistence.
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { View, Transaction, DebtItem, SavingsGoal, ArchivedMonthlyTarget, ArchivedActualReport, MonthlyTarget } from './types';
+import { mockTransactions, mockDebts, mockSavingsGoals, mockArchivedActuals, mockArchivedTargets } from './data/mockData';
+
+import BottomNav from './components/BottomNav';
 import Dashboard from './components/Dashboard';
 import Transactions from './components/Transactions';
-import BottomNav from './components/BottomNav';
-import Profile from './components/Profile';
 import Report from './components/Report';
+import Management from './components/Management';
+import Profile from './components/Profile';
+import DebtDetail from './components/goals/DebtDetail';
+import SavingsGoalDetail from './components/goals/SavingsGoalDetail';
 import AddTargetForm from './components/AddTargetForm';
 import AddTransaction from './components/AddTransaction';
 import TargetHistory from './components/history/TargetHistory';
 import ActualsHistory from './components/history/ActualsHistory';
-import Management from './components/Management';
-import DebtDetail from './components/goals/DebtDetail';
-import SavingsGoalDetail from './components/goals/SavingsGoalDetail';
-import Toast from './components/Toast';
-import AddDebtForm from './components/AddDebtForm';
-import AddSavingsGoalForm from './components/AddSavingsGoalForm';
 import DebtHistory from './components/history/DebtHistory';
 import SavingsGoalHistory from './components/history/SavingsGoalHistory';
 import OnboardingWizard from './components/goals/OnboardingWizard';
+import AddDebtForm from './components/AddDebtForm';
+import AddSavingsGoalForm from './components/AddSavingsGoalForm';
+import Toast from './components/Toast';
 import Modal from './components/Modal';
 
-const navOrder = [
-    View.DASHBOARD,
-    View.TRANSACTIONS,
-    View.REPORT,
-    View.MANAGEMENT,
-    View.PROFILE,
-];
+// A simple hook to persist state to localStorage
+function useLocalStorage<T>(key: string, initialValue: T): [T, React.Dispatch<React.SetStateAction<T>>] {
+  const [storedValue, setStoredValue] = useState<T>(() => {
+    try {
+      const item = window.localStorage.getItem(key);
+      return item ? JSON.parse(item) : initialValue;
+    } catch (error) {
+      console.error(error);
+      return initialValue;
+    }
+  });
 
-type ActiveSheet = 'ONBOARDING' | View.ADD_DEBT | View.ADD_SAVINGS_GOAL | null;
+  const setValue: React.Dispatch<React.SetStateAction<T>> = (value) => {
+    try {
+      const valueToStore = value instanceof Function ? value(storedValue) : value;
+      setStoredValue(valueToStore);
+      window.localStorage.setItem(key, JSON.stringify(valueToStore));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  return [storedValue, setValue];
+}
 
 const App: React.FC = () => {
     const [view, setView] = useState<View>(View.DASHBOARD);
-    const [activeSheet, setActiveSheet] = useState<ActiveSheet>(null);
-    const [activeGoalId, setActiveGoalId] = useState<string | null>(null);
-    const [animationClass, setAnimationClass] = useState('animate-fade-in-up');
-    const currentViewRef = useRef(view);
-    const [onboardingComplete, setOnboardingComplete] = useState(() => localStorage.getItem('onboardingComplete') === 'true');
+    const [activeDetailId, setActiveDetailId] = useState<string | null>(null);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+    const [activeModal, setActiveModal] = useState<null | 'ADD_DEBT' | 'ADD_SAVINGS_GOAL'>(null);
 
-    const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
-    const [archivedTargets, setArchivedTargets] = useState<ArchivedMonthlyTarget[]>(mockArchivedTargets);
-    const [archivedActuals, setArchivedActuals] = useState<ArchivedActualReport[]>(mockArchivedActuals);
-    const [debts, setDebts] = useState<DebtItem[]>(mockDebts);
-    const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>(mockSavingsGoals);
+    // Data states
+    const [transactions, setTransactions] = useLocalStorage<Transaction[]>('transactions_data', mockTransactions);
+    const [debts, setDebts] = useLocalStorage<DebtItem[]>('debts_data', mockDebts);
+    const [savingsGoals, setSavingsGoals] = useLocalStorage<SavingsGoal[]>('savingsGoals_data', mockSavingsGoals);
+    const [archivedTargets, setArchivedTargets] = useLocalStorage<ArchivedMonthlyTarget[]>('archivedTargets_data', mockArchivedTargets);
+    const [archivedActuals, setArchivedActuals] = useLocalStorage<ArchivedActualReport[]>('archivedActuals_data', mockArchivedActuals);
+    
+    // Onboarding state
+    const [onboardingComplete, setOnboardingComplete] = useLocalStorage<boolean>('onboardingComplete_status', false);
 
     const [displayDate, setDisplayDate] = useState(new Date());
-    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-    useEffect(() => {
-        document.title = "BendaharaKita";
-    }, []);
+    const handlePrevMonth = () => setDisplayDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
+    const handleNextMonth = () => setDisplayDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1));
     
-    useEffect(() => {
-        if (view === View.MANAGEMENT && !onboardingComplete) {
-            setActiveSheet('ONBOARDING');
+    const currentMonthYear = useMemo(() => {
+        return `${displayDate.getFullYear()}-${String(displayDate.getMonth() + 1).padStart(2, '0')}`;
+    }, [displayDate]);
+
+    // DERIVED STATE: The single source of truth for the current month's target.
+    // This is the core fix for the "empty form" bug.
+    const currentMonthlyTarget = useMemo(() => {
+        let targetForMonth = archivedTargets.find(t => t.monthYear === currentMonthYear);
+        
+        // If no target exists for the current month, smartly grab the most recent one as a template.
+        if (!targetForMonth && archivedTargets.length > 0) {
+            const lastTargetArchive = [...archivedTargets].sort((a, b) => b.monthYear.localeCompare(a.monthYear))[0];
+            // We return the target data, but NOT the monthYear, so the app knows it's a template.
+            return lastTargetArchive.target;
         }
-    }, [view, onboardingComplete]);
-    
-    // This effect ensures the wizard closes if the user navigates away from the goals page.
-    useEffect(() => {
-        if (view !== View.MANAGEMENT && activeSheet !== null) {
-            setActiveSheet(null);
-        }
-    }, [view, activeSheet]);
 
-    useEffect(() => {
-        currentViewRef.current = view;
-    }, [view]);
+        return targetForMonth ? targetForMonth.target : null;
+    }, [currentMonthYear, archivedTargets]);
 
-    const handleSetView = (newView: View) => {
-        const oldIndex = navOrder.indexOf(currentViewRef.current);
-        const newIndex = navOrder.indexOf(newView);
-
-        if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-            if (newIndex > oldIndex) {
-                setAnimationClass('animate-slide-in-from-right');
-            } else {
-                setAnimationClass('animate-slide-in-from-left');
-            }
-        } else {
-            setAnimationClass('animate-fade-in-up');
-        }
-        setView(newView);
-    };
-
-    const handlePrevMonth = () => setDisplayDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
-    const handleNextMonth = () => setDisplayDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
-
-    const currentMonthYear = useMemo(() => `${displayDate.getFullYear()}-${String(displayDate.getMonth() + 1).padStart(2, '0')}`, [displayDate]);
-    
-    const { currentMonthlyTarget, isPreFilled } = useMemo(() => {
-        const targetForCurrentMonth = archivedTargets.find(t => t.monthYear === currentMonthYear);
-        if (targetForCurrentMonth) {
-            return { currentMonthlyTarget: targetForCurrentMonth.target, isPreFilled: false };
-        }
-        const pastArchives = archivedTargets.filter(t => t.monthYear < currentMonthYear);
-        if (pastArchives.length > 0) {
-            const sortedPastArchives = pastArchives.sort((a, b) => b.monthYear.localeCompare(a.monthYear));
-            const mostRecentArchive = sortedPastArchives[0];
-            if (mostRecentArchive) {
-                return { currentMonthlyTarget: mostRecentArchive.target, isPreFilled: true };
-            }
-        }
-        return { currentMonthlyTarget: null, isPreFilled: false };
-    }, [archivedTargets, currentMonthYear]);
-
-    const isTargetForCurrentMonthSet = !!archivedTargets.find(t => t.monthYear === currentMonthYear);
-
-    const { activeDebts, paidDebts } = useMemo(() => {
-        const active: DebtItem[] = [];
-        const paid: DebtItem[] = [];
-        debts.forEach(debt => {
-            const paidAmount = debt.payments.reduce((sum, p) => sum + p.amount, 0);
-            if ((debt.totalAmount - paidAmount) <= 0) {
-                paid.push(debt);
-            } else {
-                active.push(debt);
-            }
-        });
-        return { activeDebts: active, paidDebts: paid };
-    }, [debts]);
-    
-    const { activeSavingsGoals, completedSavingsGoals } = useMemo(() => {
-        const active: SavingsGoal[] = [];
-        const completed: SavingsGoal[] = [];
-        savingsGoals.forEach(goal => {
-            if (goal.currentAmount >= goal.targetAmount) {
-                completed.push(goal);
-            } else {
-                active.push(goal);
-            }
-        });
-        return { activeSavingsGoals: active, completedSavingsGoals: completed };
-    }, [savingsGoals]);
-
-    const totalAllTimeSavings = useMemo(() => savingsGoals.reduce((sum, goal) => sum + goal.currentAmount, 0), [savingsGoals]);
-    const totalAllTimeDebt = useMemo(() => debts.reduce((sum, debt) => sum + debt.totalAmount, 0), [debts]);
-
-    const handleOnboardingComplete = (initialData: { debts: DebtItem[], savingsGoals: SavingsGoal[] }) => {
-        setDebts(initialData.debts);
-        setSavingsGoals(initialData.savingsGoals);
-        localStorage.setItem('onboardingComplete', 'true');
-        setOnboardingComplete(true);
-        setActiveSheet(null);
-        setToast({ message: 'Pengaturan awal berhasil!', type: 'success' });
-    };
-
-    const handleSaveTarget = (data: AddTargetFormData) => {
+    const handleSaveTarget = (data: MonthlyTarget) => {
         setArchivedTargets(prev => {
-            const existingIndex = prev.findIndex(t => t.monthYear === currentMonthYear);
-            const newTarget: ArchivedMonthlyTarget = { monthYear: currentMonthYear, target: data };
-            if (existingIndex !== -1) {
-                const updated = [...prev];
-                updated[existingIndex] = newTarget;
-                return updated;
+            const existing = prev.find(p => p.monthYear === currentMonthYear);
+            if (existing) {
+                return prev.map(p => p.monthYear === currentMonthYear ? { ...p, target: data } : p);
             }
-            return [...prev, newTarget];
+            return [...prev, { monthYear: currentMonthYear, target: data }];
         });
-        setToast({ message: 'Target bulanan berhasil disimpan!', type: 'success' });
-        handleSetView(View.REPORT);
+        setView(View.REPORT);
+        setToast({ message: 'Target berhasil disimpan!', type: 'success' });
     };
     
     const handleSaveActuals = (data: { [key: string]: string }) => {
-        const targetForActuals = archivedTargets.find(t => t.monthYear === currentMonthYear)?.target;
-        if (targetForActuals) {
-            setArchivedActuals(prev => {
-                const existingIndex = prev.findIndex(a => a.monthYear === currentMonthYear);
-                const newActualReport: ArchivedActualReport = { monthYear: currentMonthYear, target: targetForActuals, actuals: data };
-                if (existingIndex !== -1) {
-                    const updated = [...prev];
-                    updated[existingIndex] = newActualReport;
-                    return updated;
-                }
-                return [...prev, newActualReport];
-            });
-            setToast({ message: 'Laporan aktual berhasil disimpan!', type: 'success' });
-            handleSetView(View.REPORT);
-        } else {
-            setToast({ message: 'Target bulanan tidak ditemukan!', type: 'error' });
-        }
+        if (!currentMonthlyTarget) return;
+
+        setArchivedActuals(prev => {
+            const existing = prev.find(p => p.monthYear === currentMonthYear);
+            if (existing) {
+                return prev.map(p => p.monthYear === currentMonthYear ? { ...p, actuals: data } : p);
+            }
+            return [...prev, { monthYear: currentMonthYear, target: currentMonthlyTarget, actuals: data }];
+        });
+
+        // --- Data Integration Logic ---
+        const syncDate = new Date().toISOString();
+        const monthIdentifier = `auto-sync-${currentMonthYear}`;
+
+        // Sync Savings
+        const newSavingsGoals = [...savingsGoals];
+        currentMonthlyTarget.tabungan.forEach(item => {
+            const actualAmount = Number(data[item.id] || '0');
+            if(actualAmount <= 0) return;
+
+            const goal = newSavingsGoals.find(g => g.name === item.name);
+            if (goal && !goal.contributions.some(c => c.date.startsWith(monthIdentifier))) {
+                goal.currentAmount += actualAmount;
+                goal.contributions.push({ date: `${monthIdentifier}-${item.id}`, amount: actualAmount });
+            }
+        });
+        setSavingsGoals(newSavingsGoals);
+
+        // Sync Debts
+        const newDebts = [...debts];
+        currentMonthlyTarget.cicilanUtang.forEach(item => {
+            const actualAmount = Number(data[item.id] || '0');
+            if (actualAmount <= 0) return;
+            
+            const debt = newDebts.find(d => d.name === item.name);
+            if (debt && !debt.payments.some(p => p.date.startsWith(monthIdentifier))) {
+                debt.payments.push({ date: `${monthIdentifier}-${item.id}`, amount: actualAmount });
+            }
+        });
+        setDebts(newDebts);
+
+        setView(View.REPORT);
+        setToast({ message: 'Laporan aktual berhasil disimpan & disinkronkan!', type: 'success' });
+    };
+
+    const handleOnboardingComplete = (data: { debts: DebtItem[], savingsGoals: SavingsGoal[] }) => {
+        setDebts(data.debts);
+        setSavingsGoals(data.savingsGoals);
+        setOnboardingComplete(true);
+        setActiveModal(null);
+        setToast({ message: 'Pengaturan awal berhasil!', type: 'success' });
+    };
+
+    const handleAddDebt = (debtData: Omit<DebtItem, 'id'>) => {
+        const newDebt: DebtItem = { ...debtData, id: `debt-${Date.now()}` };
+        setDebts(prev => [...prev, newDebt]);
+        setActiveModal(null);
+        setToast({ message: 'Pinjaman baru berhasil ditambahkan!', type: 'success' });
+    };
+
+    const handleAddSavingsGoal = (goalData: Omit<SavingsGoal, 'id'>) => {
+        const newGoal: SavingsGoal = { ...goalData, id: `sg-${Date.now()}` };
+        setSavingsGoals(prev => [...prev, newGoal]);
+        setActiveModal(null);
+        setToast({ message: 'Tujuan baru berhasil ditambahkan!', type: 'success' });
+    };
+
+    const handleAddPayment = (debtId: string, amount: number) => {
+        setDebts(prev => prev.map(d => d.id === debtId ? { ...d, payments: [...d.payments, { date: new Date().toISOString(), amount }] } : d));
+        setToast({ message: 'Pembayaran berhasil dicatat!', type: 'success' });
     };
     
-    const handleSaveDebt = (newDebtData: Omit<DebtItem, 'id' | 'payments'> & { payments: { date: string; amount: number }[] }) => {
-        const newDebt: DebtItem = { ...newDebtData, id: `debt-${Date.now()}` };
-        setDebts(prev => [...prev, newDebt]);
-        setToast({ message: 'Pinjaman baru berhasil dicatat!', type: 'success' });
-        setActiveSheet(null);
+    const handleAddContribution = (goalId: string, amount: number) => {
+        setSavingsGoals(prev => prev.map(g => g.id === goalId ? { ...g, currentAmount: g.currentAmount + amount, contributions: [...g.contributions, { date: new Date().toISOString(), amount }] } : g));
+        setToast({ message: 'Dana berhasil ditambahkan!', type: 'success' });
     };
 
-    const handleSaveSavingsGoal = (newGoalData: Omit<SavingsGoal, 'id'>) => {
-        const newGoal: SavingsGoal = { ...newGoalData, id: `sg-${Date.now()}` };
-        setSavingsGoals(prev => [...prev, newGoal]);
-        setToast({ message: 'Tujuan tabungan baru berhasil dibuat!', type: 'success' });
-        setActiveSheet(null);
+    const handleClearAllData = () => {
+        localStorage.clear();
+        window.location.reload();
     };
 
-    const handleResetGoalsData = () => {
+    const resetGoals = () => {
         setDebts([]);
         setSavingsGoals([]);
-        localStorage.removeItem('onboardingComplete');
         setOnboardingComplete(false);
-        setActiveSheet('ONBOARDING');
-        setToast({ message: 'Data berhasil diatur ulang. Silakan masukkan data baru.', type: 'success' });
-    };
-
-    const handleSelectDebt = (id: string) => {
-      setActiveGoalId(id);
-      handleSetView(View.DEBT_DETAIL);
-    };
-
-    const handleSelectSavingsGoal = (id: string) => {
-      setActiveGoalId(id);
-      handleSetView(View.SAVINGS_GOAL_DETAIL);
-    };
+        setView(View.MANAGEMENT);
+        setToast({ message: 'Data tujuan telah direset.', type: 'success' });
+    }
     
-    const isSheetVisible = activeSheet !== null;
+    // Auto-close modals if view changes
+    useEffect(() => {
+        if(activeModal) setActiveModal(null);
+    }, [view]);
+
+    // Show onboarding wizard contextually
+    useEffect(() => {
+        if(view === View.MANAGEMENT && !onboardingComplete) {
+            setActiveModal(null); // Ensure other modals are closed
+        }
+    }, [view, onboardingComplete]);
+
+
+    const activeDebts = useMemo(() => debts.filter(d => (d.totalAmount - d.payments.reduce((sum, p) => sum + p.amount, 0)) > 0), [debts]);
+    const paidDebts = useMemo(() => debts.filter(d => (d.totalAmount - d.payments.reduce((sum, p) => sum + p.amount, 0)) <= 0), [debts]);
+    const activeSavingsGoals = useMemo(() => savingsGoals.filter(g => g.currentAmount < g.targetAmount), [savingsGoals]);
+    const completedSavingsGoals = useMemo(() => savingsGoals.filter(g => g.currentAmount >= g.targetAmount), [savingsGoals]);
+    const totalAllTimeSavings = useMemo(() => savingsGoals.reduce((sum, g) => sum + g.targetAmount, 0), [savingsGoals]);
+    const totalAllTimeDebt = useMemo(() => debts.reduce((sum, d) => sum + d.totalAmount, 0), [debts]);
 
     const renderView = () => {
+        const pageContentClass = `transition-all duration-500 ${activeModal ? 'blur-md scale-95' : ''}`;
+        
+        let pageComponent: React.ReactNode;
+
         switch (view) {
             case View.DASHBOARD:
-                return <Dashboard displayDate={displayDate} handlePrevMonth={handlePrevMonth} handleNextMonth={handleNextMonth} archivedTargets={archivedTargets} archivedActuals={archivedActuals} transactions={transactions} />;
+                pageComponent = <Dashboard displayDate={displayDate} handlePrevMonth={handlePrevMonth} handleNextMonth={handleNextMonth} archivedTargets={archivedTargets} archivedActuals={archivedActuals} transactions={transactions} />;
+                break;
             case View.TRANSACTIONS:
-                return <Transactions transactions={transactions} />;
+                pageComponent = <Transactions transactions={transactions} />;
+                break;
             case View.REPORT:
-                return <Report setView={handleSetView} isTargetSet={isTargetForCurrentMonthSet} />;
+                pageComponent = <Report setView={setView} isTargetSet={!!currentMonthlyTarget} />;
+                break;
             case View.ADD_TARGET:
-                return <AddTargetForm setView={handleSetView} onSave={handleSaveTarget} savedTarget={currentMonthlyTarget} debts={debts} savingsGoals={savingsGoals} isPreFilled={isPreFilled} />;
+                pageComponent = <AddTargetForm 
+                                    setView={setView} 
+                                    onSave={handleSaveTarget} 
+                                    initialData={currentMonthlyTarget}
+                                    archivedTargets={archivedTargets}
+                                    currentMonthYear={currentMonthYear}
+                                    activeDebts={activeDebts}
+                                    activeSavingsGoals={activeSavingsGoals}
+                                    onAddDebt={() => setActiveModal('ADD_DEBT')}
+                                    onAddSavingsGoal={() => setActiveModal('ADD_SAVINGS_GOAL')}
+                                />;
+                break;
             case View.ADD_ACTUAL:
-                const targetForActuals = archivedTargets.find(t => t.monthYear === currentMonthYear)?.target || null;
-                return <AddTransaction setView={handleSetView} onSave={handleSaveActuals} monthlyTarget={targetForActuals} />;
+                pageComponent = <AddTransaction setView={setView} onSave={handleSaveActuals} monthlyTarget={currentMonthlyTarget} />;
+                break;
             case View.TARGET_HISTORY:
-                return <TargetHistory archives={archivedTargets} setView={handleSetView} />;
+                pageComponent = <TargetHistory archives={archivedTargets} setView={setView} />;
+                break;
             case View.ACTUALS_HISTORY:
-                return <ActualsHistory archives={archivedActuals} setView={handleSetView} />;
+                pageComponent = <ActualsHistory archives={archivedActuals} setView={setView} />;
+                break;
             case View.MANAGEMENT:
-                return <Management 
-                    setView={handleSetView} 
+                pageComponent = <Management 
+                    setView={setView} 
                     debts={activeDebts} 
-                    savingsGoals={activeSavingsGoals} 
-                    onSelectDebt={handleSelectDebt} 
-                    onSelectSavingsGoal={handleSelectSavingsGoal} 
-                    onAddDebt={() => setActiveSheet(View.ADD_DEBT)} 
-                    onAddSavingsGoal={() => setActiveSheet(View.ADD_SAVINGS_GOAL)} 
-                    onViewHistory={() => handleSetView(View.DEBT_HISTORY)} 
-                    onViewSavingsHistory={() => handleSetView(View.SAVINGS_GOAL_HISTORY)}
+                    savingsGoals={activeSavingsGoals}
+                    onSelectDebt={(id) => { setActiveDetailId(id); setView(View.DEBT_DETAIL); }}
+                    onSelectSavingsGoal={(id) => { setActiveDetailId(id); setView(View.SAVINGS_GOAL_DETAIL); }}
+                    onAddDebt={() => setActiveModal('ADD_DEBT')}
+                    onAddSavingsGoal={() => setActiveModal('ADD_SAVINGS_GOAL')}
+                    onViewHistory={() => setView(View.DEBT_HISTORY)}
+                    onViewSavingsHistory={() => setView(View.SAVINGS_GOAL_HISTORY)}
                     totalAllTimeSavings={totalAllTimeSavings}
                     totalAllTimeDebt={totalAllTimeDebt}
-                    onResetGoals={handleResetGoalsData}
+                    onResetGoals={resetGoals}
                 />;
-            case View.DEBT_HISTORY:
-                return <DebtHistory paidDebts={paidDebts} setView={handleSetView} onSelectDebt={handleSelectDebt} />;
-             case View.SAVINGS_GOAL_HISTORY:
-                return <SavingsGoalHistory completedGoals={completedSavingsGoals} setView={handleSetView} onSelectSavingsGoal={handleSelectSavingsGoal} />;
+                break;
             case View.DEBT_DETAIL:
-                const debt = debts.find(d => d.id === activeGoalId);
-                return debt ? <DebtDetail debt={debt} setView={handleSetView} /> : <p>Debt not found</p>;
+                const debt = debts.find(d => d.id === activeDetailId);
+                pageComponent = debt ? <DebtDetail debt={debt} setView={setView} onAddPayment={handleAddPayment} /> : <div>Debt not found</div>;
+                break;
             case View.SAVINGS_GOAL_DETAIL:
-                const goal = savingsGoals.find(g => g.id === activeGoalId);
-                return goal ? <SavingsGoalDetail goal={goal} setView={handleSetView} /> : <p>Goal not found</p>;
+                const goal = savingsGoals.find(g => g.id === activeDetailId);
+                pageComponent = goal ? <SavingsGoalDetail goal={goal} setView={setView} onAddContribution={handleAddContribution} /> : <div>Goal not found</div>;
+                break;
+            case View.DEBT_HISTORY:
+                pageComponent = <DebtHistory paidDebts={paidDebts} setView={setView} onSelectDebt={(id) => { setActiveDetailId(id); setView(View.DEBT_DETAIL); }} />;
+                break;
+            case View.SAVINGS_GOAL_HISTORY:
+                pageComponent = <SavingsGoalHistory completedGoals={completedSavingsGoals} setView={setView} onSelectSavingsGoal={(id) => { setActiveDetailId(id); setView(View.SAVINGS_GOAL_DETAIL); }} />;
+                break;
             case View.PROFILE:
-                return <Profile />;
+                pageComponent = <Profile onClearAllData={handleClearAllData} />;
+                break;
             default:
-                return <Dashboard displayDate={displayDate} handlePrevMonth={handlePrevMonth} handleNextMonth={handleNextMonth} archivedTargets={archivedTargets} archivedActuals={archivedActuals} transactions={transactions} />;
+                pageComponent = <Dashboard displayDate={displayDate} handlePrevMonth={handlePrevMonth} handleNextMonth={handleNextMonth} archivedTargets={archivedTargets} archivedActuals={archivedActuals} transactions={transactions} />;
         }
+        
+        return <div className={pageContentClass}>{pageComponent}</div>;
     };
+    
+    // Contextual Onboarding Wizard
+    const showOnboardingWizard = view === View.MANAGEMENT && !onboardingComplete;
 
     return (
-        <div className={`min-h-screen`}>
-            {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+        <div className="bg-gray-900 text-white font-sans min-h-screen">
+             {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
             
-            <main className={`pb-24 ${animationClass} transition-all duration-300 ${isSheetVisible ? 'blur-md' : ''}`} key={view}>
+            <main className="pb-24">
                 {renderView()}
             </main>
-            
-            <BottomNav activeView={view} setView={handleSetView} />
 
-            <Modal isOpen={activeSheet === 'ONBOARDING'} onClose={() => { /* Onboarding cannot be closed */ }}>
-                <OnboardingWizard
-                    onComplete={handleOnboardingComplete}
-                />
-            </Modal>
+            <BottomNav activeView={view} setView={setView} />
             
-            <Modal isOpen={activeSheet === View.ADD_DEBT} onClose={() => setActiveSheet(null)}>
-                <AddDebtForm
-                    onSave={handleSaveDebt}
-                    onClose={() => setActiveSheet(null)}
-                />
+            {/* --- MODAL AREA --- */}
+            <Modal isOpen={showOnboardingWizard} onClose={() => {}}>
+                <OnboardingWizard onComplete={handleOnboardingComplete} />
             </Modal>
-            
-            <Modal isOpen={activeSheet === View.ADD_SAVINGS_GOAL} onClose={() => setActiveSheet(null)}>
-                <AddSavingsGoalForm
-                    onSave={handleSaveSavingsGoal}
-                    onClose={() => setActiveSheet(null)}
-                />
+
+            <Modal isOpen={activeModal === 'ADD_DEBT'} onClose={() => setActiveModal(null)}>
+                <AddDebtForm onSave={handleAddDebt} onClose={() => setActiveModal(null)} />
+            </Modal>
+
+            <Modal isOpen={activeModal === 'ADD_SAVINGS_GOAL'} onClose={() => setActiveModal(null)}>
+                <AddSavingsGoalForm onSave={handleAddSavingsGoal} onClose={() => setActiveModal(null)} />
             </Modal>
         </div>
     );

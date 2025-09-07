@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { SavingsGoal } from '../../types';
 
@@ -100,13 +101,20 @@ const AddSavingsGoalForm: React.FC<AddSavingsGoalFormProps> = ({ onClose, onSave
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!isStepValid) return;
+        const currentAmount = parseInt(formData.currentAmount || '0');
+
+        // FIX: Add missing 'contributions' property to satisfy SavingsGoal type.
+        // Create a synthetic contribution if an initial amount is provided.
+        const contributions = currentAmount > 0 ? [{ date: new Date().toISOString(), amount: currentAmount }] : [];
+
         // FIX: Included 'source' in the saved data object to resolve the type error.
         onSave({
             name: formData.name,
             source: formData.source === 'Lainnya' ? customSource : formData.source,
             targetAmount: parseInt(formData.targetAmount),
             deadline: new Date(formData.deadline).toISOString(),
-            currentAmount: parseInt(formData.currentAmount || '0'),
+            currentAmount: currentAmount,
+            contributions: contributions,
         });
     };
 

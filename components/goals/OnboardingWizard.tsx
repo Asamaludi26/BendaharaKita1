@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { DebtItem, SavingsGoal } from '../../types';
 import Modal from '../Modal';
@@ -117,14 +118,20 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
             };
         }).filter(d => d.name !== 'Pinjaman Tanpa Nama' && d.totalAmount > 0);
 
-        const finalSavings: SavingsGoal[] = savingsGoals.map(sg => ({
-            id: sg.id!,
-            name: sg.name || 'Tabungan Tanpa Nama',
-            source: sg.source || 'Lainnya',
-            targetAmount: Number(sg.targetAmount) || 0,
-            currentAmount: Number(sg.currentAmount) || 0,
-            deadline: sg.deadline ? new Date(sg.deadline).toISOString() : new Date().toISOString()
-        })).filter(sg => sg.name !== 'Tabungan Tanpa Nama' && sg.targetAmount > 0);
+        const finalSavings: SavingsGoal[] = savingsGoals.map(sg => {
+            const currentAmount = Number(sg.currentAmount) || 0;
+            return {
+                id: sg.id!,
+                name: sg.name || 'Tabungan Tanpa Nama',
+                source: sg.source || 'Lainnya',
+                targetAmount: Number(sg.targetAmount) || 0,
+                currentAmount: currentAmount,
+                deadline: sg.deadline ? new Date(sg.deadline).toISOString() : new Date().toISOString(),
+                // FIX: Add missing 'contributions' property to satisfy the SavingsGoal type.
+                // Create a synthetic contribution from the initial currentAmount.
+                contributions: currentAmount > 0 ? [{ date: new Date().toISOString(), amount: currentAmount }] : [],
+            };
+        }).filter(sg => sg.name !== 'Tabungan Tanpa Nama' && sg.targetAmount > 0);
         
         onComplete({ debts: finalDebts, savingsGoals: finalSavings });
     };

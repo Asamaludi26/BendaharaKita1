@@ -1,4 +1,4 @@
-import { View as PreviousView } from './types';
+
 
 export enum View {
   DASHBOARD = 'DASHBOARD',
@@ -95,4 +95,5 @@ export interface SavingsGoal {
   targetAmount: number;
   currentAmount: number;
   deadline: string; // ISO date string
+  contributions: { date: string; amount: number }[];
 }

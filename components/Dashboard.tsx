@@ -113,15 +113,15 @@ const healthStatusDetails: { [key: string]: { icon: string; explanation: string;
 const healthStatusStyles = {
     "Sehat": {
         glowColor: 'var(--color-income)',
-        textColor: 'text-green-300',
+        textColor: 'text-[var(--color-income)]',
     },
     "Cukup Sehat": {
         glowColor: '#facc15', // yellow-400
-        textColor: 'text-yellow-300',
+        textColor: 'text-yellow-400',
     },
     "Perlu Perhatian": {
         glowColor: 'var(--color-expense)',
-        textColor: 'text-red-400',
+        textColor: 'text-[var(--color-expense)]',
     },
     "Data Tidak Cukup": {
         glowColor: '#6b7280', // gray-500
@@ -469,7 +469,7 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
                                     {activeAllocationIndex === -1 && (
                                     <div className={`absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none transition-opacity duration-300 ${isOverspent ? 'animate-pulse-glow-red' : ''}`}>
                                          <p className="text-sm font-medium text-gray-400">{isOverspent ? 'Dana Terlampaui' : 'Sisa Uang'}</p>
-                                         <p className={`font-bold text-2xl ${isOverspent ? 'text-red-400' : 'text-white'}`}>
+                                         <p className={`font-bold text-2xl ${isOverspent ? 'text-[var(--color-expense)]' : 'text-white'}`}>
                                             Rp {(isOverspent ? -financialSummary.overspendingAmount : financialSummary.sisaUang).toLocaleString('id-ID')}
                                          </p>
                                     </div>
@@ -515,7 +515,7 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
                         <div className="space-y-3 animate-fade-in-up" style={{animationDelay: '200ms'}}>
                            <HealthAnalysisItem 
                                 icon={isDataAvailable ? (isSavingsRatioIdeal ? "fa-circle-check" : "fa-circle-exclamation") : "fa-question-circle"}
-                                iconColor={isDataAvailable ? (isSavingsRatioIdeal ? "text-green-500" : "text-yellow-500") : "text-gray-500"}
+                                iconColor={isDataAvailable ? (isSavingsRatioIdeal ? "text-[var(--color-income)]" : "text-yellow-400") : "text-gray-500"}
                                 text={isDataAvailable ? 
                                     <>Rasio Tabungan Anda saat ini <strong>{financialSummary.rasioTabungan.toFixed(1)}%</strong>, {isSavingsRatioIdeal ? 'berada di atas ideal (> 10%)' : 'berada di bawah ideal (> 10%)'}.</> :
                                     <>Rasio Tabungan Anda saat ini <strong>--%</strong>.</>
@@ -523,7 +523,7 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
                            />
                            <HealthAnalysisItem 
                                 icon={isDataAvailable ? (financialSummary.rasioHutang < 35 ? "fa-circle-check" : "fa-circle-exclamation") : "fa-question-circle"} 
-                                iconColor={isDataAvailable ? (financialSummary.rasioHutang < 35 ? "text-green-500" : "text-yellow-500") : "text-gray-500"} 
+                                iconColor={isDataAvailable ? (financialSummary.rasioHutang < 35 ? "text-[var(--color-income)]" : "text-yellow-400") : "text-gray-500"} 
                                 text={isDataAvailable ? 
                                     <>Rasio Utang Anda <strong>{financialSummary.rasioHutang.toFixed(1)}%</strong>, {financialSummary.rasioHutang < 35 ? 'berada dalam batas aman' : 'mendekati batas'} ({'<'} 35%).</> :
                                     <>Rasio Utang Anda <strong>--%</strong>.</>
@@ -531,7 +531,7 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
                            />
                            <HealthAnalysisItem 
                                 icon={isDataAvailable ? (financialSummary.rasioSisaUang > 0 ? "fa-circle-check" : "fa-circle-xmark") : "fa-question-circle"} 
-                                iconColor={isDataAvailable ? (financialSummary.rasioSisaUang > 0 ? "text-green-500" : "text-red-500") : "text-gray-500"} 
+                                iconColor={isDataAvailable ? (financialSummary.rasioSisaUang > 0 ? "text-[var(--color-income)]" : "text-[var(--color-expense)]") : "text-gray-500"} 
                                 text={isDataAvailable ? 
                                     <>Arus kas bersih (Sisa Uang) Anda <strong>{financialSummary.rasioSisaUang > 0 ? 'positif' : 'negatif'}</strong> sebesar <strong>{financialSummary.rasioSisaUang.toFixed(1)}%</strong> dari pendapatan.</> :
                                     <>Arus kas bersih (Sisa Uang) Anda <strong>--%</strong> dari pendapatan.</>

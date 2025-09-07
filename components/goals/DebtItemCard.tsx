@@ -17,6 +17,12 @@ const DebtItemCard: React.FC<DebtItemCardProps> = ({ debt, onSelect }) => {
     const isDueSoon = !isPaid && daysUntilDue >= 0 && daysUntilDue <= 7;
 
     const remainingTenor = debt.tenor - debt.payments.length;
+    
+    const paidOffDate = isPaid && debt.payments.length > 0
+        ? new Date(Math.max(...debt.payments.map(p => new Date(p.date).getTime())))
+        : null;
+    const paidOffDateFormatted = paidOffDate?.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+
 
     const cardClasses = `p-4 rounded-xl cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1.5 border dark:border-gray-700/50 ${
         isPaid 
@@ -70,20 +76,6 @@ const DebtItemCard: React.FC<DebtItemCardProps> = ({ debt, onSelect }) => {
             {/* Details Section */}
             <div className="border-t border-gray-200 dark:border-gray-700 pt-4 grid grid-cols-2 gap-x-4 gap-y-3">
                 <div className="flex items-start space-x-2">
-                    <i className="fa-solid fa-money-bill-wave text-base text-gray-400 mt-0.5"></i>
-                    <div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Cicilan /bln</p>
-                        <p className="text-sm font-bold text-gray-800 dark:text-white">Rp {debt.monthlyInstallment.toLocaleString('id-ID')}</p>
-                    </div>
-                </div>
-                 <div className="flex items-start space-x-2">
-                    <i className="fa-solid fa-calendar-day text-base text-gray-400 mt-0.5"></i>
-                    <div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Jatuh Tempo</p>
-                        <p className="text-sm font-bold text-gray-800 dark:text-white">Tgl. {debt.dueDate}</p>
-                    </div>
-                </div>
-                <div className="flex items-start space-x-2">
                     <i className="fa-solid fa-coins text-base text-gray-400 mt-0.5"></i>
                     <div>
                         <p className="text-xs text-gray-500 dark:text-gray-400">Total Pinjaman</p>
@@ -91,12 +83,38 @@ const DebtItemCard: React.FC<DebtItemCardProps> = ({ debt, onSelect }) => {
                     </div>
                 </div>
                 <div className="flex items-start space-x-2">
-                    <i className="fa-solid fa-hourglass-half text-base text-gray-400 mt-0.5"></i>
+                    <i className="fa-solid fa-money-bill-wave text-base text-gray-400 mt-0.5"></i>
                     <div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Sisa Tenor</p>
-                        <p className={`text-sm font-bold ${isPaid ? 'text-green-600 dark:text-green-400' : 'text-gray-800 dark:text-white'}`}>{isPaid ? 'Lunas' : (remainingTenor > 0 ? `${remainingTenor} bulan` : 'Selesai')}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Cicilan /bln</p>
+                        <p className="text-sm font-bold text-gray-800 dark:text-white">Rp {debt.monthlyInstallment.toLocaleString('id-ID')}</p>
                     </div>
                 </div>
+                {isPaid && paidOffDateFormatted ? (
+                    <div className="flex items-start space-x-2 col-span-2">
+                        <i className="fa-solid fa-calendar-check text-base text-green-400 mt-0.5"></i>
+                        <div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Lunas Pada</p>
+                            <p className="text-sm font-bold text-gray-800 dark:text-white">{paidOffDateFormatted}</p>
+                        </div>
+                    </div>
+                ) : (
+                    <>
+                        <div className="flex items-start space-x-2">
+                            <i className="fa-solid fa-calendar-day text-base text-gray-400 mt-0.5"></i>
+                            <div>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">Jatuh Tempo</p>
+                                <p className="text-sm font-bold text-gray-800 dark:text-white">Tgl. {debt.dueDate}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-start space-x-2">
+                            <i className="fa-solid fa-hourglass-half text-base text-gray-400 mt-0.5"></i>
+                            <div>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">Sisa Tenor</p>
+                                <p className="text-sm font-bold text-gray-800 dark:text-white">{remainingTenor > 0 ? `${remainingTenor} bulan` : 'Selesai'}</p>
+                            </div>
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );

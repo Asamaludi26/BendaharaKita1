@@ -39,9 +39,9 @@ export const mockDebts: DebtItem[] = [
         payments: Array.from({ length: 4 }, (_, i) => ({ date: relativeDate(-30 * (4 - i)), amount: 1750000 }))
     },
     { 
-        id: 'debt-2', name: 'DP Rumah KPR', source: 'Bank BCA', 
-        totalAmount: 50000000, monthlyInstallment: 4166667, tenor: 12, dueDate: 1, 
-        payments: [] // Brand new debt
+        id: 'debt-kpr', name: 'KPR Rumah Pertama', source: 'Bank BCA', 
+        totalAmount: 450000000, monthlyInstallment: 3750000, tenor: 120, dueDate: 1, 
+        payments: Array.from({ length: 2 }, (_, i) => ({ date: relativeDate(-30 * (2 - i)), amount: 3750000 }))
     },
     { 
         id: 'debt-3', name: 'Pinjaman Renovasi Dapur', source: 'Bank Mandiri', 
@@ -67,24 +67,53 @@ export const mockSavingsGoals: SavingsGoal[] = [
     { 
         id: 'sg-1', name: 'Dana Darurat', source: 'Bank BCA',
         targetAmount: 25000000, currentAmount: 3500000, 
-        deadline: relativeDate(365 * 2) // 2 years from now
+        deadline: relativeDate(365 * 2), // 2 years from now
+        contributions: [
+            { date: relativeDate(-90), amount: 1500000 },
+            { date: relativeDate(-60), amount: 1000000 },
+            { date: relativeDate(-30), amount: 1000000 },
+        ]
     },
     { 
         id: 'sg-2', name: 'Liburan ke Jepang', source: 'Bibit',
         targetAmount: 30000000, currentAmount: 18500000, 
-        deadline: relativeDate(30 * 8) // 8 months from now
+        deadline: relativeDate(30 * 8), // 8 months from now
+        contributions: [
+            { date: relativeDate(-150), amount: 5000000 },
+            { date: relativeDate(-120), amount: 5000000 },
+            { date: relativeDate(-90), amount: 5000000 },
+            { date: relativeDate(-60), amount: 2500000 },
+            { date: relativeDate(-30), amount: 1000000 },
+        ]
+    },
+     { 
+        id: 'sg-almost', name: 'DP Motor Baru', source: 'OVO',
+        targetAmount: 5000000, currentAmount: 4800000, // Almost complete
+        deadline: relativeDate(25), // 25 days left
+        contributions: [
+            { date: relativeDate(-60), amount: 3000000 },
+            { date: relativeDate(-30), amount: 1800000 },
+        ]
     },
 
     // --- COMPLETED GOALS (FOR HISTORY) ---
     { 
         id: 'sg-3', name: 'Upgrade PC Gaming', source: 'Lainnya',
         targetAmount: 15000000, currentAmount: 15500000, // Achieved (over target)
-        deadline: relativeDate(-30 * 2) // Deadline was 2 months ago
+        deadline: relativeDate(-30 * 2), // Deadline was 2 months ago
+        contributions: [
+             { date: relativeDate(-120), amount: 10000000 },
+             { date: relativeDate(-60), amount: 5500000 },
+        ]
     },
     { 
-        id: 'sg-4', name: 'Membeli Motor Baru', source: 'Bank Mandiri',
-        targetAmount: 20000000, currentAmount: 20000000, // Achieved (at target)
-        deadline: relativeDate(-30 * 5) // Deadline was 5 months ago
+        id: 'sg-4', name: 'Membeli Sepatu Lari', source: 'GoPay Tabungan',
+        targetAmount: 2000000, currentAmount: 2000000, // Achieved (at target)
+        deadline: relativeDate(-30 * 5), // Deadline was 5 months ago
+        contributions: [
+            { date: relativeDate(-240), amount: 1000000 },
+            { date: relativeDate(-180), amount: 1000000 },
+        ]
     },
 ];
 
@@ -99,19 +128,20 @@ const generateArchivedData = () => {
 
     // BASE TARGET for reuse
     const baseTarget: MonthlyTarget = {
-      pendapatan: [{ id: 'p1', name: 'Gaji', amount: '8000000' }],
-      cicilanUtang: [{ id: 'cu1', name: 'Cicilan Motor', amount: '800000' }],
+      pendapatan: [{ id: 'p1', name: 'Gaji', amount: '9000000' }],
+      cicilanUtang: [{ id: 'cu1', name: 'Cicilan iPhone', amount: '1750000' }],
       pengeluaranUtama: [{ id: 'pu1', name: 'Sewa Kos', amount: '1500000' }],
       kebutuhan: [{ id: 'k1', name: 'Belanja Dapur', amount: '1200000' }],
-      penunjang: [{ id: 'pn1', name: 'Transportasi', amount: '400000' }],
+      penunjang: [{ id: 'pn1', name: 'Transportasi', amount: '500000' }, { id: 'pn2', name: 'Langganan Digital', amount: '150000' }],
       pendidikan: [],
       tabungan: [{ id: 't1', name: 'Dana Darurat', amount: '1000000' }],
     };
     
-    // Scenarios for variety
-    const achievedActuals = { 'p1': '8200000', 'cu1': '800000', 'pu1': '1500000', 'k1': '1150000', 'pn1': '400000', 't1': '1100000' };
-    const failedActuals = { 'p1': '7800000', 'cu1': '800000', 'pu1': '1600000', 'k1': '1400000', 'pn1': '500000', 't1': '800000' };
-    const randomActuals = { 'p1': '8000000', 'cu1': '800000', 'pu1': '1500000', 'k1': '1200000', 'pn1': '400000', 't1': '1000000' };
+    // Generates a random actual value between 80% and 120% of the target
+    const generateRandomActual = (targetAmount: number) => {
+        const deviation = (Math.random() - 0.5) * 0.4; // between -0.2 and +0.2
+        return Math.round(targetAmount * (1 + deviation));
+    }
 
     const categoryMap: { [key in keyof MonthlyTarget]?: string } = {
         pendapatan: 'Pendapatan',
@@ -127,12 +157,12 @@ const generateArchivedData = () => {
         const monthYear = pastMonthYear(i);
         const [year, month] = monthYear.split('-').map(Number);
         targets.push({ monthYear: monthYear, target: baseTarget });
-
-        let currentActuals;
-        if (i % 3 === 1) currentActuals = achievedActuals;
-        else if (i % 3 === 2) currentActuals = failedActuals;
-        else currentActuals = randomActuals;
         
+        const currentActuals: { [key: string]: string } = {};
+        Object.values(baseTarget).flat().forEach(item => {
+            currentActuals[item.id] = String(generateRandomActual(parseInt(item.amount)));
+        });
+
         actuals.push({ monthYear: monthYear, target: baseTarget, actuals: currentActuals });
 
         // Generate detailed transactions from this month's actuals
@@ -167,15 +197,20 @@ const {
 export const mockArchivedTargets: ArchivedMonthlyTarget[] = generatedTargets;
 export const mockArchivedActuals: ArchivedActualReport[] = generatedActuals;
 
-// --- CURRENT MONTH TRANSACTIONS ---
+// --- CURRENT MONTH TRANSACTIONS (More variety for testing) ---
 const currentMonthMockTransactions: Transaction[] = [
-  { id: 'tx1', date: relativeDate(0), description: 'Gaji Bulanan', amount: 8500000, type: TransactionType.INCOME, category: 'Gaji' },
+  { id: 'tx1', date: relativeDate(0), description: 'Gaji Bulanan', amount: 9500000, type: TransactionType.INCOME, category: 'Gaji' },
   { id: 'tx2', date: relativeDate(-1), description: 'Bayar Kos', amount: 1500000, type: TransactionType.EXPENSE, category: 'Sewa' },
-  { id: 'tx3', date: relativeDate(-3), description: 'Belanja Bulanan', amount: 1200000, type: TransactionType.EXPENSE, category: 'Kebutuhan' },
+  { id: 'tx3', date: relativeDate(-3), description: 'Belanja Bulanan (Supermarket)', amount: 1350000, type: TransactionType.EXPENSE, category: 'Kebutuhan' },
   { id: 'tx4', date: relativeDate(-5), description: 'Cicilan iPhone', amount: 1750000, type: TransactionType.EXPENSE, category: 'Utang' },
-  { id: 'tx5', date: relativeDate(-10), description: 'Nonton Bioskop', amount: 150000, type: TransactionType.EXPENSE, category: 'Hiburan' },
-  { id: 'tx6', date: relativeDate(-12), description: 'Proyek Desain Freelance', amount: 1250000, type: TransactionType.INCOME, category: 'Pendapatan Lain' },
-  { id: 'tx7', date: relativeDate(-15), description: 'Makan Siang & Kopi', amount: 450000, type: TransactionType.EXPENSE, category: 'Jajan' },
+  { id: 'tx5', date: relativeDate(-10), description: 'Nonton Bioskop & Makan Malam', amount: 250000, type: TransactionType.EXPENSE, category: 'Hiburan' },
+  { id: 'tx6', date: relativeDate(-12), description: 'Proyek Desain Freelance', amount: 1750000, type: TransactionType.INCOME, category: 'Pendapatan Lain' },
+  { id: 'tx7', date: relativeDate(-15), description: 'Makan Siang & Kopi (Seminggu)', amount: 480000, type: TransactionType.EXPENSE, category: 'Jajan' },
+  { id: 'tx8', date: relativeDate(-16), description: 'Langganan Netflix & Spotify', amount: 175000, type: TransactionType.EXPENSE, category: 'Langganan' },
+  { id: 'tx9', date: relativeDate(-18), description: 'Transportasi (Gojek/Grab)', amount: 320000, type: TransactionType.EXPENSE, category: 'Transportasi' },
+  { id: 'tx10', date: relativeDate(-20), description: 'Beli Buku & Kursus Online', amount: 450000, type: TransactionType.EXPENSE, category: 'Pendidikan' },
+  { id: 'tx11', date: relativeDate(-22), description: 'Setor ke Dana Darurat', amount: 1000000, type: TransactionType.EXPENSE, category: 'Tabungan' },
+  { id: 'tx12', date: relativeDate(-25), description: 'Beli Obat & Vitamin', amount: 150000, type: TransactionType.EXPENSE, category: 'Kesehatan' },
 ];
 
 // --- COMBINED TRANSACTIONS FOR THE APP ---
