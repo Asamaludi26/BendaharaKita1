@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, DebtItem, SavingsGoal } from '../types';
+import { View, DebtItem, SavingsGoal } from '../../types';
 import DebtManagement from './goals/DebtManagement';
 import SavingsGoals from './goals/SavingsGoals';
 import Modal from './Modal';
@@ -20,13 +20,13 @@ interface ManagementProps {
 }
 
 const SummaryCard: React.FC<{ title: string; amount: number; icon: string; gradient: string; }> = ({ title, amount, icon, gradient }) => (
-    <div className={`relative p-5 rounded-2xl shadow-lg overflow-hidden bg-black/20 backdrop-blur-lg border border-white/10 ${gradient}`}>
+    <div className={`relative p-5 rounded-2xl shadow-lg overflow-hidden bg-[var(--bg-secondary)] backdrop-blur-lg border border-[var(--border-primary)]`}>
         <div className="absolute -inset-px rounded-2xl opacity-30" style={{backgroundImage: gradient}}></div>
         <div className="relative z-10">
-            <p className="text-white/80 font-semibold">{title}</p>
-            <p className="text-3xl font-bold text-white mt-1">Rp {amount.toLocaleString('id-ID')}</p>
+            <p className="text-[var(--text-secondary)] font-semibold">{title}</p>
+            <p className="text-3xl font-bold text-[var(--text-primary)] mt-1">Rp {amount.toLocaleString('id-ID')}</p>
         </div>
-        <i className={`fa-solid ${icon} absolute -right-4 -bottom-4 text-8xl text-white/10 transform-gpu rotate-[-20deg]`}></i>
+        <i className={`fa-solid ${icon} absolute -right-4 -bottom-4 text-8xl text-[var(--text-primary)]/5 transform-gpu rotate-[-20deg]`}></i>
     </div>
 );
 
@@ -56,10 +56,10 @@ const Management: React.FC<ManagementProps> = ({
     <>
       <div className="p-4 md:p-6 space-y-6 animate-fade-in">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-white">Tujuan Finansial</h1>
+          <h1 className="text-3xl font-bold text-[var(--text-primary)]">Tujuan Finansial</h1>
            <button 
             onClick={() => setIsResetModalOpen(true)}
-            className="w-10 h-10 rounded-full bg-black/20 text-gray-400 flex items-center justify-center transition-colors shadow-sm hover:bg-white/10 border border-white/10"
+            className="w-10 h-10 rounded-full bg-[var(--bg-secondary)] text-[var(--text-tertiary)] flex items-center justify-center transition-colors shadow-sm hover:bg-[var(--bg-interactive-hover)] border border-[var(--border-primary)]"
             aria-label="Atur Ulang Data Awal"
             title="Atur Ulang Data Awal"
           >
@@ -98,10 +98,10 @@ const Management: React.FC<ManagementProps> = ({
       </div>
 
        <Modal isOpen={isResetModalOpen} onClose={() => setIsResetModalOpen(false)}>
-        <div className="relative bg-gray-800/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-xl text-center p-6 pt-16">
+        <div className="relative bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-xl text-center p-6 pt-16">
           <button 
               onClick={() => setIsResetModalOpen(false)} 
-              className="absolute top-4 right-4 w-10 h-10 rounded-full text-gray-400 hover:bg-white/10 flex items-center justify-center transition-colors z-10"
+              className="absolute top-4 right-4 w-10 h-10 rounded-full text-[var(--text-tertiary)] hover:bg-[var(--bg-interactive-hover)] flex items-center justify-center transition-colors z-10"
               aria-label="Close modal"
           >
               <i className="fa-solid fa-times text-xl"></i>
@@ -111,13 +111,13 @@ const Management: React.FC<ManagementProps> = ({
               <i className="fa-solid fa-triangle-exclamation text-5xl text-white"></i>
           </div>
           
-          <h3 className="text-2xl font-bold text-white mb-2">
+          <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-2">
               Anda Yakin?
           </h3>
-          <p className="text-gray-300 mb-6">
+          <p className="text-[var(--text-secondary)] mb-6">
               Tindakan ini akan <strong>menghapus semua data</strong> pinjaman dan tujuan tabungan Anda saat ini. Anda akan dipandu untuk memasukkannya kembali.
               <br/><br/>
-              <span className="font-semibold text-gray-400">Data transaksi tidak akan terpengaruh.</span>
+              <span className="font-semibold text-[var(--text-tertiary)]">Data transaksi tidak akan terpengaruh.</span>
           </p>
           
           <div className="flex flex-col gap-3">
@@ -131,7 +131,7 @@ const Management: React.FC<ManagementProps> = ({
               <button
                   type="button"
                   onClick={() => setIsResetModalOpen(false)}
-                  className="w-full bg-transparent text-gray-400 font-semibold py-3 px-6 rounded-full hover:bg-white/10 transition-colors"
+                  className="w-full bg-transparent text-[var(--text-tertiary)] font-semibold py-3 px-6 rounded-full hover:bg-[var(--bg-interactive-hover)] transition-colors"
               >
                   Batal
               </button>

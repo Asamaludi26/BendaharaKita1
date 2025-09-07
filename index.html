@@ -25,55 +25,119 @@
 </script>
 <style>
   :root {
-    /* "Deep Ocean Glow" Theme */
+    /* "Deep Ocean Glow" Theme (Dark - Default) */
 
     /* Main Theme Colors */
-    --bg-primary: #0D1117; /* Deep Navy Blue */
-    --bg-secondary: #161B22; /* Slightly Lighter Navy */
+    --bg-primary: #0D1117; 
+    --bg-secondary: #161B22; 
+    --bg-secondary-translucent: rgba(22, 27, 34, 0.7);
+    --bg-interactive: rgba(33, 38, 45, 0.6);
+    --bg-interactive-hover: rgba(45, 51, 59, 0.8);
+    --border-primary: rgba(255, 255, 255, 0.1);
+    --border-secondary: rgba(255, 255, 255, 0.2);
     
     /* Accent & Brand Colors */
-    --primary-glow: #5865F2; /* Discord-like Indigo */
-    --secondary-glow: #00A896; /* Vibrant Teal */
+    --primary-glow: #5865F2;
+    --secondary-glow: #00A896;
     --primary-500: #5865F2;
     --primary-600: #4752C4;
     --secondary-500: #00A896;
     --secondary-600: #008778;
     
-    /* Semantic Colors (Refined for better contrast and feel) */
-    --color-income: #10B981; /* Emerald 500 */
-    --color-expense: #F43F5E; /* Rose 500 */
-    --color-debt: #F97316; /* Orange 500 (remains strong for warnings) */
-    --color-savings: #3B82F6; /* Blue 500 */
-    --color-balance: #8B5CF6; /* Violet 500 */
-    --color-net-positive: #2DD4BF; /* Teal 400 */
-    --color-net-negative: #FB923C; /* Orange 400 */
+    /* Semantic Colors */
+    --color-income: #10B981; 
+    --color-expense: #F43F5E;
+    --color-debt: #F97316; 
+    --color-savings: #3B82F6; 
+    --color-balance: #8B5CF6; 
+    --color-net-positive: #2DD4BF;
+    --color-net-negative: #FB923C;
+    --color-warning: #FBBF24; /* Amber 400 */
 
-    /* Text Colors for Hierarchy */
-    --text-primary: #F0F6FC; /* Brightest */
-    --text-secondary: #C9D1D9; /* Main Body */
-    --text-tertiary: #8B949E; /* Muted / Labels */
+    /* Text Colors */
+    --text-primary: #F0F6FC;
+    --text-secondary: #C9D1D9;
+    --text-tertiary: #8B949E;
+
+    /* Badge Colors */
+    --bg-success-subtle: rgba(16, 185, 129, 0.1);
+    --text-success-strong: #059669;
+    --bg-danger-subtle: rgba(244, 63, 94, 0.1);
+    --text-danger-strong: #BE123C;
+    --bg-warning-subtle: rgba(251, 191, 36, 0.1);
+    --text-warning-strong: #B45309;
 
     --font-sans: 'Inter', sans-serif;
+    
+    /* Gradients */
+    --gradient-active-nav: linear-gradient(to right bottom, var(--primary-500), var(--secondary-500));
   }
+
+  html[data-theme='light'] {
+    /* "Sakura Breeze" Theme (Light) - New & Improved */
+    --bg-primary: #F9FAFB; /* Gray 50 (Off-white) */
+    --bg-secondary: #FFFFFF; /* Pure white for cards */
+    --bg-secondary-translucent: rgba(255, 255, 255, 0.7);
+    --bg-interactive: #F3F4F6; /* Gray 100 for interactive elements */
+    --bg-interactive-hover: #E5E7EB; /* Gray 200 for hover */
+    --border-primary: #E5E7EB; /* Gray 200 */
+    --border-secondary: #D1D5DB; /* Gray 300 */
+
+    /* Accent & Brand Colors - Pink & Violet Palette */
+    --primary-glow: #EC4899; /* Pink-500 */
+    --secondary-glow: #8B5CF6; /* Violet-500 */
+    --primary-500: #EC4899;
+    --primary-600: #DB2777;
+    --secondary-500: #8B5CF6;
+    --secondary-600: #7C3AED;
+
+    /* Semantic Colors */
+    --color-income: #16A34A; /* Green-600 */
+    --color-expense: #E11D48; /* Rose-600 */
+    --color-debt: #EA580C; /* Orange-600 */
+    --color-savings: #2563EB; /* Blue-600 */
+    --color-balance: #7C3AED; /* Violet-600 */
+    --color-net-positive: #059669; /* Emerald-600 */
+    --color-net-negative: #D97706; /* Amber-600 */
+    --color-warning: #F59E0B; /* Amber 500 */
+
+    /* Text Colors - High Contrast */
+    --text-primary: #1F2937; /* Gray-800 */
+    --text-secondary: #4B5563; /* Gray-600 */
+    --text-tertiary: #9CA3AF; /* Gray-400 */
+
+    /* Badge Colors */
+    --bg-success-subtle: #D1FAE5; /* Green 100 */
+    --text-success-strong: #065F46; /* Green 800 */
+    --bg-danger-subtle: #FEE2E2; /* Red 100 */
+    --text-danger-strong: #991B1B; /* Red 800 */
+    --bg-warning-subtle: #FEF3C7; /* Amber 100 */
+    --text-warning-strong: #92400E; /* Amber 800 */
+    
+    /* Gradients */
+    --gradient-active-nav: linear-gradient(to right bottom, var(--primary-500), var(--secondary-500));
+  }
+
 
   body {
     font-family: var(--font-sans);
     background-color: var(--bg-primary);
     color: var(--text-secondary);
-    overflow: hidden; /* Prevent body scroll, main content will scroll */
+    overflow: hidden;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   /* Responsive Typography */
   html {
-    font-size: 15px; /* Base for mobile */
+    font-size: 15px;
   }
-  @media (min-width: 768px) { /* md breakpoint */
+  @media (min-width: 768px) {
     html {
-      font-size: 16px; /* Standard for desktop */
+      font-size: 16px;
     }
   }
 
-  /* Animated Aurora Background (Subtler version) */
+  /* Animated Aurora Background */
   body::before {
     content: '';
     position: fixed;
@@ -87,28 +151,26 @@
     will-change: transform;
     animation: aurora 25s linear infinite alternate;
     z-index: -1;
-    opacity: 0.15; /* Reduced opacity for subtlety */
+    opacity: 0.15;
+    transition: opacity 0.5s ease;
+  }
+  
+  html[data-theme='light'] body::before {
+      opacity: 0; /* Hide aurora in light mode */
   }
 
-  @keyframes aurora {
-    0% { transform: translate(0%, 0%) rotate(0deg) scale(1.2); }
-    50% { transform: translate(5%, -10%) rotate(10deg) scale(1.5); }
-    100% { transform: translate(-5%, 5%) rotate(-10deg) scale(1.2); }
-  }
-
-  /* Main App Container */
   #root > div {
     height: 100vh;
     overflow-y: auto;
-    overflow-x: hidden; /* Prevents horizontal scroll during slide animations */
+    overflow-x: hidden;
     scroll-behavior: smooth;
   }
 
   /* Custom Scrollbar */
   ::-webkit-scrollbar { width: 8px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 4px; }
-  ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.25); }
+  ::-webkit-scrollbar-thumb { background: var(--border-primary); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--border-secondary); }
 
   /* Global smooth transitions */
   button, a, input, [tabindex], summary { transition: all 0.2s ease-in-out; }

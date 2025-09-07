@@ -53,6 +53,7 @@ const App: React.FC = () => {
     const [activeDetailId, setActiveDetailId] = useState<string | null>(null);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
     const [activeModal, setActiveModal] = useState<null | 'ADD_DEBT' | 'ADD_SAVINGS_GOAL'>(null);
+    const [theme, setTheme] = useLocalStorage<'light' | 'dark'>('app_theme', 'dark');
 
     // Data states
     const [transactions, setTransactions] = useLocalStorage<Transaction[]>('transactions_data', mockTransactions);
@@ -65,6 +66,15 @@ const App: React.FC = () => {
     const [onboardingComplete, setOnboardingComplete] = useLocalStorage<boolean>('onboardingComplete_status', false);
 
     const [displayDate, setDisplayDate] = useState(new Date());
+
+    // Theme switching logic
+    useEffect(() => {
+        document.documentElement.setAttribute('data-theme', theme);
+    }, [theme]);
+
+    const toggleTheme = () => {
+        setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
+    };
 
     const handlePrevMonth = () => setDisplayDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
     const handleNextMonth = () => setDisplayDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1));
@@ -279,7 +289,7 @@ const App: React.FC = () => {
                 pageComponent = <SavingsGoalHistory completedGoals={completedSavingsGoals} setView={setView} onSelectSavingsGoal={(id) => { setActiveDetailId(id); setView(View.SAVINGS_GOAL_DETAIL); }} />;
                 break;
             case View.PROFILE:
-                pageComponent = <Profile onClearAllData={handleClearAllData} />;
+                pageComponent = <Profile onClearAllData={handleClearAllData} theme={theme} toggleTheme={toggleTheme} />;
                 break;
             default:
                 pageComponent = <Dashboard displayDate={displayDate} handlePrevMonth={handlePrevMonth} handleNextMonth={handleNextMonth} archivedTargets={archivedTargets} archivedActuals={archivedActuals} transactions={transactions} />;
@@ -292,7 +302,7 @@ const App: React.FC = () => {
     const showOnboardingWizard = view === View.MANAGEMENT && !onboardingComplete;
 
     return (
-        <div className="bg-gray-900 text-white font-sans min-h-screen">
+        <div className="bg-[var(--bg-primary)] text-[var(--text-secondary)] font-sans min-h-screen">
              {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
             
             <main className="pb-24">

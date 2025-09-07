@@ -17,7 +17,7 @@ const ManagementCard: React.FC<{
     onCardClick: () => void;
     onHistoryClick: () => void;
 }> = ({ title, description, icon, gradientFrom, gradientTo, actionText, onCardClick, onHistoryClick }) => (
-    <div className="group relative bg-black/20 backdrop-blur-lg rounded-2xl shadow-lg border border-white/10 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:border-white/20 flex flex-col">
+    <div className="group relative bg-[var(--bg-secondary)] backdrop-blur-lg rounded-2xl shadow-lg border border-[var(--border-primary)] overflow-hidden transition-all duration-300 hover:shadow-2xl hover:border-[var(--border-secondary)] flex flex-col">
         {/* Glow on hover */}
         <div 
             className="absolute inset-0 rounded-2xl transition-all duration-300 opacity-0 group-hover:opacity-100 pointer-events-none"
@@ -31,19 +31,19 @@ const ManagementCard: React.FC<{
         <div className="relative p-6 flex-grow">
             <div className="flex items-start space-x-5">
                 {/* Icon */}
-                <div className="w-16 h-16 rounded-2xl bg-black/30 flex items-center justify-center border border-white/10 flex-shrink-0">
+                <div className="w-16 h-16 rounded-2xl bg-[var(--bg-interactive)] flex items-center justify-center border border-[var(--border-primary)] flex-shrink-0">
                     <i className={`fa-solid ${icon} text-4xl bg-clip-text text-transparent`} style={{ backgroundImage: `linear-gradient(to right, ${gradientFrom}, ${gradientTo})`}}></i>
                 </div>
                 {/* Text */}
                 <div>
-                    <h3 className="text-xl font-bold text-white">{title}</h3>
-                    <p className="text-gray-400 text-sm mt-1">{description}</p>
+                    <h3 className="text-xl font-bold text-[var(--text-primary)]">{title}</h3>
+                    <p className="text-[var(--text-tertiary)] text-sm mt-1">{description}</p>
                 </div>
             </div>
         </div>
 
         {/* Action Buttons Area */}
-        <div className="relative bg-black/30 backdrop-blur-sm px-6 py-4 border-t border-white/10 flex flex-col sm:flex-row gap-3">
+        <div className="relative bg-[var(--bg-interactive)] backdrop-blur-sm px-6 py-4 border-t border-[var(--border-primary)] flex flex-col sm:flex-row gap-3">
             <button
                 onClick={onCardClick}
                 className="flex-1 text-white font-bold py-2.5 px-4 rounded-full shadow-md hover:shadow-lg transform hover:scale-105 transition-all text-sm"
@@ -53,7 +53,7 @@ const ManagementCard: React.FC<{
             </button>
             <button
                 onClick={onHistoryClick}
-                className="flex-1 bg-black/20 border border-white/10 text-gray-300 font-semibold py-2.5 px-4 rounded-full hover:bg-white/10 hover:text-white transition-colors text-sm"
+                className="flex-1 bg-[var(--bg-secondary)] border border-[var(--border-secondary)] text-[var(--text-secondary)] font-semibold py-2.5 px-4 rounded-full hover:bg-[var(--bg-interactive-hover)] hover:text-[var(--text-primary)] transition-colors text-sm"
             >
                 Lihat Riwayat
             </button>
@@ -77,7 +77,7 @@ const Report: React.FC<ReportProps> = ({ setView, isTargetSet }) => {
         <>
             <div className="p-4 md:p-6 space-y-6 animate-fade-in">
                 <div className="flex justify-between items-center">
-                    <h1 className="text-3xl font-bold text-white">Manajemen</h1>
+                    <h1 className="text-3xl font-bold text-[var(--text-primary)]">Manajemen</h1>
                     {/* Settings Button can go here if needed in the future */}
                 </div>
                 
@@ -107,10 +107,10 @@ const Report: React.FC<ReportProps> = ({ setView, isTargetSet }) => {
             </div>
 
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-                <div className="relative bg-gray-800/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-xl text-center p-6 pt-16">
+                <div className="relative bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-xl text-center p-6 pt-16">
                     <button 
                         onClick={() => setIsModalOpen(false)} 
-                        className="absolute top-4 right-4 w-10 h-10 rounded-full text-gray-400 hover:bg-white/10 flex items-center justify-center transition-colors z-10"
+                        className="absolute top-4 right-4 w-10 h-10 rounded-full text-[var(--text-tertiary)] hover:bg-[var(--bg-interactive-hover)] flex items-center justify-center transition-colors z-10"
                         aria-label="Close modal"
                     >
                         <i className="fa-solid fa-times text-xl"></i>
@@ -120,10 +120,10 @@ const Report: React.FC<ReportProps> = ({ setView, isTargetSet }) => {
                         <i className="fa-solid fa-bullseye text-5xl text-white"></i>
                     </div>
                     
-                    <h3 className="text-2xl font-bold text-white mb-2">
+                    <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-2">
                         Oops, Tunggu Dulu!
                     </h3>
-                    <p className="text-gray-300 mb-6">
+                    <p className="text-[var(--text-secondary)] mb-6">
                         Anda harus membuat <strong>Target Bulanan</strong> sebelum bisa mengisi Laporan Aktual.
                     </p>
                     
@@ -141,7 +141,7 @@ const Report: React.FC<ReportProps> = ({ setView, isTargetSet }) => {
                         <button
                             type="button"
                             onClick={() => setIsModalOpen(false)}
-                            className="w-full bg-transparent text-gray-400 font-semibold py-3 px-6 rounded-full hover:bg-white/10 transition-colors"
+                            className="w-full bg-transparent text-[var(--text-tertiary)] font-semibold py-3 px-6 rounded-full hover:bg-[var(--bg-interactive-hover)] transition-colors"
                         >
                             Nanti Saja
                         </button>

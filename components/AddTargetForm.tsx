@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-// FIX: Import 'View' as a value, not just a type, as it's an enum used at runtime.
 import { View } from '../types';
 import type { MonthlyTarget, TargetFormField, ArchivedMonthlyTarget, DebtItem, SavingsGoal } from '../types';
 import { AccordionSection } from './AccordionSection';
@@ -64,7 +63,6 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({
   }, [initialData]);
 
   const handleFieldChange = (section: keyof MonthlyTarget, id: string, field: 'name' | 'amount', value: string) => {
-    // FIX: Reverted to parseInt for currency formatting to resolve a type error and maintain consistency.
     const numericValue = field === 'amount' ? value.replace(/[^0-9]/g, '') : value;
     setFormData(prev => ({
       ...prev,
@@ -145,14 +143,12 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({
   const prePopulateGoals = (baseForm: MonthlyTarget): MonthlyTarget => {
     const newForm = JSON.parse(JSON.stringify(baseForm));
 
-    // Sync Debts
     newForm.cicilanUtang = activeDebts.map(debt => ({
       id: `debt-${debt.id}`,
       name: debt.name,
       amount: String(debt.monthlyInstallment)
     }));
 
-    // Sync Savings
     const savingsMap = new Map(newForm.tabungan.map((item: TargetFormField) => [item.name, item]));
     activeSavingsGoals.forEach(goal => {
       const remainingAmount = goal.targetAmount - goal.currentAmount;
@@ -210,8 +206,8 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({
               <div key={field.id} className="grid grid-cols-12 gap-2 items-center">
                 {isReadOnly ? (
                   <>
-                    <p className="col-span-7 p-2 text-gray-300 truncate">{field.name}</p>
-                    <p className="col-span-5 p-2 text-white text-right font-semibold">Rp {parseInt(field.amount || '0').toLocaleString('id-ID')}</p>
+                    <p className="col-span-7 p-2 text-[var(--text-secondary)] truncate">{field.name}</p>
+                    <p className="col-span-5 p-2 text-[var(--text-primary)] text-right font-semibold">Rp {parseInt(field.amount || '0').toLocaleString('id-ID')}</p>
                   </>
                 ) : (
                   <>
@@ -221,7 +217,7 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({
                       value={field.name}
                       readOnly={field.id.startsWith('debt-') || field.id.startsWith('sg-')}
                       onChange={e => handleFieldChange(sectionKey, field.id, 'name', e.target.value)}
-                      className="col-span-7 p-2 bg-black/20 border border-white/10 rounded-md focus:ring-2 focus:ring-[var(--primary-glow)] focus:border-transparent read-only:bg-black/30 read-only:text-gray-400"
+                      className="col-span-7 p-2 bg-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-md focus:ring-2 focus:ring-[var(--primary-glow)] focus:border-transparent read-only:bg-[var(--bg-interactive-hover)] read-only:text-[var(--text-tertiary)] text-[var(--text-primary)]"
                     />
                     <input
                       type="text"
@@ -229,13 +225,13 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({
                       placeholder="Jumlah (Rp)"
                       value={field.amount ? parseInt(field.amount).toLocaleString('id-ID') : ''}
                       onChange={e => handleFieldChange(sectionKey, field.id, 'amount', e.target.value)}
-                      className="col-span-4 p-2 bg-black/20 border border-white/10 rounded-md focus:ring-2 focus:ring-[var(--primary-glow)] focus:border-transparent text-right"
+                      className="col-span-4 p-2 bg-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-md focus:ring-2 focus:ring-[var(--primary-glow)] focus:border-transparent text-right text-[var(--text-primary)]"
                     />
                     {allowAdd ? (
                         <button
                         type="button"
                         onClick={() => removeField(sectionKey, field.id)}
-                        className="col-span-1 text-gray-400 hover:text-red-500 transition-colors"
+                        className="col-span-1 text-[var(--text-tertiary)] hover:text-[var(--color-expense)] transition-colors"
                         aria-label={`Hapus ${field.name}`}
                         >
                         <i className="fa-solid fa-trash-can"></i>
@@ -250,9 +246,9 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({
                  <button
                     type="button"
                     onClick={sectionKey === 'cicilanUtang' ? onAddDebt : onAddSavingsGoal}
-                    className="w-full text-center py-6 px-4 border-2 border-dashed border-gray-600 rounded-xl hover:bg-white/5 hover:border-[var(--primary-glow)] transition-all duration-300 group"
+                    className="w-full text-center py-6 px-4 border-2 border-dashed border-[var(--border-secondary)] rounded-xl hover:bg-[var(--bg-interactive-hover)] hover:border-[var(--primary-glow)] transition-all duration-300 group"
                   >
-                      <p className="font-semibold text-gray-300 group-hover:text-[var(--primary-glow)] transition-colors duration-300">
+                      <p className="font-semibold text-[var(--text-secondary)] group-hover:text-[var(--primary-glow)] transition-colors duration-300">
                         {sectionKey === 'cicilanUtang' 
                             ? "Belum ada utang tercatat. Klik untuk mulai." 
                             : "Anda belum punya tujuan. Klik untuk wujudkan impianmu!"
@@ -265,16 +261,16 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({
                 <button 
                   type="button" 
                   onClick={() => addField(sectionKey)} 
-                  className="w-full border-2 border-dashed border-gray-600 rounded-lg py-2 text-sm font-semibold text-gray-400 hover:border-[var(--primary-glow)] hover:text-[var(--primary-glow)] transition-all duration-300"
+                  className="w-full border-2 border-dashed border-[var(--border-secondary)] rounded-lg py-2 text-sm font-semibold text-[var(--text-tertiary)] hover:border-[var(--primary-glow)] hover:text-[var(--primary-glow)] transition-all duration-300"
                 >
                     <i className="fa-solid fa-plus mr-2"></i>Tambah Item
                 </button>
             )}
 
             {hasItems && (
-                 <div className="flex justify-between items-center mt-3 pt-3 border-t border-white/10">
-                     <span className="font-bold text-gray-300">TOTAL</span>
-                     <span className="text-lg font-bold text-white">Rp {sectionTotal.toLocaleString('id-ID')}</span>
+                 <div className="flex justify-between items-center mt-3 pt-3 border-t border-[var(--border-primary)]">
+                     <span className="font-bold text-[var(--text-secondary)]">TOTAL</span>
+                     <span className="text-lg font-bold text-[var(--text-primary)]">Rp {sectionTotal.toLocaleString('id-ID')}</span>
                  </div>
             )}
         </div>
@@ -285,22 +281,22 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({
   return (
     <div className="p-4 md:p-6 space-y-6">
       <header className="flex items-center space-x-4">
-        <button onClick={() => setView(View.REPORT)} className="text-gray-300">
+        <button onClick={() => setView(View.REPORT)} className="text-[var(--text-tertiary)]">
             <i className="fa-solid fa-arrow-left text-xl"></i>
         </button>
-        <h1 className="text-2xl font-bold text-white">Target Bulanan</h1>
+        <h1 className="text-2xl font-bold text-[var(--text-primary)]">Target Bulanan</h1>
       </header>
       
-        <div className="sticky top-0 z-20 p-4 bg-black/30 backdrop-blur-lg border border-white/10 rounded-2xl shadow-2xl">
-            <h3 className="font-bold text-white mb-3 text-lg">Ringkasan Target</h3>
+        <div className="sticky top-0 z-20 p-4 bg-[var(--bg-secondary)] backdrop-blur-lg border border-[var(--border-primary)] rounded-2xl shadow-2xl">
+            <h3 className="font-bold text-[var(--text-primary)] mb-3 text-lg">Ringkasan Target</h3>
             <div className="space-y-2 text-sm">
-                <div className="flex justify-between items-center"><span className="flex items-center"><div className="w-2.5 h-2.5 rounded-sm bg-[var(--color-income)] mr-2"></div>Pemasukan</span><span className="font-bold text-green-400">Rp {totalPendapatan.toLocaleString('id-ID')}</span></div>
-                <div className="flex justify-between items-center"><span className="flex items-center"><div className="w-2.5 h-2.5 rounded-sm bg-[var(--color-expense)] mr-2"></div>Pengeluaran</span><span className="font-bold text-red-400">Rp {totalPengeluaran.toLocaleString('id-ID')}</span></div>
-                <div className="flex justify-between items-center"><span className="flex items-center"><div className="w-2.5 h-2.5 rounded-sm bg-[var(--color-savings)] mr-2"></div>Tabungan</span><span className="font-bold text-blue-400">Rp {totalTabungan.toLocaleString('id-ID')}</span></div>
-                <div className="border-t border-white/10 my-2"></div>
+                <div className="flex justify-between items-center"><span className="flex items-center text-[var(--text-secondary)]"><div className="w-2.5 h-2.5 rounded-sm bg-[var(--color-income)] mr-2"></div>Pemasukan</span><span className="font-bold" style={{color: 'var(--color-income)'}}>Rp {totalPendapatan.toLocaleString('id-ID')}</span></div>
+                <div className="flex justify-between items-center"><span className="flex items-center text-[var(--text-secondary)]"><div className="w-2.5 h-2.5 rounded-sm bg-[var(--color-expense)] mr-2"></div>Pengeluaran</span><span className="font-bold" style={{color: 'var(--color-expense)'}}>Rp {totalPengeluaran.toLocaleString('id-ID')}</span></div>
+                <div className="flex justify-between items-center"><span className="flex items-center text-[var(--text-secondary)]"><div className="w-2.5 h-2.5 rounded-sm bg-[var(--color-savings)] mr-2"></div>Tabungan</span><span className="font-bold" style={{color: 'var(--color-savings)'}}>Rp {totalTabungan.toLocaleString('id-ID')}</span></div>
+                <div className="border-t border-[var(--border-primary)] my-2"></div>
                 <div className="flex justify-between items-center pt-1">
-                    <span className="font-bold text-gray-300">Potensi Sisa Uang</span>
-                    <span className={`font-bold text-lg ${sisa >= 0 ? 'text-white' : 'text-orange-400'}`}>
+                    <span className="font-bold text-[var(--text-secondary)]">Potensi Sisa Uang</span>
+                    <span className={`font-bold text-lg ${sisa >= 0 ? 'text-[var(--text-primary)]' : 'text-[var(--color-warning)]'}`}>
                         {sisa < 0 && <i className="fa-solid fa-triangle-exclamation mr-2"></i>}
                         Rp {sisa.toLocaleString('id-ID')}
                     </span>
@@ -326,7 +322,7 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({
                 </button>
             ) : (
                 <>
-                    <button type="button" onClick={handleCancel} className="w-full bg-black/20 border border-white/10 text-gray-300 font-bold py-4 px-6 rounded-full hover:bg-white/10 transition-colors">
+                    <button type="button" onClick={handleCancel} className="w-full bg-[var(--bg-interactive)] border border-[var(--border-primary)] text-[var(--text-secondary)] font-bold py-4 px-6 rounded-full hover:bg-[var(--bg-interactive-hover)] transition-colors">
                         Batal
                     </button>
                     <button type="submit" className="w-full bg-gradient-to-r from-[var(--secondary-600)] to-[var(--primary-500)] text-white font-bold py-4 px-6 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all">
@@ -337,58 +333,51 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({
         </div>
       </form>
 
-      {/* Confirmation Modal */}
       <Modal isOpen={showConfirmModal} onClose={() => setShowConfirmModal(false)}>
-        <div className="text-center p-6">
-            <h3 className="text-xl font-bold text-white mb-4">Simpan Perubahan?</h3>
-            {/* Summary can be added here */}
+        <div className="text-center p-6 bg-[var(--bg-secondary)] backdrop-blur-lg border border-[var(--border-primary)] rounded-xl">
+            <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">Simpan Perubahan?</h3>
             <div className="flex gap-3 mt-6">
-                <button onClick={() => setShowConfirmModal(false)} className="w-full bg-black/30 text-gray-300 py-2 rounded-full">Batal</button>
+                <button onClick={() => setShowConfirmModal(false)} className="w-full bg-[var(--bg-interactive)] text-[var(--text-secondary)] py-2 rounded-full">Batal</button>
                 <button onClick={handleConfirmSave} className="w-full bg-[var(--primary-600)] text-white font-bold py-2 rounded-full">Ya, Simpan</button>
             </div>
         </div>
       </Modal>
 
-      {/* Edit Options Modal */}
        <Modal isOpen={showEditOptionsModal} onClose={() => setShowEditOptionsModal(false)}>
-        <div className="p-4">
-            <h3 className="text-2xl font-bold text-white mb-4 text-center">Ubah Target</h3>
+        <div className="p-4 bg-[var(--bg-secondary)] backdrop-blur-lg border border-[var(--border-primary)] rounded-xl">
+            <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-4 text-center">Ubah Target</h3>
             <div className="space-y-3">
-                
-                {/* Adjust Current Card */}
-                <button onClick={() => handleEdit('adjust')} className="w-full text-left p-4 bg-black/20 hover:border-[var(--primary-glow)] rounded-xl transition-all duration-300 border border-white/10 group">
+                <button onClick={() => handleEdit('adjust')} className="w-full text-left p-4 bg-[var(--bg-interactive)] hover:border-[var(--primary-glow)] rounded-xl transition-all duration-300 border border-[var(--border-primary)] group">
                     <div className="flex items-start space-x-4">
-                        <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-black/30 rounded-lg text-[var(--primary-glow)] border border-white/10"><i className="fa-solid fa-sliders text-xl"></i></div>
+                        <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-[var(--bg-primary)] rounded-lg text-[var(--primary-glow)] border border-[var(--border-primary)]"><i className="fa-solid fa-sliders text-xl"></i></div>
                         <div>
-                            <p className="font-bold text-gray-200">Sesuaikan Target Saat Ini</p>
-                            <p className="text-sm text-gray-400">Ubah angka-angka dari target yang ditampilkan.</p>
+                            <p className="font-bold text-[var(--text-secondary)]">Sesuaikan Target Saat Ini</p>
+                            <p className="text-sm text-[var(--text-tertiary)]">Ubah angka-angka dari target yang ditampilkan.</p>
                         </div>
                     </div>
                 </button>
                 
-                {/* Start Blank Card */}
-                <button onClick={() => handleEdit('blank')} className="w-full text-left p-4 bg-black/20 hover:border-[var(--primary-glow)] rounded-xl transition-all duration-300 border border-white/10 group">
+                <button onClick={() => handleEdit('blank')} className="w-full text-left p-4 bg-[var(--bg-interactive)] hover:border-[var(--primary-glow)] rounded-xl transition-all duration-300 border border-[var(--border-primary)] group">
                      <div className="flex items-start space-x-4">
-                        <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-black/30 rounded-lg text-[var(--primary-glow)] border border-white/10"><i className="fa-solid fa-file text-xl"></i></div>
+                        <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-[var(--bg-primary)] rounded-lg text-[var(--primary-glow)] border border-[var(--border-primary)]"><i className="fa-solid fa-file text-xl"></i></div>
                         <div>
-                            <p className="font-bold text-gray-200">Mulai dari Awal (Kosong)</p>
-                            <p className="text-sm text-gray-400">Buat target baru dari formulir kosong.</p>
+                            <p className="font-bold text-[var(--text-secondary)]">Mulai dari Awal (Kosong)</p>
+                            <p className="text-sm text-[var(--text-tertiary)]">Buat target baru dari formulir kosong.</p>
                         </div>
                     </div>
                 </button>
 
-                {/* Copy from Last Month Card */}
                 {lastMonthTarget && (
-                    <button onClick={() => handleEdit('copy')} className="w-full text-left p-4 bg-black/20 hover:border-[var(--primary-glow)] rounded-xl transition-all duration-300 border border-white/10 group">
+                    <button onClick={() => handleEdit('copy')} className="w-full text-left p-4 bg-[var(--bg-interactive)] hover:border-[var(--primary-glow)] rounded-xl transition-all duration-300 border border-[var(--border-primary)] group">
                          <div className="flex items-start space-x-4">
-                            <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-black/30 rounded-lg text-[var(--primary-glow)] border border-white/10"><i className="fa-solid fa-copy text-xl"></i></div>
+                            <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-[var(--bg-primary)] rounded-lg text-[var(--primary-glow)] border border-[var(--border-primary)]"><i className="fa-solid fa-copy text-xl"></i></div>
                             <div>
-                                <p className="font-bold text-gray-200">Salin dari Bulan Lalu</p>
-                                <p className="text-sm text-gray-400">Gunakan data bulan sebelumnya sebagai dasar.</p>
+                                <p className="font-bold text-[var(--text-secondary)]">Salin dari Bulan Lalu</p>
+                                <p className="text-sm text-[var(--text-tertiary)]">Gunakan data bulan sebelumnya sebagai dasar.</p>
                                 {lastMonthSummary && (
-                                     <div className="mt-2 text-xs flex space-x-4 text-gray-500 border-t border-white/10 pt-2">
-                                         <span>Pemasukan: <strong className="text-green-400/80">Rp {lastMonthSummary.totalPendapatan.toLocaleString('id-ID')}</strong></span>
-                                         <span>Pengeluaran: <strong className="text-red-400/80">Rp {lastMonthSummary.totalPengeluaran.toLocaleString('id-ID')}</strong></span>
+                                     <div className="mt-2 text-xs flex space-x-4 text-[var(--text-tertiary)] border-t border-[var(--border-primary)] pt-2">
+                                         <span>Pemasukan: <strong style={{color: 'var(--color-income)'}}>Rp {lastMonthSummary.totalPendapatan.toLocaleString('id-ID')}</strong></span>
+                                         <span>Pengeluaran: <strong style={{color: 'var(--color-expense)'}}>Rp {lastMonthSummary.totalPengeluaran.toLocaleString('id-ID')}</strong></span>
                                      </div>
                                 )}
                             </div>

@@ -37,27 +37,27 @@ const SavingsGoalHistory: React.FC<SavingsGoalHistoryProps> = ({ completedGoals,
     return (
         <div className="p-4 md:p-6 space-y-4 pb-24">
             <header className="flex items-center space-x-4">
-                <button onClick={() => setView(View.MANAGEMENT)} className="text-gray-500 dark:text-gray-400">
+                <button onClick={() => setView(View.MANAGEMENT)} className="text-[var(--text-secondary)]">
                     <i className="fa-solid fa-arrow-left text-xl"></i>
                 </button>
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">Riwayat Tujuan Tercapai</h1>
+                <h1 className="text-2xl md:text-3xl font-bold text-[var(--text-primary)]">Riwayat Tujuan Tercapai</h1>
             </header>
             
             <div className="space-y-6">
                 {groupedGoals.length > 0 ? (
                     groupedGoals.map(({ monthYear, goals }) => (
                         <div key={monthYear}>
-                            <h2 className="text-lg font-bold text-gray-700 dark:text-gray-300 py-2 mb-3 border-b-2 border-gray-200 dark:border-gray-700">{monthYear}</h2>
+                            <h2 className="text-lg font-bold text-[var(--text-secondary)] py-2 mb-3 border-b-2 border-[var(--border-primary)]">{monthYear}</h2>
                             <div className="space-y-4">
                                 {goals.map(goal => <SavingsGoalItemCard key={goal.id} goal={goal} onSelect={onSelectSavingsGoal} />)}
                             </div>
                         </div>
                     ))
                 ) : (
-                    <div className="text-center p-8 mt-4 bg-white dark:bg-gray-800 rounded-2xl">
-                        <i className="fa-solid fa-box-open text-4xl text-gray-400 mb-4"></i>
-                        <p className="font-semibold text-gray-700 dark:text-gray-200">Riwayat Kosong</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Belum ada tujuan tabungan yang berhasil Anda capai.</p>
+                    <div className="text-center p-8 mt-4 bg-[var(--bg-secondary)] rounded-2xl">
+                        <i className="fa-solid fa-box-open text-4xl text-[var(--text-tertiary)] mb-4"></i>
+                        <p className="font-semibold text-[var(--text-secondary)]">Riwayat Kosong</p>
+                        <p className="text-sm text-[var(--text-tertiary)]">Belum ada tujuan tabungan yang berhasil Anda capai.</p>
                     </div>
                 )}
             </div>

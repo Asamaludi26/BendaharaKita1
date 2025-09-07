@@ -24,15 +24,15 @@ const DebtItemCard: React.FC<DebtItemCardProps> = ({ debt, onSelect }) => {
     const paidOffDateFormatted = paidOffDate?.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
 
-    const cardClasses = `p-4 rounded-xl cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1.5 border dark:border-gray-700/50 ${
+    const cardClasses = `p-4 rounded-xl cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1.5 border border-[var(--border-primary)] ${
         isPaid 
-        ? 'bg-green-50/50 dark:bg-green-900/20 border-green-500/50 dark:border-green-500/50 hover:bg-green-50 dark:hover:bg-green-900/30' 
-        : 'bg-gray-50 dark:bg-gray-800/50 hover:bg-white dark:hover:bg-gray-800'
+        ? 'bg-[var(--bg-success-subtle)] hover:bg-green-500/20' 
+        : 'bg-[var(--bg-secondary)] hover:bg-[var(--bg-interactive-hover)]'
     }`;
     
     const progressBarGradient = isPaid 
-        ? "bg-gradient-to-r from-green-400 to-emerald-500"
-        : "bg-gradient-to-r from-orange-400 to-red-500";
+        ? "bg-gradient-to-r from-[var(--color-income)] to-emerald-500"
+        : "bg-gradient-to-r from-[var(--color-debt)] to-[var(--color-expense)]";
 
     return (
         <div 
@@ -42,16 +42,16 @@ const DebtItemCard: React.FC<DebtItemCardProps> = ({ debt, onSelect }) => {
             {/* Header */}
             <div className="flex justify-between items-start mb-2">
                 <div>
-                    <p className="font-bold text-gray-800 dark:text-white">{debt.name}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{debt.source}</p>
+                    <p className="font-bold text-[var(--text-primary)]">{debt.name}</p>
+                    <p className="text-xs text-[var(--text-tertiary)]">{debt.source}</p>
                 </div>
                 {isPaid ? (
-                     <div className="flex-shrink-0 ml-2 text-xs font-bold text-green-700 bg-green-100 dark:bg-green-900/50 dark:text-green-300 px-2.5 py-1.5 rounded-full">
+                     <div className="flex-shrink-0 ml-2 text-xs font-bold text-[var(--text-success-strong)] bg-[var(--bg-success-subtle)] px-2.5 py-1.5 rounded-full">
                         <i className="fa-solid fa-check-circle mr-1.5"></i>
                         Lunas
                     </div>
                 ) : isDueSoon && (
-                    <div className="flex-shrink-0 ml-2 text-xs font-bold text-orange-500 bg-orange-100 dark:bg-orange-900/50 dark:text-orange-400 px-2 py-1 rounded-full animate-pulse">
+                    <div className="flex-shrink-0 ml-2 text-xs font-bold text-[var(--text-warning-strong)] bg-[var(--bg-warning-subtle)] px-2 py-1 rounded-full animate-pulse">
                         <i className="fa-solid fa-fire mr-1.5"></i>
                         {daysUntilDue === 0 ? 'Jatuh Tempo Hari Ini' : `Jatuh Tempo ${daysUntilDue} hari lagi`}
                     </div>
@@ -59,58 +59,58 @@ const DebtItemCard: React.FC<DebtItemCardProps> = ({ debt, onSelect }) => {
             </div>
 
             {/* Progress Section */}
-            <div className={`w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-2 overflow-hidden ${isPaid ? 'border border-green-200 dark:border-green-800' : ''}`}>
+            <div className={`w-full bg-[var(--bg-interactive)] rounded-full h-3 mb-2 overflow-hidden ${isPaid ? 'border border-green-500/20' : ''}`}>
                 <div 
                     className={`${progressBarGradient} h-full rounded-full transition-all duration-500 ease-out`} 
                     style={{ width: `${progress}%` }}
                 ></div>
             </div>
-            <div className="flex justify-between items-center text-sm text-gray-600 dark:text-gray-300 mb-4">
-                <span className={`font-semibold ${isPaid ? 'text-green-600 dark:text-green-400' : 'text-red-500/80'}`}>{progress.toFixed(1)}% Lunas</span>
+            <div className="flex justify-between items-center text-sm text-[var(--text-secondary)] mb-4">
+                <span className={`font-semibold`} style={{color: isPaid ? 'var(--color-income)' : 'var(--color-debt)'}}>{progress.toFixed(1)}% Lunas</span>
                 <div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">Sisa: </span>
-                    <span className="font-bold text-gray-800 dark:text-white">Rp {remainingAmount > 0 ? remainingAmount.toLocaleString('id-ID') : 0}</span>
+                    <span className="text-xs text-[var(--text-tertiary)]">Sisa: </span>
+                    <span className="font-bold text-[var(--text-primary)]">Rp {remainingAmount > 0 ? remainingAmount.toLocaleString('id-ID') : 0}</span>
                 </div>
             </div>
 
             {/* Details Section */}
-            <div className="border-t border-gray-200 dark:border-gray-700 pt-4 grid grid-cols-2 gap-x-4 gap-y-3">
+            <div className="border-t border-[var(--border-primary)] pt-4 grid grid-cols-2 gap-x-4 gap-y-3">
                 <div className="flex items-start space-x-2">
-                    <i className="fa-solid fa-coins text-base text-gray-400 mt-0.5"></i>
+                    <i className="fa-solid fa-coins text-base text-[var(--text-tertiary)] mt-0.5"></i>
                     <div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Total Pinjaman</p>
-                        <p className="text-sm font-bold text-gray-800 dark:text-white">Rp {debt.totalAmount.toLocaleString('id-ID')}</p>
+                        <p className="text-xs text-[var(--text-tertiary)]">Total Pinjaman</p>
+                        <p className="text-sm font-bold text-[var(--text-primary)]">Rp {debt.totalAmount.toLocaleString('id-ID')}</p>
                     </div>
                 </div>
                 <div className="flex items-start space-x-2">
-                    <i className="fa-solid fa-money-bill-wave text-base text-gray-400 mt-0.5"></i>
+                    <i className="fa-solid fa-money-bill-wave text-base text-[var(--text-tertiary)] mt-0.5"></i>
                     <div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Cicilan /bln</p>
-                        <p className="text-sm font-bold text-gray-800 dark:text-white">Rp {debt.monthlyInstallment.toLocaleString('id-ID')}</p>
+                        <p className="text-xs text-[var(--text-tertiary)]">Cicilan /bln</p>
+                        <p className="text-sm font-bold text-[var(--text-primary)]">Rp {debt.monthlyInstallment.toLocaleString('id-ID')}</p>
                     </div>
                 </div>
                 {isPaid && paidOffDateFormatted ? (
                     <div className="flex items-start space-x-2 col-span-2">
-                        <i className="fa-solid fa-calendar-check text-base text-green-400 mt-0.5"></i>
+                        <i className="fa-solid fa-calendar-check text-base text-[var(--color-income)] mt-0.5"></i>
                         <div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">Lunas Pada</p>
-                            <p className="text-sm font-bold text-gray-800 dark:text-white">{paidOffDateFormatted}</p>
+                            <p className="text-xs text-[var(--text-tertiary)]">Lunas Pada</p>
+                            <p className="text-sm font-bold text-[var(--text-primary)]">{paidOffDateFormatted}</p>
                         </div>
                     </div>
                 ) : (
                     <>
                         <div className="flex items-start space-x-2">
-                            <i className="fa-solid fa-calendar-day text-base text-gray-400 mt-0.5"></i>
+                            <i className="fa-solid fa-calendar-day text-base text-[var(--text-tertiary)] mt-0.5"></i>
                             <div>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">Jatuh Tempo</p>
-                                <p className="text-sm font-bold text-gray-800 dark:text-white">Tgl. {debt.dueDate}</p>
+                                <p className="text-xs text-[var(--text-tertiary)]">Jatuh Tempo</p>
+                                <p className="text-sm font-bold text-[var(--text-primary)]">Tgl. {debt.dueDate}</p>
                             </div>
                         </div>
                         <div className="flex items-start space-x-2">
-                            <i className="fa-solid fa-hourglass-half text-base text-gray-400 mt-0.5"></i>
+                            <i className="fa-solid fa-hourglass-half text-base text-[var(--text-tertiary)] mt-0.5"></i>
                             <div>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">Sisa Tenor</p>
-                                <p className="text-sm font-bold text-gray-800 dark:text-white">{remainingTenor > 0 ? `${remainingTenor} bulan` : 'Selesai'}</p>
+                                <p className="text-xs text-[var(--text-tertiary)]">Sisa Tenor</p>
+                                <p className="text-sm font-bold text-[var(--text-primary)]">{remainingTenor > 0 ? `${remainingTenor} bulan` : 'Selesai'}</p>
                             </div>
                         </div>
                     </>

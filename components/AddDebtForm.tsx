@@ -23,13 +23,13 @@ const ProgressBar: React.FC<{ currentStep: number }> = ({ currentStep }) => {
                 return (
                     <React.Fragment key={step.name}>
                         <div className="flex flex-col items-center text-center">
-                            <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${isCompleted ? 'bg-[var(--primary-600)] text-white' : isActive ? 'bg-gradient-to-br from-[var(--primary-500)] to-[var(--secondary-500)] text-white scale-110 shadow-lg' : 'bg-black/20 text-gray-400'}`}>
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${isCompleted ? 'bg-[var(--primary-600)] text-white' : isActive ? 'bg-gradient-to-br from-[var(--primary-500)] to-[var(--secondary-500)] text-white scale-110 shadow-lg' : 'bg-[var(--bg-interactive)] text-[var(--text-tertiary)]'}`}>
                                 <i className={`fa-solid ${step.icon} text-xl`}></i>
                             </div>
-                            <p className={`mt-2 text-xs font-bold transition-colors ${isActive || isCompleted ? 'text-[var(--primary-glow)]' : 'text-gray-400'}`}>{step.name}</p>
+                            <p className={`mt-2 text-xs font-bold transition-colors ${isActive || isCompleted ? 'text-[var(--primary-glow)]' : 'text-[var(--text-tertiary)]'}`}>{step.name}</p>
                         </div>
                         {stepNumber < steps.length && (
-                             <div className={`flex-1 h-1 mx-2 transition-colors duration-500 ${isCompleted ? 'bg-[var(--primary-600)]' : 'bg-black/20'}`}></div>
+                             <div className={`flex-1 h-1 mx-2 transition-colors duration-500 ${isCompleted ? 'bg-[var(--primary-600)]' : 'bg-[var(--bg-interactive)]'}`}></div>
                         )}
                     </React.Fragment>
                 );
@@ -145,63 +145,66 @@ const AddDebtForm: React.FC<AddDebtFormProps> = ({ onClose, onSave }) => {
     };
 
     const renderStepContent = () => {
+        const inputClasses = "w-full p-3 bg-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-md focus:ring-2 focus:ring-[var(--primary-glow)] focus:border-transparent text-[var(--text-primary)]";
+        const labelClasses = "block text-sm font-medium text-[var(--text-secondary)] mb-2";
+
         switch(step) {
             case 1: return (
                 <div className="space-y-6">
                      <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">Nama Pinjaman</label>
-                        <input type="text" placeholder="Contoh: Cicilan Motor Vario" value={formData.name} onChange={e => handleInputChange('name', e.target.value)} className="w-full p-3 bg-black/20 border border-white/10 rounded-md focus:ring-2 focus:ring-[var(--primary-glow)] focus:border-transparent" />
+                        <label className={labelClasses}>Nama Pinjaman</label>
+                        <input type="text" placeholder="Contoh: Cicilan Motor Vario" value={formData.name} onChange={e => handleInputChange('name', e.target.value)} className={inputClasses} />
                      </div>
                      <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">Sumber Pinjaman</label>
+                        <label className={labelClasses}>Sumber Pinjaman</label>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                             {popularLenders.map(lender => (
-                                <button key={lender} type="button" onClick={() => handleSourceSelection(lender)} className={`p-3 border rounded-lg text-sm font-semibold transition-all duration-200 ${formData.source === lender ? 'bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white border-transparent shadow-md' : 'bg-black/20 border-white/10 hover:border-[var(--primary-glow)]'}`}>{lender}</button>
+                                <button key={lender} type="button" onClick={() => handleSourceSelection(lender)} className={`p-3 border rounded-lg text-sm font-semibold transition-all duration-200 ${formData.source === lender ? 'bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white border-transparent shadow-md' : 'bg-[var(--bg-interactive)] text-[var(--text-secondary)] border-[var(--border-primary)] hover:border-[var(--primary-glow)]'}`}>{lender}</button>
                             ))}
-                            <button type="button" onClick={() => handleSourceSelection('Lainnya')} className={`p-3 border rounded-lg text-sm font-semibold transition-all duration-200 ${formData.source === 'Lainnya' ? 'bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white border-transparent shadow-md' : 'bg-black/20 border-white/10 hover:border-[var(--primary-glow)]'}`}>Lainnya...</button>
+                            <button type="button" onClick={() => handleSourceSelection('Lainnya')} className={`p-3 border rounded-lg text-sm font-semibold transition-all duration-200 ${formData.source === 'Lainnya' ? 'bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white border-transparent shadow-md' : 'bg-[var(--bg-interactive)] text-[var(--text-secondary)] border-[var(--border-primary)] hover:border-[var(--primary-glow)]'}`}>Lainnya...</button>
                         </div>
-                        {formData.source === 'Lainnya' && (<input type="text" placeholder="Masukkan sumber pinjaman lain" value={customSource} onChange={e => setCustomSource(e.target.value)} className="w-full p-3 mt-3 bg-black/20 border border-white/10 rounded-md focus:ring-2 focus:ring-[var(--primary-glow)] focus:border-transparent" />)}
+                        {formData.source === 'Lainnya' && (<input type="text" placeholder="Masukkan sumber pinjaman lain" value={customSource} onChange={e => setCustomSource(e.target.value)} className={`${inputClasses} mt-3`} />)}
                      </div>
                 </div>
             );
             case 2: return (
                  <div className="space-y-6">
-                     <div className="p-3 bg-black/30 rounded-lg flex items-center space-x-3">
-                         <input type="checkbox" id="existingDebt" checked={isExistingDebt} onChange={e => setIsExistingDebt(e.target.checked)} className="h-5 w-5 rounded text-[var(--primary-glow)] focus:ring-[var(--primary-glow)] cursor-pointer bg-black/20 border-white/10" />
-                         <label htmlFor="existingDebt" className="text-sm font-medium text-gray-300 cursor-pointer">Centang jika ini adalah pinjaman yang sedang berjalan.</label>
+                     <div className="p-3 bg-[var(--bg-interactive)]/50 rounded-lg flex items-center space-x-3">
+                         <input type="checkbox" id="existingDebt" checked={isExistingDebt} onChange={e => setIsExistingDebt(e.target.checked)} className="h-5 w-5 rounded text-[var(--primary-glow)] focus:ring-[var(--primary-glow)] cursor-pointer bg-[var(--bg-interactive)] border-[var(--border-primary)]" />
+                         <label htmlFor="existingDebt" className="text-sm font-medium text-[var(--text-secondary)] cursor-pointer">Centang jika ini adalah pinjaman yang sedang berjalan.</label>
                      </div>
                      {isExistingDebt ? (
                          <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-1">Sisa Pokok Pinjaman</label>
-                            <div className="relative"><span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">Rp</span><input type="text" inputMode="numeric" placeholder="10.000.000" value={formData.remainingAmount ? parseInt(formData.remainingAmount).toLocaleString('id-ID') : ''} onChange={e => handleInputChange('remainingAmount', e.target.value)} className="w-full p-3 pl-9 bg-black/20 border border-white/10 rounded-md" /></div>
+                            <label className={labelClasses}>Sisa Pokok Pinjaman</label>
+                            <div className="relative"><span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-[var(--text-tertiary)]">Rp</span><input type="text" inputMode="numeric" placeholder="10.000.000" value={formData.remainingAmount ? parseInt(formData.remainingAmount).toLocaleString('id-ID') : ''} onChange={e => handleInputChange('remainingAmount', e.target.value)} className={`${inputClasses} pl-9`} /></div>
                          </div>
                      ) : (
                          <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-1">Jumlah Total Pinjaman</label>
-                            <div className="relative"><span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">Rp</span><input type="text" inputMode="numeric" placeholder="15.000.000" value={formData.totalAmount ? parseInt(formData.totalAmount).toLocaleString('id-ID') : ''} onChange={e => handleInputChange('totalAmount', e.target.value)} className="w-full p-3 pl-9 bg-black/20 border border-white/10 rounded-md" /></div>
+                            <label className={labelClasses}>Jumlah Total Pinjaman</label>
+                            <div className="relative"><span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-[var(--text-tertiary)]">Rp</span><input type="text" inputMode="numeric" placeholder="15.000.000" value={formData.totalAmount ? parseInt(formData.totalAmount).toLocaleString('id-ID') : ''} onChange={e => handleInputChange('totalAmount', e.target.value)} className={`${inputClasses} pl-9`} /></div>
                          </div>
                      )}
                      <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-1">Cicilan per Bulan</label>
-                        <div className="relative"><span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">Rp</span><input type="text" inputMode="numeric" placeholder="800.000" value={formData.monthlyInstallment ? parseInt(formData.monthlyInstallment).toLocaleString('id-ID') : ''} onChange={e => handleInputChange('monthlyInstallment', e.target.value)} className="w-full p-3 pl-9 bg-black/20 border border-white/10 rounded-md" /></div>
+                        <label className={labelClasses}>Cicilan per Bulan</label>
+                        <div className="relative"><span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-[var(--text-tertiary)]">Rp</span><input type="text" inputMode="numeric" placeholder="800.000" value={formData.monthlyInstallment ? parseInt(formData.monthlyInstallment).toLocaleString('id-ID') : ''} onChange={e => handleInputChange('monthlyInstallment', e.target.value)} className={`${inputClasses} pl-9`} /></div>
                      </div>
                  </div>
             );
             case 3: return (
                  <div className="space-y-6">
                      <div>
-                         <label className="block text-sm font-medium text-gray-300 mb-1">Total Tenor</label>
-                         <div className="relative"><input type="text" inputMode="numeric" placeholder="12" value={formData.tenor} onChange={e => handleInputChange('tenor', e.target.value)} className="w-full p-3 pr-14 bg-black/20 border border-white/10 rounded-md text-right" /><span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400">bulan</span></div>
+                         <label className={labelClasses}>Total Tenor</label>
+                         <div className="relative"><input type="text" inputMode="numeric" placeholder="12" value={formData.tenor} onChange={e => handleInputChange('tenor', e.target.value)} className={`${inputClasses} pr-14 text-right`} /><span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-[var(--text-tertiary)]">bulan</span></div>
                      </div>
                     {isExistingDebt && (
                          <div>
-                             <label className="block text-sm font-medium text-gray-300 mb-1">Sisa Tenor</label>
-                             <div className="relative"><input type="text" inputMode="numeric" placeholder="8" value={formData.remainingTenor} onChange={e => handleInputChange('remainingTenor', e.target.value)} className="w-full p-3 pr-14 bg-black/20 border border-white/10 rounded-md text-right" /><span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400">bulan</span></div>
+                             <label className={labelClasses}>Sisa Tenor</label>
+                             <div className="relative"><input type="text" inputMode="numeric" placeholder="8" value={formData.remainingTenor} onChange={e => handleInputChange('remainingTenor', e.target.value)} className={`${inputClasses} pr-14 text-right`} /><span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-[var(--text-tertiary)]">bulan</span></div>
                          </div>
                     )}
                       <div>
-                         <label className="block text-sm font-medium text-gray-300 mb-1">Tanggal Jatuh Tempo</label>
-                        <div className="relative"><span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">Setiap tgl.</span><input type="text" inputMode="numeric" min="1" max="31" placeholder="10" value={formData.dueDate} onChange={e => handleInputChange('dueDate', e.target.value)} className="w-full p-3 pl-20 bg-black/20 border border-white/10 rounded-md text-center" /></div>
+                         <label className={labelClasses}>Tanggal Jatuh Tempo</label>
+                        <div className="relative"><span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-[var(--text-tertiary)]">Setiap tgl.</span><input type="text" inputMode="numeric" min="1" max="31" placeholder="10" value={formData.dueDate} onChange={e => handleInputChange('dueDate', e.target.value)} className={`${inputClasses} pl-20 text-center`} /></div>
                      </div>
                  </div>
             );
@@ -210,20 +213,20 @@ const AddDebtForm: React.FC<AddDebtFormProps> = ({ onClose, onSave }) => {
     }
 
     return (
-        <div className="bg-gray-800/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-6 w-full max-w-lg">
+        <div className="bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-2xl p-6 w-full max-w-lg">
              <header className="flex items-center justify-between space-x-4 mb-6">
                 <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 rounded-xl bg-black/30 flex items-center justify-center border border-white/10 flex-shrink-0">
-                      <i className="fa-solid fa-wallet text-2xl text-orange-300"></i>
+                    <div className="w-12 h-12 rounded-xl bg-[var(--bg-interactive)] flex items-center justify-center border border-[var(--border-primary)] flex-shrink-0">
+                      <i className="fa-solid fa-wallet text-2xl" style={{color: 'var(--color-debt)'}}></i>
                     </div>
                     <div>
-                      <h1 className="text-xl font-bold text-white">Catat Pinjaman Baru</h1>
-                      <p className="text-sm text-gray-400">Langkah {step} dari 3</p>
+                      <h1 className="text-xl font-bold text-[var(--text-primary)]">Catat Pinjaman Baru</h1>
+                      <p className="text-sm text-[var(--text-tertiary)]">Langkah {step} dari 3</p>
                     </div>
                 </div>
                 <button 
                     onClick={onClose} 
-                    className="w-8 h-8 rounded-full bg-black/20 text-gray-400 hover:bg-white/10 hover:text-white flex items-center justify-center transition-colors"
+                    className="w-8 h-8 rounded-full bg-[var(--bg-interactive)] text-[var(--text-tertiary)] hover:bg-[var(--bg-interactive-hover)] hover:text-[var(--text-primary)] flex items-center justify-center transition-colors"
                     aria-label="Close"
                 >
                     <i className="fa-solid fa-times text-lg"></i>
@@ -238,7 +241,7 @@ const AddDebtForm: React.FC<AddDebtFormProps> = ({ onClose, onSave }) => {
                 </div>
 
                 <div className="mt-8 flex items-center justify-between">
-                    <button type="button" onClick={handlePrev} disabled={step === 1} className="bg-black/20 border border-white/10 text-gray-300 font-bold py-3 px-6 rounded-full disabled:opacity-50 transition-opacity">
+                    <button type="button" onClick={handlePrev} disabled={step === 1} className="bg-[var(--bg-interactive)] border border-[var(--border-primary)] text-[var(--text-secondary)] font-bold py-3 px-6 rounded-full disabled:opacity-50 transition-opacity">
                         Kembali
                     </button>
                     {step < 3 ? (
@@ -246,7 +249,7 @@ const AddDebtForm: React.FC<AddDebtFormProps> = ({ onClose, onSave }) => {
                             Lanjut
                         </button>
                     ) : (
-                         <button type="submit" disabled={!isStepValid} className="w-auto bg-gradient-to-r from-[var(--secondary-600)] to-[var(--primary-500)] text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300">
+                         <button type="submit" disabled={!isStepValid} className="w-auto bg-gradient-to-r from-[var(--color-debt)] to-[var(--color-expense)] text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300">
                             Simpan Pinjaman
                         </button>
                     )}

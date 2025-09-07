@@ -17,10 +17,11 @@ const SummaryCard: React.FC<SummaryCardProps> = ({ data, isComparisonMode }) => 
   const progressPercentage = target ? (amount / target) * 100 : 0;
   
   const mainColor = `var(--color-${color})`;
+  const changeColor = isPositiveChange ? 'var(--color-income)' : 'var(--color-expense)';
 
   return (
     <div 
-        className="relative bg-black/20 backdrop-blur-lg border border-white/10 rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 group"
+        className="relative bg-[var(--bg-secondary)] backdrop-blur-lg border border-[var(--border-primary)] rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 group"
     >
         {/* Glow effect */}
         <div 
@@ -33,29 +34,29 @@ const SummaryCard: React.FC<SummaryCardProps> = ({ data, isComparisonMode }) => 
         <div className="relative z-10 flex flex-col justify-between h-full">
             <div>
                 <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-medium text-gray-400">{title}</p>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center bg-black/30`} style={{boxShadow: `0 0 10px ${mainColor}80`}}>
+                <p className="text-sm font-medium text-[var(--text-tertiary)]">{title}</p>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center bg-[var(--bg-primary)]`} style={{boxShadow: `0 0 10px ${mainColor}80`}}>
                     <Icon className={`w-5 h-5`} style={{ color: mainColor }}/>
                 </div>
                 </div>
                 {isComparisonMode && target ? (
                 <div>
-                    <p className="text-lg font-bold text-white">{formatCurrency(amount)}</p>
-                    <p className="text-xs text-gray-400">/ {formatCurrency(target)}</p>
+                    <p className="text-lg font-bold text-[var(--text-primary)]">{formatCurrency(amount)}</p>
+                    <p className="text-xs text-[var(--text-tertiary)]">/ {formatCurrency(target)}</p>
                 </div>
                 ) : (
-                <p className="text-2xl font-bold text-white">{formatCurrency(amount)}</p>
+                <p className="text-2xl font-bold text-[var(--text-primary)]">{formatCurrency(amount)}</p>
                 )}
             </div>
             <div className="mt-2">
                 {isComparisonMode && target ? (
                 <div className="mt-4">
-                    <div className="w-full bg-gray-700/50 rounded-full h-1.5">
+                    <div className="w-full bg-[var(--bg-interactive)] rounded-full h-1.5">
                     <div className="h-1.5 rounded-full" style={{ width: `${Math.min(progressPercentage, 100)}%`, backgroundColor: mainColor, boxShadow: `0 0 8px ${mainColor}` }}></div>
                     </div>
                 </div>
                 ) : (
-                <div className={`text-xs font-medium flex items-center mt-2 ${isPositiveChange ? 'text-green-400' : 'text-red-400'}`}>
+                <div className={`text-xs font-medium flex items-center mt-2`} style={{color: changeColor}}>
                     {percentageChange !== 0 && (
                         <i className={`fa-solid fa-arrow-${percentageChange > 0 ? 'up' : 'down'} mr-1`}></i>
                     )}

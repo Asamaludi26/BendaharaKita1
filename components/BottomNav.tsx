@@ -20,7 +20,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeView, setView }) => {
 
   return (
     // The container is made taller to accommodate the pop-out effect
-    <div className="fixed bottom-0 left-0 right-0 h-24 bg-black/30 backdrop-blur-xl flex z-50 border-t border-white/10">
+    <div className="fixed bottom-0 left-0 right-0 h-24 bg-[var(--bg-secondary-translucent)] backdrop-blur-xl flex z-50 border-t border-[var(--border-primary)]">
       {navItems.map((item, index) => {
         const isActive = activeIndex === index;
         return (
@@ -34,13 +34,14 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeView, setView }) => {
             <div
               className={`flex flex-col items-center justify-center transition-all duration-500 ease-[cubic-bezier(0.25,1.5,0.5,1)] ${
                 isActive
-                  ? 'w-16 h-16 rounded-2xl bg-gradient-to-br from-[var(--primary-500)] to-[var(--secondary-500)] -translate-y-8 shadow-lg shadow-[var(--primary-glow)]/30'
+                  ? 'w-16 h-16 rounded-2xl -translate-y-8 shadow-lg shadow-[var(--primary-glow)]/30'
                   : 'w-12 h-12'
               }`}
+              style={isActive ? { backgroundImage: 'var(--gradient-active-nav)' } : {}}
             >
               <item.Icon
                 className={`transition-all duration-300 ${
-                  isActive ? 'w-8 h-8 text-white' : 'w-7 h-7 text-gray-400 group-hover:text-gray-200'
+                  isActive ? 'w-8 h-8 text-white' : `w-7 h-7 text-[var(--text-tertiary)] group-hover:text-[var(--text-secondary)]`
                 }`}
               />
             </div>
@@ -48,7 +49,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeView, setView }) => {
             <span
                 className={`absolute bottom-2 text-xs font-semibold transition-all duration-300 ${
                   isActive
-                    ? 'opacity-100 text-white font-bold'
+                    ? 'opacity-100 text-[var(--text-primary)] font-bold'
                     : 'opacity-0 pointer-events-none'
                 }`}
               >

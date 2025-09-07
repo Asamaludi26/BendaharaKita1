@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { MonthlyTarget, View } from '../types';
 import { AccordionSection } from './AccordionSection';
@@ -75,9 +76,9 @@ const AddTransaction: React.FC<AddTransactionProps> = ({ setView, onSave, monthl
   if (!monthlyTarget) {
     return (
       <div className="p-4 md:p-6 flex flex-col items-center justify-center h-full text-center">
-         <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-2xl max-w-sm">
-             <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">Target Bulanan Belum Dibuat</h2>
-             <p className="text-gray-600 dark:text-gray-300 mb-6">Anda harus membuat "Target Bulanan" terlebih dahulu sebelum bisa mengisi Laporan Aktual.</p>
+         <div className="bg-[var(--bg-secondary)] p-8 rounded-2xl shadow-2xl max-w-sm">
+             <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-4">Target Bulanan Belum Dibuat</h2>
+             <p className="text-[var(--text-secondary)] mb-6">Anda harus membuat "Target Bulanan" terlebih dahulu sebelum bisa mengisi Laporan Aktual.</p>
              <button
                 type="button"
                 onClick={() => setView(View.ADD_TARGET)}
@@ -106,23 +107,23 @@ const AddTransaction: React.FC<AddTransactionProps> = ({ setView, onSave, monthl
       <AccordionSection title={title} isOpen={sectionKey === 'pendapatan'} headerClassName={`border-l-4 ${sectionAccentColors[sectionKey]}`}>
         <div className="space-y-3">
           <div className="grid grid-cols-12 gap-2 px-2 items-center">
-            <label className="col-span-5 text-xs font-semibold text-gray-500 dark:text-gray-400">ITEM</label>
-            <label className="col-span-3 text-xs font-semibold text-gray-500 dark:text-gray-400 text-right">TARGET</label>
-            <label className="col-span-1 text-xs font-semibold text-gray-500 dark:text-gray-400 text-center">
+            <label className="col-span-5 text-xs font-semibold text-[var(--text-tertiary)]">ITEM</label>
+            <label className="col-span-3 text-xs font-semibold text-[var(--text-tertiary)] text-right">TARGET</label>
+            <label className="col-span-1 text-xs font-semibold text-[var(--text-tertiary)] text-center">
                 <i className="fa-solid fa-check"></i>
             </label>
-            <label className="col-span-3 text-xs font-semibold text-gray-500 dark:text-gray-400 text-right">AKTUAL</label>
+            <label className="col-span-3 text-xs font-semibold text-[var(--text-tertiary)] text-right">AKTUAL</label>
           </div>
           {monthlyTarget[sectionKey].map((field) => (
             <div key={field.id} className="grid grid-cols-12 gap-2 items-center">
-              <span className="col-span-5 p-2 bg-gray-100 dark:bg-gray-700/50 border border-transparent rounded-md text-gray-600 dark:text-gray-300 truncate">{field.name}</span>
-              <span className="col-span-3 p-2 bg-gray-100 dark:bg-gray-700/50 border border-transparent rounded-md text-gray-600 dark:text-gray-300 text-right">Rp {parseInt(field.amount || '0').toLocaleString('id-ID')}</span>
+              <span className="col-span-5 p-2 bg-[var(--bg-interactive)] border border-transparent rounded-md text-[var(--text-secondary)] truncate">{field.name}</span>
+              <span className="col-span-3 p-2 bg-[var(--bg-interactive)] border border-transparent rounded-md text-[var(--text-secondary)] text-right">Rp {parseInt(field.amount || '0').toLocaleString('id-ID')}</span>
               <div className="col-span-1 flex justify-center relative group">
                 <input
                     type="checkbox"
                     checked={checkedItems.has(field.id)}
                     onChange={(e) => handleCheckboxChange(field.id, field.amount, e.target.checked)}
-                    className="w-5 h-5 rounded text-[var(--primary-500)] bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:ring-[var(--primary-500)] cursor-pointer"
+                    className="w-5 h-5 rounded text-[var(--primary-500)] bg-[var(--bg-interactive)] border-[var(--border-primary)] focus:ring-[var(--primary-500)] cursor-pointer"
                 />
                 <div className="absolute bottom-full mb-2 w-max max-w-xs bg-gray-900 text-white text-center text-xs rounded-lg py-1 px-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg z-10 invisible group-hover:visible">
                     Centang jika aktual sama dengan target
@@ -135,15 +136,15 @@ const AddTransaction: React.FC<AddTransactionProps> = ({ setView, onSave, monthl
                 placeholder="0"
                 value={(actualsData[field.id] && parseInt(actualsData[field.id])) ? parseInt(actualsData[field.id] || '0').toLocaleString('id-ID') : actualsData[field.id]}
                 onChange={(e) => handleActualChange(field.id, e.target.value, field.amount)}
-                className="col-span-3 p-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-[var(--primary-500)] focus:border-transparent text-right"
+                className="col-span-3 p-2 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-md focus:ring-2 focus:ring-[var(--primary-500)] focus:border-transparent text-right text-[var(--text-primary)]"
               />
             </div>
           ))}
-          <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-             <span className="font-bold text-gray-700 dark:text-gray-200">TOTAL</span>
+          <div className="flex justify-between items-center mt-4 pt-4 border-t border-[var(--border-primary)]">
+             <span className="font-bold text-[var(--text-primary)]">TOTAL</span>
              <div className="flex flex-col items-end">
                 <div className="flex items-center space-x-4">
-                    <span className="text-lg text-gray-600 dark:text-gray-300 font-bold">Rp {totalTarget.toLocaleString('id-ID')}</span>
+                    <span className="text-lg text-[var(--text-secondary)] font-bold">Rp {totalTarget.toLocaleString('id-ID')}</span>
                     <span className={`text-lg font-bold ${totalColorClass}`}>Rp {totalActual.toLocaleString('id-ID')}</span>
                 </div>
                 {difference !== 0 && (
@@ -161,24 +162,24 @@ const AddTransaction: React.FC<AddTransactionProps> = ({ setView, onSave, monthl
   return (
     <div className="p-4 md:p-6 space-y-6">
       <header className="flex items-center space-x-4">
-        <button onClick={() => setView(View.REPORT)} className="text-gray-500 dark:text-gray-400">
+        <button onClick={() => setView(View.REPORT)} className="text-[var(--text-secondary)]">
             <i className="fa-solid fa-arrow-left text-xl"></i>
         </button>
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Laporan Aktual</h1>
+        <h1 className="text-2xl font-bold text-[var(--text-primary)]">Laporan Aktual</h1>
       </header>
       
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-6">
             <div>
-                <h2 className="text-lg font-semibold text-gray-500 dark:text-gray-400 mb-2 border-b border-gray-200 dark:border-gray-700 pb-2">1. Pendapatan Bulanan</h2>
+                <h2 className="text-lg font-semibold text-[var(--text-tertiary)] mb-2 border-b border-[var(--border-primary)] pb-2">1. Pendapatan Bulanan</h2>
                 {renderSection('pendapatan', 'Rincian Pendapatan')}
             </div>
             <div>
-                <h2 className="text-lg font-semibold text-gray-500 dark:text-gray-400 mb-2 border-b border-gray-200 dark:border-gray-700 pb-2">2. Rincian Utang Bulanan (Pembayaran Cicilan)</h2>
+                <h2 className="text-lg font-semibold text-[var(--text-tertiary)] mb-2 border-b border-[var(--border-primary)] pb-2">2. Rincian Utang Bulanan (Pembayaran Cicilan)</h2>
                 {renderSection('cicilanUtang', 'Rincian Cicilan Utang')}
             </div>
             <div>
-                <h2 className="text-lg font-semibold text-gray-500 dark:text-gray-400 mb-2 border-b border-gray-200 dark:border-gray-700 pb-2">3. Rincian Pengeluaran Bulanan (Non-Utang)</h2>
+                <h2 className="text-lg font-semibold text-[var(--text-tertiary)] mb-2 border-b border-[var(--border-primary)] pb-2">3. Rincian Pengeluaran Bulanan (Non-Utang)</h2>
                 <div className="space-y-3">
                   {renderSection('pengeluaranUtama', 'Pengeluaran Utama')}
                   {renderSection('kebutuhan', 'Kebutuhan')}
@@ -187,7 +188,7 @@ const AddTransaction: React.FC<AddTransactionProps> = ({ setView, onSave, monthl
                 </div>
             </div>
             <div>
-                <h2 className="text-lg font-semibold text-gray-500 dark:text-gray-400 mb-2 border-b border-gray-200 dark:border-gray-700 pb-2">4. Rincian Tabungan Bulanan</h2>
+                <h2 className="text-lg font-semibold text-[var(--text-tertiary)] mb-2 border-b border-[var(--border-primary)] pb-2">4. Rincian Tabungan Bulanan</h2>
                 {renderSection('tabungan', 'Tujuan Tabungan')}
             </div>
         </div>

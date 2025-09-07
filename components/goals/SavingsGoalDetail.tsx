@@ -9,13 +9,13 @@ interface SavingsGoalDetailProps {
 }
 
 const StatCard: React.FC<{ icon: string; label: string; value: string; color: string }> = ({ icon, label, value, color }) => (
-    <div className="bg-black/20 border border-white/10 rounded-xl p-4 flex items-center space-x-4">
+    <div className="bg-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-xl p-4 flex items-center space-x-4">
         <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white text-xl`} style={{backgroundColor: color, boxShadow: `0 0 15px ${color}`}}>
             <i className={`fa-solid ${icon}`}></i>
         </div>
         <div>
-            <p className="text-sm text-gray-400">{label}</p>
-            <p className="text-lg font-bold text-white">{value}</p>
+            <p className="text-sm text-[var(--text-tertiary)]">{label}</p>
+            <p className="text-lg font-bold text-[var(--text-primary)]">{value}</p>
         </div>
     </div>
 );
@@ -28,11 +28,9 @@ const RadialProgress: React.FC<{ percentage: number }> = ({ percentage }) => {
         return () => clearTimeout(timer);
     }, [percentage]);
 
-    // Corrected SVG Geometry for perfect centering
     const viewBoxSize = 200;
     const strokeWidth = 12;
     const center = viewBoxSize / 2;
-    // Radius is center minus half the stroke width to prevent clipping
     const radius = center - (strokeWidth / 2);
     const circumference = 2 * Math.PI * radius;
     const strokeDashoffset = circumference - (progress / 100) * circumference;
@@ -46,7 +44,7 @@ const RadialProgress: React.FC<{ percentage: number }> = ({ percentage }) => {
                 className="transform -rotate-90"
             >
                 <circle
-                    stroke="rgba(255,255,255,0.1)"
+                    stroke="var(--bg-interactive)"
                     fill="transparent"
                     strokeWidth={strokeWidth}
                     r={radius}
@@ -72,7 +70,7 @@ const RadialProgress: React.FC<{ percentage: number }> = ({ percentage }) => {
                 </defs>
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-4xl font-bold text-white drop-shadow-lg">{Math.round(progress)}%</span>
+                <span className="text-4xl font-bold text-[var(--text-primary)] drop-shadow-lg">{Math.round(progress)}%</span>
             </div>
         </div>
     );
@@ -126,23 +124,23 @@ const SavingsGoalDetail: React.FC<SavingsGoalDetailProps> = ({ goal, setView, on
     <>
         <div className="p-4 md:p-6 space-y-6 animate-fade-in">
             <header className="flex items-center space-x-4">
-                <button onClick={() => setView(View.MANAGEMENT)} className="w-10 h-10 rounded-full bg-black/20 text-gray-300 flex items-center justify-center transition-colors shadow-sm hover:bg-white/10 border border-white/10">
+                <button onClick={() => setView(View.MANAGEMENT)} className="w-10 h-10 rounded-full bg-[var(--bg-interactive)] text-[var(--text-tertiary)] flex items-center justify-center transition-colors shadow-sm hover:bg-[var(--bg-interactive-hover)] border border-[var(--border-primary)]">
                     <i className="fa-solid fa-arrow-left"></i>
                 </button>
                 <div>
-                    <h1 className="text-2xl font-bold text-white">{goal.name}</h1>
-                    <p className="text-sm text-gray-400">{goal.source}</p>
+                    <h1 className="text-2xl font-bold text-[var(--text-primary)]">{goal.name}</h1>
+                    <p className="text-sm text-[var(--text-tertiary)]">{goal.source}</p>
                 </div>
             </header>
 
-            <div className="bg-black/20 backdrop-blur-lg border border-white/10 rounded-2xl p-6 flex flex-col items-center">
+            <div className="bg-[var(--bg-secondary)] backdrop-blur-lg border border-[var(--border-primary)] rounded-2xl p-6 flex flex-col items-center">
                 <RadialProgress percentage={progress} />
                 <div className="text-center mt-4">
-                    <p className="text-gray-400">Terkumpul</p>
-                    <p className="text-3xl font-bold text-[var(--color-income)]" style={{filter: 'drop-shadow(0 0 8px var(--color-income))'}}>
+                    <p className="text-[var(--text-tertiary)]">Terkumpul</p>
+                    <p className="text-3xl font-bold" style={{color: 'var(--color-income)', filter: 'drop-shadow(0 0 8px var(--color-income))'}}>
                         Rp {goal.currentAmount.toLocaleString('id-ID')}
                     </p>
-                    <p className="text-sm text-gray-500">dari Rp {goal.targetAmount.toLocaleString('id-ID')}</p>
+                    <p className="text-sm text-[var(--text-tertiary)]">dari Rp {goal.targetAmount.toLocaleString('id-ID')}</p>
                 </div>
             </div>
 
@@ -165,22 +163,22 @@ const SavingsGoalDetail: React.FC<SavingsGoalDetailProps> = ({ goal, setView, on
             </button>
 
             <div>
-                <h3 className="text-xl font-bold text-white mb-4">Riwayat Kontribusi</h3>
-                <div className="bg-black/20 backdrop-blur-lg border border-white/10 rounded-2xl p-4 max-h-60 overflow-y-auto">
+                <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">Riwayat Kontribusi</h3>
+                <div className="bg-[var(--bg-secondary)] backdrop-blur-lg border border-[var(--border-primary)] rounded-2xl p-4 max-h-60 overflow-y-auto">
                     {sortedContributions.length > 0 ? (
                         <ul className="space-y-3">
                             {sortedContributions.map((c, i) => (
-                                <li key={i} className="flex justify-between items-center bg-black/20 p-3 rounded-lg">
+                                <li key={i} className="flex justify-between items-center bg-[var(--bg-interactive)] p-3 rounded-lg">
                                     <div>
-                                        <p className="font-semibold text-gray-300">Setoran Dana</p>
-                                        <p className="text-xs text-gray-400">{new Date(c.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+                                        <p className="font-semibold text-[var(--text-secondary)]">Setoran Dana</p>
+                                        <p className="text-xs text-[var(--text-tertiary)]">{new Date(c.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
                                     </div>
-                                    <p className="font-bold text-[var(--color-income)]">+Rp {c.amount.toLocaleString('id-ID')}</p>
+                                    <p className="font-bold" style={{color: 'var(--color-income)'}}>+Rp {c.amount.toLocaleString('id-ID')}</p>
                                 </li>
                             ))}
                         </ul>
                     ) : (
-                        <p className="text-center text-gray-400 py-8">Belum ada kontribusi.</p>
+                        <p className="text-center text-[var(--text-tertiary)] py-8">Belum ada kontribusi.</p>
                     )}
                 </div>
             </div>
@@ -188,19 +186,19 @@ const SavingsGoalDetail: React.FC<SavingsGoalDetailProps> = ({ goal, setView, on
         </div>
 
         <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-            <div className="relative bg-gray-800/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-xl p-6">
-                 <h3 className="text-xl font-bold text-white mb-4">Tambah Dana ke "{goal.name}"</h3>
+            <div className="relative bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-xl p-6">
+                 <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">Tambah Dana ke "{goal.name}"</h3>
                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Jumlah Dana</label>
+                    <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Jumlah Dana</label>
                     <div className="relative">
-                        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">Rp</span>
+                        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-[var(--text-tertiary)]">Rp</span>
                         <input
                             type="text"
                             inputMode="numeric"
                             placeholder="0"
                             value={contributionAmount ? parseInt(contributionAmount).toLocaleString('id-ID') : ''}
                             onChange={(e) => setContributionAmount(e.target.value.replace(/[^0-9]/g, ''))}
-                            className="w-full p-3 pl-9 bg-black/20 border border-white/10 rounded-md focus:ring-2 focus:ring-[var(--primary-glow)] focus:border-transparent text-right"
+                            className="w-full p-3 pl-9 bg-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-md focus:ring-2 focus:ring-[var(--primary-glow)] focus:border-transparent text-right text-[var(--text-primary)]"
                             autoFocus
                         />
                     </div>
@@ -209,7 +207,7 @@ const SavingsGoalDetail: React.FC<SavingsGoalDetailProps> = ({ goal, setView, on
                     <button
                         type="button"
                         onClick={() => setIsModalOpen(false)}
-                        className="w-full bg-black/30 border border-white/10 text-gray-300 font-semibold py-3 px-6 rounded-full hover:bg-black/50 transition-colors"
+                        className="w-full bg-[var(--bg-interactive)] border border-[var(--border-primary)] text-[var(--text-secondary)] font-semibold py-3 px-6 rounded-full hover:bg-[var(--bg-interactive-hover)] transition-colors"
                     >
                         Batal
                     </button>

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { DebtItem, SavingsGoal } from '../../types';
 import Modal from '../Modal';
@@ -24,13 +23,15 @@ const ProgressBar: React.FC<{ currentStep: number }> = ({ currentStep }) => {
                 return (
                     <React.Fragment key={step.name}>
                         <div className="flex flex-col items-center text-center">
-                            <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${isCompleted ? 'bg-[var(--primary-600)] text-white' : isActive ? 'bg-gradient-to-br from-[var(--primary-500)] to-[var(--secondary-500)] text-white scale-110 shadow-lg' : 'bg-black/20 text-gray-400'}`}>
-                                <i className={`fa-solid ${step.icon} text-xl`}></i>
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${isCompleted ? 'bg-[var(--primary-600)] text-white' : isActive ? 'scale-110 shadow-lg' : 'bg-[var(--bg-interactive)] text-[var(--text-secondary)]'}`}
+                                 style={isActive ? { backgroundImage: 'var(--gradient-active-nav)' } : {}}
+                            >
+                                <i className={`fa-solid ${step.icon} text-xl ${isActive ? 'text-white' : ''}`}></i>
                             </div>
-                            <p className={`mt-2 text-xs font-bold transition-colors ${isActive || isCompleted ? 'text-[var(--primary-glow)]' : 'text-gray-400'}`}>{step.name}</p>
+                            <p className={`mt-2 text-xs font-bold transition-colors ${isActive || isCompleted ? 'text-[var(--primary-glow)]' : 'text-[var(--text-tertiary)]'}`}>{step.name}</p>
                         </div>
                         {stepNumber < steps.length && (
-                             <div className={`flex-1 h-1 mx-2 transition-colors duration-500 ${isCompleted ? 'bg-[var(--primary-600)]' : 'bg-black/20'}`}></div>
+                             <div className={`flex-1 h-1 mx-2 transition-colors duration-500 ${isCompleted ? 'bg-[var(--primary-600)]' : 'bg-[var(--bg-interactive)]'}`}></div>
                         )}
                     </React.Fragment>
                 );
@@ -127,8 +128,6 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
                 targetAmount: Number(sg.targetAmount) || 0,
                 currentAmount: currentAmount,
                 deadline: sg.deadline ? new Date(sg.deadline).toISOString() : new Date().toISOString(),
-                // FIX: Add missing 'contributions' property to satisfy the SavingsGoal type.
-                // Create a synthetic contribution from the initial currentAmount.
                 contributions: currentAmount > 0 ? [{ date: new Date().toISOString(), amount: currentAmount }] : [],
             };
         }).filter(sg => sg.name !== 'Tabungan Tanpa Nama' && sg.targetAmount > 0);
@@ -156,6 +155,10 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
     };
 
     const renderStep = () => {
+        const inputClasses = "w-full p-2 bg-[var(--bg-interactive)] text-sm rounded-md border border-[var(--border-primary)] text-[var(--text-primary)]";
+        const labelClasses = "text-xs font-medium text-[var(--text-tertiary)] mb-1.5";
+        const buttonClasses = (isSelected: boolean) => `p-2 border rounded-lg text-xs font-semibold truncate transition-all duration-200 ${isSelected ? 'bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white border-transparent shadow-md' : 'bg-[var(--bg-interactive)] text-[var(--text-secondary)] border-[var(--border-primary)] hover:border-[var(--primary-glow)]'}`;
+        
         switch (step) {
             case 1:
                 return (
@@ -163,87 +166,87 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
                         <div className="flex items-center justify-center h-24 w-24 rounded-full bg-gradient-to-br from-[var(--primary-400)] to-[var(--secondary-500)] shadow-lg shadow-indigo-500/30 mx-auto mb-6">
                             <i className="fa-solid fa-rocket text-5xl text-white"></i>
                         </div>
-                        <h3 className="text-2xl font-bold text-white mb-2">Selamat Datang!</h3>
-                        <p className="text-gray-300 mb-8">Mari siapkan kondisi keuangan Anda saat ini agar kami dapat membantu secara akurat. Proses ini hanya butuh beberapa menit.</p>
+                        <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-2">Selamat Datang!</h3>
+                        <p className="text-[var(--text-secondary)] mb-8">Mari siapkan kondisi keuangan Anda saat ini agar kami dapat membantu secara akurat. Proses ini hanya butuh beberapa menit.</p>
                         <button onClick={() => setStep(2)} className="w-full bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all">Mulai</button>
                     </div>
                 );
             case 2:
                 return (
                     <div>
-                        <h3 className="text-xl font-bold text-white mb-4">Langkah 1: Catat Saldo Tabungan</h3>
+                        <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">Langkah 1: Catat Saldo Tabungan</h3>
                         <div className="space-y-4 max-h-[20rem] overflow-y-auto p-1 pr-3">
                              {savingsGoals.length === 0 && (
-                                <p className="text-center text-sm text-gray-400 py-4">Tidak ada tabungan? Klik tombol di bawah untuk lanjut.</p>
+                                <p className="text-center text-sm text-[var(--text-tertiary)] py-4">Tidak ada tabungan? Klik tombol di bawah untuk lanjut.</p>
                             )}
                             {savingsGoals.map((goal, index) => (
-                                <div key={goal.id} className="p-4 bg-black/20 rounded-xl space-y-3 relative">
-                                    <button onClick={() => handleRemoveSavingsGoal(goal.id!)} className="absolute top-2 right-2 text-gray-400 hover:text-red-500 w-6 h-6 rounded-full flex items-center justify-center"><i className="fa-solid fa-times"></i></button>
-                                    <input type="text" placeholder="Nama Tujuan (misal: Dana Darurat)" className="w-full p-2 bg-black/20 text-sm rounded-md border border-white/10" onChange={e => handleSavingsChange(index, 'name', e.target.value)} />
+                                <div key={goal.id} className="p-4 bg-[var(--bg-interactive)] rounded-xl space-y-3 relative">
+                                    <button onClick={() => handleRemoveSavingsGoal(goal.id!)} className="absolute top-2 right-2 text-[var(--text-tertiary)] hover:text-[var(--color-expense)] w-6 h-6 rounded-full flex items-center justify-center"><i className="fa-solid fa-times"></i></button>
+                                    <input type="text" placeholder="Nama Tujuan (misal: Dana Darurat)" className={inputClasses} onChange={e => handleSavingsChange(index, 'name', e.target.value)} />
                                     
                                     <div>
-                                        <p className="text-xs font-medium text-gray-400 mb-1.5">Sumber Dana</p>
+                                        <p className={labelClasses}>Sumber Dana</p>
                                         <div className="grid grid-cols-3 gap-2">
                                             {popularSavers.map(saver => (
-                                                <button key={saver} type="button" onClick={() => handleSavingsChange(index, 'source', saver)} className={`p-2 border rounded-lg text-xs font-semibold truncate transition-all duration-200 ${goal.source === saver ? 'bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white border-transparent shadow-md' : 'bg-black/20 border-white/10 hover:border-[var(--primary-glow)]'}`}>{saver}</button>
+                                                <button key={saver} type="button" onClick={() => handleSavingsChange(index, 'source', saver)} className={buttonClasses(goal.source === saver)}>{saver}</button>
                                             ))}
-                                            <button type="button" onClick={() => handleSavingsChange(index, 'source', 'Lainnya')} className={`p-2 border rounded-lg text-xs font-semibold transition-all duration-200 ${goal.source === 'Lainnya' ? 'bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white border-transparent shadow-md' : 'bg-black/20 border-white/10 hover:border-[var(--primary-glow)]'}`}>Lainnya...</button>
+                                            <button type="button" onClick={() => handleSavingsChange(index, 'source', 'Lainnya')} className={buttonClasses(goal.source === 'Lainnya')}>Lainnya...</button>
                                         </div>
-                                        {goal.source === 'Lainnya' && (<input type="text" placeholder="Masukkan sumber dana lain" className="w-full p-2 mt-2 bg-black/20 text-sm rounded-md border border-white/10" onChange={e => handleSavingsChange(index, 'source', e.target.value)} />)}
+                                        {goal.source === 'Lainnya' && (<input type="text" placeholder="Masukkan sumber dana lain" className={`${inputClasses} mt-2`} onChange={e => handleSavingsChange(index, 'source', e.target.value)} />)}
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-2">
-                                        <input type="text" inputMode="numeric" placeholder="Target Dana (Rp)" className="w-full p-2 bg-black/20 text-sm rounded-md border border-white/10" value={(goal.targetAmount || '') && parseInt(String(goal.targetAmount)).toLocaleString('id-ID')} onChange={e => handleSavingsChange(index, 'targetAmount', e.target.value)} />
-                                        <input type="text" inputMode="numeric" placeholder="Dana Terkumpul (Rp)" className="w-full p-2 bg-black/20 text-sm rounded-md border border-white/10" value={(goal.currentAmount || '') && parseInt(String(goal.currentAmount)).toLocaleString('id-ID')} onChange={e => handleSavingsChange(index, 'currentAmount', e.target.value)} />
+                                        <input type="text" inputMode="numeric" placeholder="Target Dana (Rp)" className={inputClasses} value={(goal.targetAmount || '') && parseInt(String(goal.targetAmount)).toLocaleString('id-ID')} onChange={e => handleSavingsChange(index, 'targetAmount', e.target.value)} />
+                                        <input type="text" inputMode="numeric" placeholder="Dana Terkumpul (Rp)" className={inputClasses} value={(goal.currentAmount || '') && parseInt(String(goal.currentAmount)).toLocaleString('id-ID')} onChange={e => handleSavingsChange(index, 'currentAmount', e.target.value)} />
                                     </div>
                                     <div>
-                                        <p className="text-xs font-medium text-gray-400 mb-1.5">Tanggal Target Menabung</p>
-                                        <input type="date" className="w-full p-2 bg-black/20 text-sm rounded-md border border-white/10" onChange={e => handleSavingsChange(index, 'deadline', e.target.value)} />
+                                        <p className={labelClasses}>Tanggal Target Menabung</p>
+                                        <input type="date" className={inputClasses} onChange={e => handleSavingsChange(index, 'deadline', e.target.value)} />
                                     </div>
                                 </div>
                             ))}
                         </div>
-                        <button onClick={handleAddSavingsGoal} className="text-sm font-semibold text-[var(--primary-glow)] hover:text-white mt-4 w-full text-left p-2 rounded-lg hover:bg-white/5 transition-colors"><i className="fa-solid fa-plus mr-2"></i>Tambah Tujuan Lain</button>
+                        <button onClick={handleAddSavingsGoal} className="text-sm font-semibold text-[var(--primary-glow)] hover:text-[var(--text-primary)] mt-4 w-full text-left p-2 rounded-lg hover:bg-[var(--bg-interactive-hover)] transition-colors"><i className="fa-solid fa-plus mr-2"></i>Tambah Tujuan Lain</button>
                     </div>
                 );
              case 3:
                 return (
                     <div>
-                        <h3 className="text-xl font-bold text-white mb-4">Langkah 2: Catat Pinjaman Berjalan</h3>
+                        <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">Langkah 2: Catat Pinjaman Berjalan</h3>
                          <div className="space-y-4 max-h-[20rem] overflow-y-auto p-1 pr-3">
                             {debts.length === 0 && (
-                                <p className="text-center text-sm text-gray-400 py-4">Tidak ada pinjaman? Klik tombol di bawah untuk menyelesaikan.</p>
+                                <p className="text-center text-sm text-[var(--text-tertiary)] py-4">Tidak ada pinjaman? Klik tombol di bawah untuk menyelesaikan.</p>
                             )}
                             {debts.map((debt, index) => (
-                                <div key={debt.id} className="p-4 bg-black/20 rounded-xl space-y-3 relative">
-                                    <button onClick={() => handleRemoveDebt(debt.id!)} className="absolute top-2 right-2 text-gray-400 hover:text-red-500 w-6 h-6 rounded-full flex items-center justify-center"><i className="fa-solid fa-times"></i></button>
-                                    <input type="text" placeholder="Nama Pinjaman (misal: Cicilan Motor)" className="w-full p-2 bg-black/20 text-sm rounded-md border border-white/10" onChange={e => handleDebtChange(index, 'name', e.target.value)} />
+                                <div key={debt.id} className="p-4 bg-[var(--bg-interactive)] rounded-xl space-y-3 relative">
+                                    <button onClick={() => handleRemoveDebt(debt.id!)} className="absolute top-2 right-2 text-[var(--text-tertiary)] hover:text-[var(--color-expense)] w-6 h-6 rounded-full flex items-center justify-center"><i className="fa-solid fa-times"></i></button>
+                                    <input type="text" placeholder="Nama Pinjaman (misal: Cicilan Motor)" className={inputClasses} onChange={e => handleDebtChange(index, 'name', e.target.value)} />
                                     
                                     <div>
-                                        <p className="text-xs font-medium text-gray-400 mb-1.5">Sumber Dana</p>
+                                        <p className={labelClasses}>Sumber Dana</p>
                                         <div className="grid grid-cols-3 gap-2">
                                             {popularLenders.map(lender => (
-                                                <button key={lender} type="button" onClick={() => handleDebtChange(index, 'source', lender)} className={`p-2 border rounded-lg text-xs font-semibold truncate transition-all duration-200 ${debt.source === lender ? 'bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white border-transparent shadow-md' : 'bg-black/20 border-white/10 hover:border-[var(--primary-glow)]'}`}>{lender}</button>
+                                                <button key={lender} type="button" onClick={() => handleDebtChange(index, 'source', lender)} className={buttonClasses(debt.source === lender)}>{lender}</button>
                                             ))}
-                                            <button type="button" onClick={() => handleDebtChange(index, 'source', 'Lainnya')} className={`p-2 border rounded-lg text-xs font-semibold transition-all duration-200 ${debt.source === 'Lainnya' ? 'bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white border-transparent shadow-md' : 'bg-black/20 border-white/10 hover:border-[var(--primary-glow)]'}`}>Lainnya...</button>
+                                            <button type="button" onClick={() => handleDebtChange(index, 'source', 'Lainnya')} className={buttonClasses(debt.source === 'Lainnya')}>Lainnya...</button>
                                         </div>
-                                        {debt.source === 'Lainnya' && (<input type="text" placeholder="Masukkan sumber lain" className="w-full p-2 mt-2 bg-black/20 text-sm rounded-md border border-white/10" onChange={e => handleDebtChange(index, 'source', e.target.value)} />)}
+                                        {debt.source === 'Lainnya' && (<input type="text" placeholder="Masukkan sumber lain" className={`${inputClasses} mt-2`} onChange={e => handleDebtChange(index, 'source', e.target.value)} />)}
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-2">
-                                        <input type="text" inputMode="numeric" placeholder="Sisa Pinjaman (Rp)" className="w-full p-2 bg-black/20 text-sm rounded-md border border-white/10" value={(debt.remainingAmount || '') && parseInt(debt.remainingAmount).toLocaleString('id-ID')} onChange={e => handleDebtChange(index, 'remainingAmount', e.target.value)} />
-                                        <input type="text" inputMode="numeric" placeholder="Sisa Tenor (bulan)" className="w-full p-2 bg-black/20 text-sm rounded-md border border-white/10" value={debt.remainingTenor} onChange={e => handleDebtChange(index, 'remainingTenor', e.target.value)} />
-                                        <input type="text" inputMode="numeric" placeholder="Cicilan /bln (Rp)" className="w-full p-2 bg-black/20 text-sm rounded-md border border-white/10" value={(debt.monthlyInstallment || '') && parseInt(String(debt.monthlyInstallment)).toLocaleString('id-ID')} onChange={e => handleDebtChange(index, 'monthlyInstallment', e.target.value)} />
-                                        <input type="text" inputMode="numeric" placeholder="Total Tenor (bulan)" className="w-full p-2 bg-black/20 text-sm rounded-md border border-white/10" value={debt.tenor} onChange={e => handleDebtChange(index, 'tenor', e.target.value)} />
+                                        <input type="text" inputMode="numeric" placeholder="Sisa Pinjaman (Rp)" className={inputClasses} value={(debt.remainingAmount || '') && parseInt(debt.remainingAmount).toLocaleString('id-ID')} onChange={e => handleDebtChange(index, 'remainingAmount', e.target.value)} />
+                                        <input type="text" inputMode="numeric" placeholder="Sisa Tenor (bulan)" className={inputClasses} value={debt.remainingTenor} onChange={e => handleDebtChange(index, 'remainingTenor', e.target.value)} />
+                                        <input type="text" inputMode="numeric" placeholder="Cicilan /bln (Rp)" className={inputClasses} value={(debt.monthlyInstallment || '') && parseInt(String(debt.monthlyInstallment)).toLocaleString('id-ID')} onChange={e => handleDebtChange(index, 'monthlyInstallment', e.target.value)} />
+                                        <input type="text" inputMode="numeric" placeholder="Total Tenor (bulan)" className={inputClasses} value={debt.tenor} onChange={e => handleDebtChange(index, 'tenor', e.target.value)} />
                                     </div>
                                     <div>
-                                        <p className="text-xs font-medium text-gray-400 mb-1.5">Tanggal Jatuh Tempo</p>
-                                        <input type="text" inputMode="numeric" min="1" max="31" placeholder="Setiap tgl. (1-31)" className="w-full p-2 bg-black/20 text-sm rounded-md border border-white/10" value={debt.dueDate} onChange={e => handleDebtChange(index, 'dueDate', e.target.value)} />
+                                        <p className={labelClasses}>Tanggal Jatuh Tempo</p>
+                                        <input type="text" inputMode="numeric" min="1" max="31" placeholder="Setiap tgl. (1-31)" className={inputClasses} value={debt.dueDate} onChange={e => handleDebtChange(index, 'dueDate', e.target.value)} />
                                     </div>
                                 </div>
                             ))}
                         </div>
-                        <button onClick={handleAddDebt} className="text-sm font-semibold text-[var(--primary-glow)] hover:text-white mt-4 w-full text-left p-2 rounded-lg hover:bg-white/5 transition-colors"><i className="fa-solid fa-plus mr-2"></i>Tambah Pinjaman Lain</button>
+                        <button onClick={handleAddDebt} className="text-sm font-semibold text-[var(--primary-glow)] hover:text-[var(--text-primary)] mt-4 w-full text-left p-2 rounded-lg hover:bg-[var(--bg-interactive-hover)] transition-colors"><i className="fa-solid fa-plus mr-2"></i>Tambah Pinjaman Lain</button>
                     </div>
                 );
             default: return null;
@@ -255,7 +258,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
         if (step === 2) {
             return (
                 <div className="flex justify-between mt-8">
-                    <button onClick={() => setStep(1)} className="bg-black/20 border border-white/10 text-gray-300 font-bold py-3 px-6 rounded-full transition-opacity">Kembali</button>
+                    <button onClick={() => setStep(1)} className="bg-[var(--bg-interactive)] border border-[var(--border-primary)] text-[var(--text-secondary)] font-bold py-3 px-6 rounded-full transition-opacity">Kembali</button>
                     <button onClick={handleAttemptNextFromSavings} className="bg-[var(--primary-600)] text-white font-bold py-3 px-6 rounded-full shadow-md hover:bg-[var(--primary-700)] transition-all">
                         {savingsGoals.length > 0 ? 'Lanjut' : 'Lewati & Lanjut'}
                     </button>
@@ -265,7 +268,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
          if (step === 3) {
             return (
                 <div className="flex justify-between mt-8">
-                    <button onClick={() => setStep(2)} className="bg-black/20 border border-white/10 text-gray-300 font-bold py-3 px-6 rounded-full transition-opacity">Kembali</button>
+                    <button onClick={() => setStep(2)} className="bg-[var(--bg-interactive)] border border-[var(--border-primary)] text-[var(--text-secondary)] font-bold py-3 px-6 rounded-full transition-opacity">Kembali</button>
                     <button onClick={handleAttemptFinish} className="bg-gradient-to-r from-[var(--secondary-600)] to-[var(--primary-500)] text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all">
                         {debts.length > 0 ? 'Selesai & Simpan' : 'Selesaikan'}
                     </button>
@@ -276,7 +279,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
 
     return (
         <>
-            <div className="bg-gray-800/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-6 w-full max-w-lg">
+            <div className="bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-2xl p-6 w-full max-w-lg">
                 <ProgressBar currentStep={step} />
                 <div key={step} className="animate-fade-in">
                     {renderStep()}
@@ -286,16 +289,16 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
 
             {/* Savings Confirmation Modal */}
             <Modal isOpen={showSavingsConfirm} onClose={() => setShowSavingsConfirm(false)}>
-                 <div className="relative bg-gray-800/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-xl text-center p-6">
-                     <h3 className="text-lg font-bold text-white mb-2">Konfirmasi Langkah</h3>
-                     <p className="text-sm text-gray-300 mb-6">
+                 <div className="relative bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-xl text-center p-6">
+                     <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">Konfirmasi Langkah</h3>
+                     <p className="text-sm text-[var(--text-secondary)] mb-6">
                         {savingsGoals.length > 0
                             ? "Apakah Anda yakin telah memasukkan semua tujuan tabungan Anda?"
                             : "Anda yakin tidak memiliki tujuan tabungan untuk dicatat?"
                         }
                      </p>
                      <div className="flex gap-3">
-                        <button onClick={() => setShowSavingsConfirm(false)} className="w-full bg-black/30 border border-white/10 text-gray-300 font-semibold py-2 px-4 rounded-full">Batal</button>
+                        <button onClick={() => setShowSavingsConfirm(false)} className="w-full bg-[var(--bg-interactive)] border border-[var(--border-primary)] text-[var(--text-secondary)] font-semibold py-2 px-4 rounded-full">Batal</button>
                         <button onClick={handleConfirmSavingsStep} className="w-full bg-[var(--primary-600)] text-white font-bold py-2 px-4 rounded-full">{savingsGoals.length > 0 ? 'Ya, Lanjut' : 'Ya, Lewati'}</button>
                      </div>
                  </div>
@@ -303,29 +306,29 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
 
             {/* Debt Confirmation Modal */}
             <Modal isOpen={showDebtConfirm} onClose={() => setShowDebtConfirm(false)}>
-                 <div className="relative bg-gray-800/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-xl text-center p-6">
-                     <h3 className="text-lg font-bold text-white mb-2">Konfirmasi Akhir</h3>
-                     <p className="text-sm text-gray-300 mb-4">
+                 <div className="relative bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-xl text-center p-6">
+                     <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">Konfirmasi Akhir</h3>
+                     <p className="text-sm text-[var(--text-secondary)] mb-4">
                         {debts.length > 0
                             ? "Pastikan semua data pinjaman sudah benar sebelum menyelesaikan pengaturan."
                             : "Anda yakin tidak memiliki pinjaman berjalan untuk dicatat saat ini?"
                         }
                      </p>
                      {debts.length > 0 && (
-                        <div className="mb-4 text-left p-3 bg-black/20 rounded-lg">
+                        <div className="mb-4 text-left p-3 bg-[var(--bg-interactive)] rounded-lg">
                             <label className="flex items-center space-x-3 cursor-pointer">
                                 <input 
                                     type="checkbox" 
                                     checked={isDebtCheckboxChecked}
                                     onChange={(e) => setIsDebtCheckboxChecked(e.target.checked)}
-                                    className="w-5 h-5 rounded text-[var(--primary-glow)] bg-black/20 border-white/10 focus:ring-[var(--primary-glow)]"
+                                    className="w-5 h-5 rounded text-[var(--primary-glow)] bg-[var(--bg-interactive)] border-[var(--border-primary)] focus:ring-[var(--primary-glow)]"
                                 />
-                                <span className="text-sm text-gray-300">Saya sadar telah mengisi semua data dengan benar.</span>
+                                <span className="text-sm text-[var(--text-secondary)]">Saya sadar telah mengisi semua data dengan benar.</span>
                             </label>
                         </div>
                      )}
                      <div className="flex gap-3">
-                        <button onClick={() => setShowDebtConfirm(false)} className="w-full bg-black/30 border border-white/10 text-gray-300 font-semibold py-2 px-4 rounded-full">Batal</button>
+                        <button onClick={() => setShowDebtConfirm(false)} className="w-full bg-[var(--bg-interactive)] border border-[var(--border-primary)] text-[var(--text-secondary)] font-semibold py-2 px-4 rounded-full">Batal</button>
                         <button 
                             onClick={handleConfirmFinish} 
                             className="w-full bg-gradient-to-r from-[var(--secondary-600)] to-[var(--primary-500)] text-white font-bold py-2 px-4 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"

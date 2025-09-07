@@ -22,17 +22,17 @@ interface CompositionData {
 }
 
 const DashboardSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; rightContent?: React.ReactNode }> = ({ title, children, defaultOpen = true, rightContent }) => (
-    <details className="group/card relative bg-black/20 backdrop-blur-lg border border-white/10 rounded-2xl shadow-lg overflow-hidden transition-all duration-300" open={defaultOpen}>
-        <summary className="relative list-none p-6 cursor-pointer flex justify-between items-center transition-colors group-hover/card:bg-white/5">
-            <h3 className="text-xl font-bold text-white">{title}</h3>
+    <details className="group/card relative bg-[var(--bg-interactive)] backdrop-blur-lg border border-[var(--border-primary)] rounded-2xl shadow-lg overflow-hidden transition-all duration-300" open={defaultOpen}>
+        <summary className="relative list-none p-6 cursor-pointer flex justify-between items-center transition-colors group-hover/card:bg-[var(--bg-interactive-hover)]">
+            <h3 className="text-xl font-bold text-[var(--text-primary)]">{title}</h3>
             <div className="flex items-center space-x-4">
                 {rightContent}
-                <div className="w-8 h-8 flex items-center justify-center bg-white/5 rounded-full">
-                  <i className="fa-solid fa-chevron-down text-gray-400 transition-transform duration-300 group-open/card:rotate-180"></i>
+                <div className="w-8 h-8 flex items-center justify-center bg-[var(--bg-interactive)]/50 rounded-full">
+                  <i className="fa-solid fa-chevron-down text-[var(--text-tertiary)] transition-transform duration-300 group-open/card:rotate-180"></i>
                 </div>
             </div>
         </summary>
-        <div className="relative border-t border-white/10 p-4 md:p-6">
+        <div className="relative border-t border-[var(--border-primary)] p-4 md:p-6">
             {children}
         </div>
     </details>
@@ -134,7 +134,7 @@ const HealthAnalysisItem: React.FC<{ icon: string; iconColor: string; text: Reac
         <div className="w-5 h-5 flex-shrink-0 flex items-center justify-center pt-0.5">
             <i className={`fa-solid ${icon} ${iconColor} text-base`}></i>
         </div>
-        <p className="text-sm text-gray-300 flex-1">{text}</p>
+        <p className="text-sm text-[var(--text-secondary)] flex-1">{text}</p>
     </div>
 );
 
@@ -147,12 +147,12 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         const net = payload.find((p: any) => p.dataKey === 'netCashFlow')?.value;
 
         return (
-            <div className="bg-black/40 backdrop-blur-xl text-white p-4 rounded-xl shadow-2xl border border-white/20 animate-fade-in">
-                <p className="font-bold text-lg mb-2 border-b border-white/10 pb-2">{label}</p>
+            <div className="bg-[var(--bg-secondary-translucent)] backdrop-blur-xl text-[var(--text-primary)] p-4 rounded-xl shadow-2xl border border-[var(--border-secondary)] animate-fade-in">
+                <p className="font-bold text-lg mb-2 border-b border-[var(--border-primary)] pb-2">{label}</p>
                 {income !== undefined && <p className="text-[var(--color-income)]" style={{filter: 'drop-shadow(0 0 5px var(--color-income))'}}>Pemasukan: Rp {income.toLocaleString('id-ID')}</p>}
                 {expense !== undefined && <p className="text-[var(--color-expense)]" style={{filter: 'drop-shadow(0 0 5px var(--color-expense))'}}>Pengeluaran: Rp {expense.toLocaleString('id-ID')}</p>}
                 {net !== undefined && (
-                    <p className={`font-semibold mt-2 pt-2 border-t border-white/10 ${net >= 0 ? 'text-[var(--color-net-positive)]' : 'text-[var(--color-net-negative)]'}`} style={{filter: `drop-shadow(0 0 5px ${net >= 0 ? 'var(--color-net-positive)' : 'var(--color-net-negative)'})`}}>
+                    <p className={`font-semibold mt-2 pt-2 border-t border-[var(--border-primary)] ${net >= 0 ? 'text-[var(--color-net-positive)]' : 'text-[var(--color-net-negative)]'}`} style={{filter: `drop-shadow(0 0 5px ${net >= 0 ? 'var(--color-net-positive)' : 'var(--color-net-negative)'})`}}>
                         Arus Kas Bersih: Rp {net.toLocaleString('id-ID')}
                     </p>
                 )}
@@ -168,10 +168,10 @@ const renderActiveShape = (props: any) => {
 
     return (
         <g style={{ filter: 'drop-shadow(0 0 8px #000)' }}>
-            <text x={cx} y={cy - 8} textAnchor="middle" fill={'#FFF'} className="font-bold text-sm" dominantBaseline="central">
+            <text x={cx} y={cy - 8} textAnchor="middle" fill={'var(--text-primary)'} className="font-bold text-sm" dominantBaseline="central">
                 {payload.name}
             </text>
-            <text x={cx} y={cy + 12} textAnchor="middle" fill={'#CCC'} className="text-xs">
+            <text x={cx} y={cy + 12} textAnchor="middle" fill={'var(--text-secondary)'} className="text-xs">
                 {`(${(percent * 100).toFixed(1)}%)`}
             </text>
             <Sector
@@ -195,10 +195,10 @@ const renderAllocationActiveShape = (props: any) => {
 
     return (
         <g>
-            <text x={cx} y={cy - 8} textAnchor="middle" fill={'#E5E7EB'} className="font-bold text-sm" dominantBaseline="central">
+            <text x={cx} y={cy - 8} textAnchor="middle" fill={'var(--text-secondary)'} className="font-bold text-sm" dominantBaseline="central">
                 {payload.name}
             </text>
-            <text x={cx} y={cy + 12} textAnchor="middle" fill={'#FFF'} className="font-semibold text-lg">
+            <text x={cx} y={cy + 12} textAnchor="middle" fill={'var(--text-primary)'} className="font-semibold text-lg">
                 {`Rp ${payload.value.toLocaleString('id-ID')}`}
             </text>
             <Sector
@@ -395,24 +395,24 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
         <div className="p-4 md:p-6 space-y-6 animate-fade-in">
             <header className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-bold text-white">Dashboard</h1>
-                    <p className="text-gray-400">{monthYearFormatter.format(displayDate)}</p>
+                    <h1 className="text-3xl font-bold text-[var(--text-primary)]">Dashboard</h1>
+                    <p className="text-[var(--text-tertiary)]">{monthYearFormatter.format(displayDate)}</p>
                 </div>
                 <div className="flex items-center space-x-2">
-                    <button onClick={handlePrevMonth} className="w-10 h-10 rounded-full bg-black/20 text-gray-300 flex items-center justify-center transition-colors shadow-sm hover:bg-white/10 border border-white/10">
+                    <button onClick={handlePrevMonth} className="w-10 h-10 rounded-full bg-[var(--bg-interactive)] text-[var(--text-secondary)] flex items-center justify-center transition-colors shadow-sm hover:bg-[var(--bg-interactive-hover)] border border-[var(--border-primary)]">
                         <i className="fa-solid fa-chevron-left"></i>
                     </button>
-                    <button onClick={handleNextMonth} disabled={isNextMonthDisabled} className="w-10 h-10 rounded-full bg-black/20 text-gray-300 flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:bg-white/10 border border-white/10">
+                    <button onClick={handleNextMonth} disabled={isNextMonthDisabled} className="w-10 h-10 rounded-full bg-[var(--bg-interactive)] text-[var(--text-secondary)] flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:bg-[var(--bg-interactive-hover)] border border-[var(--border-primary)]">
                         <i className="fa-solid fa-chevron-right"></i>
                     </button>
                 </div>
             </header>
 
-            <div className="flex items-center justify-center space-x-2 p-1 bg-black/20 backdrop-blur-sm border border-white/10 rounded-full w-full max-w-xs mx-auto">
-                <button onClick={() => setIsTargetMode(false)} className={`px-4 py-2 rounded-full w-1/2 text-sm font-semibold transition-all ${!isTargetMode ? 'bg-[var(--primary-600)] text-white shadow-md' : 'text-gray-300'}`}>
+            <div className="flex items-center justify-center space-x-2 p-1 bg-[var(--bg-interactive)] backdrop-blur-sm border border-[var(--border-primary)] rounded-full w-full max-w-xs mx-auto">
+                <button onClick={() => setIsTargetMode(false)} className={`px-4 py-2 rounded-full w-1/2 text-sm font-semibold transition-all ${!isTargetMode ? 'bg-[var(--primary-600)] text-white shadow-md' : 'text-[var(--text-secondary)]'}`}>
                     Aktual
                 </button>
-                <button onClick={() => setIsTargetMode(true)} className={`px-4 py-2 rounded-full w-1/2 text-sm font-semibold transition-all ${isTargetMode ? 'bg-[var(--primary-600)] text-white shadow-md' : 'text-gray-300'}`}>
+                <button onClick={() => setIsTargetMode(true)} className={`px-4 py-2 rounded-full w-1/2 text-sm font-semibold transition-all ${isTargetMode ? 'bg-[var(--primary-600)] text-white shadow-md' : 'text-[var(--text-secondary)]'}`}>
                     Target
                 </button>
             </div>
@@ -424,14 +424,14 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
             </div>
             
              <DashboardSection title="Analisis & Kesehatan Keuangan" rightContent={
-                <span className={`hidden sm:inline-block text-xs font-bold px-2.5 py-1 rounded-full bg-black/20 ${financialSummary.styles.textColor}`}>
+                <span className={`hidden sm:inline-block text-xs font-bold px-2.5 py-1 rounded-full bg-[var(--bg-interactive)] ${financialSummary.styles.textColor}`}>
                     {financialSummary.status}
                 </span>
              }>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-6">
                        <div className="animate-fade-in-up" style={{animationDelay: '100ms'}}>
-                           <h4 className="font-bold text-lg text-gray-200 mb-3">Alokasi Dana dari Pendapatan</h4>
+                           <h4 className="font-bold text-lg text-[var(--text-secondary)] mb-3">Alokasi Dana dari Pendapatan</h4>
                            {isDataAvailable ? (
                             <div className="flex flex-col gap-6 items-center">
                                 {/* Donut Chart */}
@@ -453,7 +453,7 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
                                                 onMouseEnter={(_, index) => setActiveAllocationIndex(index)}
                                                 onMouseLeave={() => setActiveAllocationIndex(-1)}
                                                 // @ts-ignore
-                                                background={{ fill: 'rgba(255,255,255,0.05)' }}
+                                                background={{ fill: 'var(--bg-interactive)' }}
                                             >
                                                 {donutAllocationData.map((entry, index) => (
                                                     <Cell 
@@ -468,8 +468,8 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
                                      </ResponsiveContainer>
                                     {activeAllocationIndex === -1 && (
                                     <div className={`absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none transition-opacity duration-300 ${isOverspent ? 'animate-pulse-glow-red' : ''}`}>
-                                         <p className="text-sm font-medium text-gray-400">{isOverspent ? 'Dana Terlampaui' : 'Sisa Uang'}</p>
-                                         <p className={`font-bold text-2xl ${isOverspent ? 'text-[var(--color-expense)]' : 'text-white'}`}>
+                                         <p className="text-sm font-medium text-[var(--text-tertiary)]">{isOverspent ? 'Dana Terlampaui' : 'Sisa Uang'}</p>
+                                         <p className={`font-bold text-2xl ${isOverspent ? 'text-[var(--color-expense)]' : 'text-[var(--text-primary)]'}`}>
                                             Rp {(isOverspent ? -financialSummary.overspendingAmount : financialSummary.sisaUang).toLocaleString('id-ID')}
                                          </p>
                                     </div>
@@ -482,16 +482,16 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
                                         return(
                                             <div 
                                                 key={segment.name} 
-                                                className={`flex items-center justify-between p-2 rounded-lg transition-colors duration-200 cursor-pointer ${activeAllocationIndex === index ? 'bg-white/5' : 'bg-transparent'}`}
+                                                className={`flex items-center justify-between p-2 rounded-lg transition-colors duration-200 cursor-pointer ${activeAllocationIndex === index ? 'bg-[var(--bg-interactive-hover)]' : 'bg-transparent'}`}
                                                 onMouseEnter={() => setActiveAllocationIndex(index)} 
                                                 onMouseLeave={() => setActiveAllocationIndex(-1)}
                                             >
                                                 <div className="flex items-center space-x-3">
                                                     <span className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: segment.color, boxShadow: `0 0 5px ${segment.color}` }}></span>
-                                                    <span className="text-sm text-gray-300">{segment.name}</span>
-                                                    <span className="text-xs text-gray-400">({percentage.toFixed(1)}%)</span>
+                                                    <span className="text-sm text-[var(--text-secondary)]">{segment.name}</span>
+                                                    <span className="text-xs text-[var(--text-tertiary)]">({percentage.toFixed(1)}%)</span>
                                                 </div>
-                                                <span className="text-sm font-semibold text-white">Rp {segment.value.toLocaleString('id-ID')}</span>
+                                                <span className="text-sm font-semibold text-[var(--text-primary)]">Rp {segment.value.toLocaleString('id-ID')}</span>
                                             </div>
                                         )
                                     })}
@@ -504,8 +504,8 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
                                 </div>
                             </div>
                            ) : (
-                            <div className="w-full h-10 flex items-center justify-center bg-black/20 rounded-full px-4 border border-white/10">
-                                <p className="text-sm text-gray-400 font-medium">
+                            <div className="w-full h-10 flex items-center justify-center bg-[var(--bg-interactive)] rounded-full px-4 border border-[var(--border-primary)]">
+                                <p className="text-sm text-[var(--text-tertiary)] font-medium">
                                     <i className="fa-solid fa-info-circle mr-2"></i>
                                     Data pendapatan bulan ini belum diisi.
                                 </p>
@@ -515,7 +515,7 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
                         <div className="space-y-3 animate-fade-in-up" style={{animationDelay: '200ms'}}>
                            <HealthAnalysisItem 
                                 icon={isDataAvailable ? (isSavingsRatioIdeal ? "fa-circle-check" : "fa-circle-exclamation") : "fa-question-circle"}
-                                iconColor={isDataAvailable ? (isSavingsRatioIdeal ? "text-[var(--color-income)]" : "text-yellow-400") : "text-gray-500"}
+                                iconColor={isDataAvailable ? (isSavingsRatioIdeal ? "text-[var(--color-income)]" : "text-yellow-400") : "text-[var(--text-tertiary)]"}
                                 text={isDataAvailable ? 
                                     <>Rasio Tabungan Anda saat ini <strong>{financialSummary.rasioTabungan.toFixed(1)}%</strong>, {isSavingsRatioIdeal ? 'berada di atas ideal (> 10%)' : 'berada di bawah ideal (> 10%)'}.</> :
                                     <>Rasio Tabungan Anda saat ini <strong>--%</strong>.</>
@@ -523,7 +523,7 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
                            />
                            <HealthAnalysisItem 
                                 icon={isDataAvailable ? (financialSummary.rasioHutang < 35 ? "fa-circle-check" : "fa-circle-exclamation") : "fa-question-circle"} 
-                                iconColor={isDataAvailable ? (financialSummary.rasioHutang < 35 ? "text-[var(--color-income)]" : "text-yellow-400") : "text-gray-500"} 
+                                iconColor={isDataAvailable ? (financialSummary.rasioHutang < 35 ? "text-[var(--color-income)]" : "text-yellow-400") : "text-[var(--text-tertiary)]"} 
                                 text={isDataAvailable ? 
                                     <>Rasio Utang Anda <strong>{financialSummary.rasioHutang.toFixed(1)}%</strong>, {financialSummary.rasioHutang < 35 ? 'berada dalam batas aman' : 'mendekati batas'} ({'<'} 35%).</> :
                                     <>Rasio Utang Anda <strong>--%</strong>.</>
@@ -531,7 +531,7 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
                            />
                            <HealthAnalysisItem 
                                 icon={isDataAvailable ? (financialSummary.rasioSisaUang > 0 ? "fa-circle-check" : "fa-circle-xmark") : "fa-question-circle"} 
-                                iconColor={isDataAvailable ? (financialSummary.rasioSisaUang > 0 ? "text-[var(--color-income)]" : "text-[var(--color-expense)]") : "text-gray-500"} 
+                                iconColor={isDataAvailable ? (financialSummary.rasioSisaUang > 0 ? "text-[var(--color-income)]" : "text-[var(--color-expense)]") : "text-[var(--text-tertiary)]"} 
                                 text={isDataAvailable ? 
                                     <>Arus kas bersih (Sisa Uang) Anda <strong>{financialSummary.rasioSisaUang > 0 ? 'positif' : 'negatif'}</strong> sebesar <strong>{financialSummary.rasioSisaUang.toFixed(1)}%</strong> dari pendapatan.</> :
                                     <>Arus kas bersih (Sisa Uang) Anda <strong>--%</strong> dari pendapatan.</>
@@ -539,7 +539,7 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
                            />
                         </div>
                     </div>
-                    <div className="relative rounded-xl p-6 flex flex-col justify-center bg-black/20 border border-white/10 animate-fade-in-up" style={{animationDelay: '300ms'}}>
+                    <div className="relative rounded-xl p-6 flex flex-col justify-center bg-[var(--bg-interactive)] border border-[var(--border-primary)] animate-fade-in-up" style={{animationDelay: '300ms'}}>
                         <div className="absolute inset-0 rounded-xl" style={{boxShadow: `inset 0 0 40px 0 ${financialSummary.styles.glowColor}40`, border: `1px solid ${financialSummary.styles.glowColor}80`}}></div>
                         <div className="relative z-10">
                             <div className="flex items-center space-x-3">
@@ -548,13 +548,13 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
                                </div>
                                <div>
                                 <p className={`text-sm font-semibold ${financialSummary.styles.textColor}`}>Status Anda:</p>
-                                <h4 className="font-bold text-2xl text-white">{financialSummary.status}</h4>
+                                <h4 className="font-bold text-2xl text-[var(--text-primary)]">{financialSummary.status}</h4>
                                </div>
                             </div>
-                            <p className="text-sm text-gray-300 mt-4">
+                            <p className="text-sm text-[var(--text-secondary)] mt-4">
                                {healthDetails.explanation}
                             </p>
-                            <div className="text-sm font-semibold text-gray-200 mt-4 p-4 bg-black/30 rounded-lg">
+                            <div className="text-sm font-semibold text-[var(--text-secondary)] mt-4 p-4 bg-[var(--bg-interactive)]/50 rounded-lg">
                                <p className={`font-bold mb-1 ${financialSummary.styles.textColor}`}>Rekomendasi:</p>
                                <p className="font-normal">{healthDetails.recommendation}</p>
                             </div>
@@ -566,18 +566,18 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
                 <div className="lg:col-span-3">
                     <DashboardSection title="Arus Kas Tahunan" rightContent={
-                        <div className="flex items-center space-x-2 bg-black/20 rounded-full px-2 py-1 shadow-sm border border-white/10">
+                        <div className="flex items-center space-x-2 bg-[var(--bg-interactive)] rounded-full px-2 py-1 shadow-sm border border-[var(--border-primary)]">
                             <button 
                                 onClick={() => setChartYear(y => y - 1)} 
                                 disabled={isPrevYearDisabled}
-                                className="w-8 h-8 rounded-full text-gray-300 flex items-center justify-center transition-colors hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed">
+                                className="w-8 h-8 rounded-full text-[var(--text-secondary)] flex items-center justify-center transition-colors hover:bg-[var(--bg-interactive-hover)] disabled:opacity-50 disabled:cursor-not-allowed">
                                 <i className="fa-solid fa-chevron-left"></i>
                             </button>
-                            <span className="font-semibold text-sm w-16 text-center text-gray-200">{chartYear}</span>
+                            <span className="font-semibold text-sm w-16 text-center text-[var(--text-secondary)]">{chartYear}</span>
                             <button 
                                 onClick={() => setChartYear(y => y + 1)} 
                                 disabled={isNextYearDisabled}
-                                className="w-8 h-8 rounded-full text-gray-300 flex items-center justify-center transition-colors hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed">
+                                className="w-8 h-8 rounded-full text-[var(--text-secondary)] flex items-center justify-center transition-colors hover:bg-[var(--bg-interactive-hover)] disabled:opacity-50 disabled:cursor-not-allowed">
                                 <i className="fa-solid fa-chevron-right"></i>
                             </button>
                         </div>
@@ -609,11 +609,11 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
                                             <stop offset="95%" stopColor="var(--color-expense)" stopOpacity={0}/>
                                         </linearGradient>
                                     </defs>
-                                    <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} />
-                                    <XAxis dataKey="month" tick={{ fill: '#9CA3AF', fontSize: 12 }} />
-                                    <YAxis tickFormatter={(value) => `${value/1000000} Jt`} tick={{ fill: '#9CA3AF', fontSize: 12 }} />
+                                    <CartesianGrid stroke="var(--border-primary)" strokeDasharray="3 3" />
+                                    <XAxis dataKey="month" tick={{ fill: 'var(--text-tertiary)', fontSize: 12 }} />
+                                    <YAxis tickFormatter={(value) => `${value/1000000} Jt`} tick={{ fill: 'var(--text-tertiary)', fontSize: 12 }} />
                                     <RechartsTooltip content={<CustomTooltip />} />
-                                    <Legend wrapperStyle={{ color: '#E5E7EB' }}/>
+                                    <Legend wrapperStyle={{ color: 'var(--text-secondary)' }}/>
                                     <Area type="monotone" dataKey="income" name="Pemasukan" stroke="var(--color-income)" fillOpacity={1} fill="url(#colorIncome)" />
                                     <Area type="monotone" dataKey="expense" name="Pengeluaran" stroke="var(--color-expense)" fillOpacity={1} fill="url(#colorExpense)" />
                                     <Line type="monotone" dataKey="income" stroke="var(--color-income)" strokeWidth={2} dot={false} legendType="none" style={{ filter: 'drop-shadow(0 0 5px var(--color-income))' }} />
@@ -681,7 +681,7 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
                                         return (
                                             <div 
                                                 key={entry.name} 
-                                                className={`p-2 rounded-lg flex items-center justify-between text-sm transition-all duration-200 cursor-pointer ${activePieIndex === originalIndex ? 'bg-white/10' : 'bg-transparent'}`}
+                                                className={`p-2 rounded-lg flex items-center justify-between text-sm transition-all duration-200 cursor-pointer ${activePieIndex === originalIndex ? 'bg-[var(--bg-interactive-hover)]' : 'bg-transparent'}`}
                                                 onMouseEnter={() => setActivePieIndex(originalIndex)}
                                                 onMouseLeave={() => setActivePieIndex(-1)}
                                             >
@@ -690,13 +690,13 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
                                                         className="w-3 h-3 rounded-sm flex-shrink-0" 
                                                         style={{ backgroundColor: color, boxShadow: `0 0 5px ${color}` }}
                                                     ></span>
-                                                    <span className="text-gray-300 truncate" title={entry.name}>{entry.name}</span>
+                                                    <span className="text-[var(--text-secondary)] truncate" title={entry.name}>{entry.name}</span>
                                                 </div>
                                                 <div className="text-right flex-shrink-0 pl-2">
-                                                    <p className="font-semibold text-white">
+                                                    <p className="font-semibold text-[var(--text-primary)]">
                                                         Rp {entry.value.toLocaleString('id-ID')}
                                                     </p>
-                                                    <p className="text-xs text-gray-400">
+                                                    <p className="text-xs text-[var(--text-tertiary)]">
                                                         {percentage.toFixed(1)}%
                                                     </p>
                                                 </div>
@@ -707,8 +707,8 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
                             </div>
                         ) : (
                             <div className="flex flex-col items-center justify-center min-h-[20rem]">
-                                <i className="fa-solid fa-chart-pie text-4xl text-gray-500 mb-4"></i>
-                                <p className="text-center text-gray-400">Data pengeluaran tidak tersedia untuk bulan ini.</p>
+                                <i className="fa-solid fa-chart-pie text-4xl text-[var(--text-tertiary)] mb-4"></i>
+                                <p className="text-center text-[var(--text-tertiary)]">Data pengeluaran tidak tersedia untuk bulan ini.</p>
                             </div>
                         )}
                     </DashboardSection>

@@ -8,12 +8,12 @@ const formatCurrency = (value: string | number) => {
 
 const getDifferenceClass = (actual: number, target: number, isIncome = false) => {
     if (isIncome) { // For income and savings, higher is better
-        if (actual >= target) return 'text-green-500';
-        return 'text-red-500';
+        if (actual >= target) return 'text-[var(--color-income)]';
+        return 'text-[var(--color-expense)]';
     }
     // For expenses, lower is better
-    if (actual <= target) return 'text-green-500';
-    return 'text-red-500';
+    if (actual <= target) return 'text-[var(--color-income)]';
+    return 'text-[var(--color-expense)]';
 }
 
 const ActualsDetail: React.FC<{ report: ArchivedActualReport }> = ({ report }) => {
@@ -30,7 +30,7 @@ const ActualsDetail: React.FC<{ report: ArchivedActualReport }> = ({ report }) =
     ];
 
     return (
-        <div className="space-y-4 p-4 bg-gray-50 dark:bg-gray-800/50">
+        <div className="space-y-4 p-4 bg-[var(--bg-primary)]">
             {sections.map(sectionInfo => {
                 const items = target[sectionInfo.key];
                 if (!items || items.length === 0) return null;
@@ -40,9 +40,9 @@ const ActualsDetail: React.FC<{ report: ArchivedActualReport }> = ({ report }) =
 
                 return (
                     <div key={sectionInfo.key}>
-                        <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">{sectionInfo.title}</h4>
+                        <h4 className="font-semibold text-[var(--text-secondary)] mb-2">{sectionInfo.title}</h4>
                         <ul className="space-y-1 text-sm">
-                             <li className="grid grid-cols-3 gap-4 font-semibold text-gray-500 dark:text-gray-400 text-xs mb-1">
+                             <li className="grid grid-cols-3 gap-4 font-semibold text-[var(--text-tertiary)] text-xs mb-1">
                                 <span className="col-span-1">Item</span>
                                 <span className="text-right">Target</span>
                                 <span className="text-right">Aktual</span>
@@ -51,7 +51,7 @@ const ActualsDetail: React.FC<{ report: ArchivedActualReport }> = ({ report }) =
                                 const actualAmount = parseInt(actuals[item.id] || '0');
                                 const targetAmount = parseInt(item.amount || '0');
                                 return (
-                                <li key={item.id} className="grid grid-cols-3 gap-4 items-center text-gray-600 dark:text-gray-400">
+                                <li key={item.id} className="grid grid-cols-3 gap-4 items-center text-[var(--text-tertiary)]">
                                     <span className="col-span-1 truncate">{item.name}</span>
                                     <span className="font-mono text-right">{formatCurrency(targetAmount)}</span>
                                     <span className={`font-mono font-semibold text-right ${getDifferenceClass(actualAmount, targetAmount, sectionInfo.isIncome)}`}>
@@ -60,9 +60,9 @@ const ActualsDetail: React.FC<{ report: ArchivedActualReport }> = ({ report }) =
                                 </li>
                             )})}
                         </ul>
-                         <div className="grid grid-cols-3 gap-4 font-bold text-sm mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                           <span className="col-span-1">Total</span>
-                           <span className="text-right">{formatCurrency(totalTarget)}</span>
+                         <div className="grid grid-cols-3 gap-4 font-bold text-sm mt-2 pt-2 border-t border-[var(--border-primary)]">
+                           <span className="col-span-1 text-[var(--text-secondary)]">Total</span>
+                           <span className="text-right text-[var(--text-secondary)]">{formatCurrency(totalTarget)}</span>
                            <span className={`text-right ${getDifferenceClass(totalActual, totalTarget, sectionInfo.isIncome)}`}>{formatCurrency(totalActual)}</span>
                         </div>
                     </div>
@@ -103,13 +103,13 @@ const ActualsReportCard: React.FC<{ report: ArchivedActualReport }> = ({ report 
 
     const statusStyles = summary.isAchieved 
         ? {
-            badge: "bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300",
+            badge: "bg-[var(--bg-success-subtle)] text-[var(--text-success-strong)]",
             icon: "fa-check-circle",
-            container: "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-green-400 dark:hover:border-green-600",
+            container: "bg-[var(--bg-secondary)] border-[var(--border-primary)] hover:border-[var(--color-income)]",
         } : {
-            badge: "bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300",
+            badge: "bg-[var(--bg-danger-subtle)] text-[var(--text-danger-strong)]",
             icon: "fa-times-circle",
-            container: "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-red-400 dark:hover:border-red-600",
+            container: "bg-[var(--bg-secondary)] border-[var(--border-primary)] hover:border-[var(--color-expense)]",
         };
 
     return (
@@ -121,16 +121,16 @@ const ActualsReportCard: React.FC<{ report: ArchivedActualReport }> = ({ report 
             >
                 <div className="flex justify-between items-center">
                     <div className="flex items-center space-x-3">
-                        <h3 className="font-bold text-lg text-gray-800 dark:text-white">{monthName}</h3>
+                        <h3 className="font-bold text-lg text-[var(--text-primary)]">{monthName}</h3>
                         <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${statusStyles.badge}`}>
                             <i className={`fa-solid ${statusStyles.icon} mr-1.5`}></i>
                             {summary.isAchieved ? 'Target Tercapai' : 'Tidak Tercapai'}
                         </span>
                     </div>
-                    <i className={`fa-solid fa-chevron-down text-gray-500 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}></i>
+                    <i className={`fa-solid fa-chevron-down text-[var(--text-tertiary)] transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}></i>
                 </div>
                 {/* Summary Row */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-1 mt-3 text-xs text-gray-500 dark:text-gray-400">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-1 mt-3 text-xs text-[var(--text-tertiary)]">
                     <div>
                         <strong>Pemasukan:</strong> <span className={`font-semibold ${getDifferenceClass(summary.income.actualTotal, summary.income.targetTotal, true)}`}>{formatCurrency(summary.income.actualTotal)}</span> / {formatCurrency(summary.income.targetTotal)}
                     </div>
@@ -143,7 +143,7 @@ const ActualsReportCard: React.FC<{ report: ArchivedActualReport }> = ({ report 
                 </div>
             </button>
             <div className={`overflow-hidden transition-all duration-500 ease-in-out ${isOpen ? 'max-h-[3000px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                <div className="border-t border-gray-200 dark:border-gray-700">
+                <div className="border-t border-[var(--border-primary)]">
                     <ActualsDetail report={report} />
                 </div>
             </div>
@@ -151,7 +151,6 @@ const ActualsReportCard: React.FC<{ report: ArchivedActualReport }> = ({ report 
     );
 };
 
-// FIX: Added ActualsHistoryProps interface to define component props.
 interface ActualsHistoryProps {
     archives: ArchivedActualReport[];
     setView: (view: View) => void;
@@ -163,10 +162,10 @@ const ActualsHistory: React.FC<ActualsHistoryProps> = ({ archives, setView }) =>
   return (
     <div className="p-4 md:p-6 space-y-4">
       <div className="flex items-center space-x-4">
-        <button onClick={() => setView(View.REPORT)} className="text-gray-500 dark:text-gray-400">
+        <button onClick={() => setView(View.REPORT)} className="text-[var(--text-secondary)]">
             <i className="fa-solid fa-arrow-left text-xl"></i>
         </button>
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">Riwayat Laporan Aktual</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-[var(--text-primary)]">Riwayat Laporan Aktual</h1>
       </div>
 
       {sortedArchives.length > 0 ? (
@@ -176,9 +175,9 @@ const ActualsHistory: React.FC<ActualsHistoryProps> = ({ archives, setView }) =>
             ))}
         </div>
        ) : (
-        <div className="text-center p-8 bg-white dark:bg-gray-800 rounded-2xl">
-            <i className="fa-solid fa-folder-open text-4xl text-gray-400 mb-4"></i>
-            <p className="text-gray-500 dark:text-gray-400">Belum ada riwayat laporan aktual yang tersimpan.</p>
+        <div className="text-center p-8 bg-[var(--bg-secondary)] rounded-2xl">
+            <i className="fa-solid fa-folder-open text-4xl text-[var(--text-tertiary)] mb-4"></i>
+            <p className="text-[var(--text-tertiary)]">Belum ada riwayat laporan aktual yang tersimpan.</p>
         </div>
       )}
     </div>
