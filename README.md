@@ -19,6 +19,16 @@ BendaharaKita bukan sekadar aplikasi pencatat keuangan biasa. Ini adalah platfor
 
 ---
 
+## 🧭 Filosofi Kami
+
+BendaharaKita dibangun di atas tiga pilar utama untuk memberikan pengalaman manajemen keuangan terbaik:
+
+-   **⚡ Real-Time & Responsif:** Setiap transaksi yang Anda catat akan langsung tercermin di seluruh aplikasi—mulai dari saldo dompet hingga laporan analitik.
+-   **🔗 Terintegrasi Penuh:** Semua fitur saling terhubung. Laporan bulanan, analisis kesehatan, dan saldo dompet Anda bersumber dari satu data inti yang sama: riwayat transaksi Anda. Ini menjamin konsistensi dan akurasi.
+-   **🧠 Cerdas & Memberdayakan:** Kami tidak hanya mencatat. Dengan bantuan AI dari Google Gemini, kami memberikan wawasan yang dapat ditindaklanjuti untuk membantu Anda membuat keputusan finansial yang lebih cerdas.
+
+---
+
 ## ✨ Fitur Unggulan
 
 BendaharaKita dikemas dengan fitur-fitur canggih yang dirancang untuk memberikan pengalaman manajemen keuangan terbaik.
@@ -73,47 +83,19 @@ BendaharaKita dikemas dengan fitur-fitur canggih yang dirancang untuk memberikan
 
 ---
 
-## 🚀 Menjalankan Secara Lokal
+## 🚀 Menjalankan Aplikasi
 
-Ini berisi semua yang Anda butuhkan untuk menjalankan aplikasi Anda secara lokal.
-
-Lihat aplikasi Anda di AI Studio: https://ai.studio/apps/drive/1L2WA5PMFm9ox5wm5OxeKfvXZ40aK4uPS
+Aplikasi ini dirancang untuk berjalan di lingkungan di mana kunci API sudah dikonfigurasi sebelumnya.
 
 ### Prasyarat
 
-- [Node.js](https://nodejs.org/) (versi 18 atau lebih tinggi direkomendasikan)
-- `npm` atau `pnpm`
+-   **Kunci API Google Gemini:** Kunci API **harus** tersedia sebagai variabel lingkungan (`environment variable`) dengan nama `API_KEY`. Aplikasi akan mengaksesnya melalui `process.env.API_KEY`. **Jangan pernah menulis kunci API langsung di dalam kode.**
 
-### Langkah-langkah Instalasi
+### Menjalankan di AI Studio
 
-1.  **Clone repositori:**
-    ```bash
-    git clone https://github.com/your-username/bendaharakita.git
-    cd bendaharakita
-    ```
+Lingkungan AI Studio secara otomatis menyediakan `API_KEY` yang diperlukan. Cukup buka tautan di bawah untuk menjalankan aplikasi.
 
-2.  **Install dependensi:**
-    ```bash
-    npm install
-    # atau jika Anda menggunakan pnpm
-    # pnpm install
-    ```
-
-3.  **Siapkan API Key:**
-    Buat file bernama `.env.local` di root proyek dan tambahkan kunci API Gemini Anda.
-    ```
-    GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
-    ```
-    *Catatan: Dalam kode aplikasi, kunci ini diakses melalui `process.env.API_KEY`. Framework seperti Vite atau Next.js biasanya memetakan `GEMINI_API_KEY` dari file `.env` ke `process.env` yang dapat diakses oleh aplikasi.*
-
-4.  **Jalankan aplikasi:**
-    ```bash
-    npm run dev
-    # atau
-    # pnpm dev
-    ```
-
-    Buka [http://localhost:5173](http://localhost:5173) (atau port lain yang ditampilkan di terminal) di browser Anda.
+[Buka Aplikasi di AI Studio](https://ai.studio/apps/drive/1L2WA5PMFm9ox5wm5OxeKfvXZ40aK4uPS)
 
 ---
 
