@@ -1,11 +1,10 @@
 
 
 import { GoogleGenAI, Type } from "@google/genai";
-import type { FinancialInsight, Transaction } from './types';
+import type { FinancialInsight, Transaction } from '../types';
 
-// FIX: Aligned with @google/genai guidelines to assume API_KEY is always present.
-// The API key is now passed directly to the constructor without intermediate variables or checks.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
+// Aligned with @google/genai guidelines to assume API_KEY is always present.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const getFinancialInsight = async (transactions: Transaction[], income: number, expense: number): Promise<FinancialInsight[]> => {
   // Refactored prompt to use systemInstruction for better separation of concerns and adherence to best practices.

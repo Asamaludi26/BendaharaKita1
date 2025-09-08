@@ -281,7 +281,7 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({
   return (
     <div className="p-4 md:p-6 space-y-6">
       <header className="flex items-center space-x-4">
-        <button onClick={() => setView(View.REPORT)} className="text-[var(--text-tertiary)]">
+        <button onClick={() => setView(View.DASHBOARD)} className="text-[var(--text-tertiary)]">
             <i className="fa-solid fa-arrow-left text-xl"></i>
         </button>
         <h1 className="text-2xl font-bold text-[var(--text-primary)]">Target Bulanan</h1>

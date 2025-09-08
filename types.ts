@@ -1,9 +1,8 @@
-
-
 export enum View {
   DASHBOARD = 'DASHBOARD',
   TRANSACTIONS = 'TRANSACTIONS',
-  REPORT = 'REPORT',
+  REPORTS_DASHBOARD = 'REPORTS_DASHBOARD',
+  WALLET = 'WALLET', // Renamed from ACCOUNTS for better user understanding
   ADD_TARGET = 'ADD_TARGET',
   ADD_ACTUAL = 'ADD_ACTUAL',
   TARGET_HISTORY = 'TARGET_HISTORY',
@@ -23,6 +22,12 @@ export enum TransactionType {
   EXPENSE = 'expense',
 }
 
+export interface UserCategory {
+  id: string;
+  name: string;
+  type: TransactionType;
+}
+
 export interface Transaction {
   id: string;
   date: string;
@@ -30,6 +35,14 @@ export interface Transaction {
   amount: number;
   type: TransactionType;
   category: string;
+  accountId: string; // Link transaction to an account
+}
+
+export interface Account {
+  id: string;
+  name: string;
+  type: 'Bank' | 'E-Wallet';
+  balance: number;
 }
 
 export interface FinancialInsight {

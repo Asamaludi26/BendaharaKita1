@@ -172,13 +172,15 @@ const generateArchivedData = () => {
             items.forEach(item => {
                 const amount = parseInt(currentActuals[item.id] || '0');
                 if (amount > 0) {
+                    // FIX: Added missing accountId to align with the Transaction type.
                     historicalTransactions.push({
                         id: `hist-tx-${monthYear}-${item.id}`,
                         date: new Date(year, month - 1, Math.floor(Math.random() * 28) + 1).toISOString(),
                         description: item.name,
                         amount: amount,
                         type: type,
-                        category: category
+                        category: category,
+                        accountId: 'acc-bca'
                     });
                 }
             });
@@ -198,19 +200,20 @@ export const mockArchivedTargets: ArchivedMonthlyTarget[] = generatedTargets;
 export const mockArchivedActuals: ArchivedActualReport[] = generatedActuals;
 
 // --- CURRENT MONTH TRANSACTIONS (More variety for testing) ---
+// FIX: Added missing accountId to each transaction to align with the Transaction type.
 const currentMonthMockTransactions: Transaction[] = [
-  { id: 'tx1', date: relativeDate(0), description: 'Gaji Bulanan', amount: 9500000, type: TransactionType.INCOME, category: 'Gaji' },
-  { id: 'tx2', date: relativeDate(-1), description: 'Bayar Kos', amount: 1500000, type: TransactionType.EXPENSE, category: 'Sewa' },
-  { id: 'tx3', date: relativeDate(-3), description: 'Belanja Bulanan (Supermarket)', amount: 1350000, type: TransactionType.EXPENSE, category: 'Kebutuhan' },
-  { id: 'tx4', date: relativeDate(-5), description: 'Cicilan iPhone', amount: 1750000, type: TransactionType.EXPENSE, category: 'Utang' },
-  { id: 'tx5', date: relativeDate(-10), description: 'Nonton Bioskop & Makan Malam', amount: 250000, type: TransactionType.EXPENSE, category: 'Hiburan' },
-  { id: 'tx6', date: relativeDate(-12), description: 'Proyek Desain Freelance', amount: 1750000, type: TransactionType.INCOME, category: 'Pendapatan Lain' },
-  { id: 'tx7', date: relativeDate(-15), description: 'Makan Siang & Kopi (Seminggu)', amount: 480000, type: TransactionType.EXPENSE, category: 'Jajan' },
-  { id: 'tx8', date: relativeDate(-16), description: 'Langganan Netflix & Spotify', amount: 175000, type: TransactionType.EXPENSE, category: 'Langganan' },
-  { id: 'tx9', date: relativeDate(-18), description: 'Transportasi (Gojek/Grab)', amount: 320000, type: TransactionType.EXPENSE, category: 'Transportasi' },
-  { id: 'tx10', date: relativeDate(-20), description: 'Beli Buku & Kursus Online', amount: 450000, type: TransactionType.EXPENSE, category: 'Pendidikan' },
-  { id: 'tx11', date: relativeDate(-22), description: 'Setor ke Dana Darurat', amount: 1000000, type: TransactionType.EXPENSE, category: 'Tabungan' },
-  { id: 'tx12', date: relativeDate(-25), description: 'Beli Obat & Vitamin', amount: 150000, type: TransactionType.EXPENSE, category: 'Kesehatan' },
+  { id: 'tx1', date: relativeDate(0), description: 'Gaji Bulanan', amount: 9500000, type: TransactionType.INCOME, category: 'Gaji', accountId: 'acc-bca' },
+  { id: 'tx2', date: relativeDate(-1), description: 'Bayar Kos', amount: 1500000, type: TransactionType.EXPENSE, category: 'Sewa', accountId: 'acc-bca' },
+  { id: 'tx3', date: relativeDate(-3), description: 'Belanja Bulanan (Supermarket)', amount: 1350000, type: TransactionType.EXPENSE, category: 'Kebutuhan', accountId: 'acc-ovo' },
+  { id: 'tx4', date: relativeDate(-5), description: 'Cicilan iPhone', amount: 1750000, type: TransactionType.EXPENSE, category: 'Utang', accountId: 'acc-bca' },
+  { id: 'tx5', date: relativeDate(-10), description: 'Nonton Bioskop & Makan Malam', amount: 250000, type: TransactionType.EXPENSE, category: 'Hiburan', accountId: 'acc-gopay' },
+  { id: 'tx6', date: relativeDate(-12), description: 'Proyek Desain Freelance', amount: 1750000, type: TransactionType.INCOME, category: 'Pendapatan Lain', accountId: 'acc-bca' },
+  { id: 'tx7', date: relativeDate(-15), description: 'Makan Siang & Kopi (Seminggu)', amount: 480000, type: TransactionType.EXPENSE, category: 'Jajan', accountId: 'acc-gopay' },
+  { id: 'tx8', date: relativeDate(-16), description: 'Langganan Netflix & Spotify', amount: 175000, type: TransactionType.EXPENSE, category: 'Langganan', accountId: 'acc-bca' },
+  { id: 'tx9', date: relativeDate(-18), description: 'Transportasi (Gojek/Grab)', amount: 320000, type: TransactionType.EXPENSE, category: 'Transportasi', accountId: 'acc-gopay' },
+  { id: 'tx10', date: relativeDate(-20), description: 'Beli Buku & Kursus Online', amount: 450000, type: TransactionType.EXPENSE, category: 'Pendidikan', accountId: 'acc-bca' },
+  { id: 'tx11', date: relativeDate(-22), description: 'Setor ke Dana Darurat', amount: 1000000, type: TransactionType.EXPENSE, category: 'Tabungan', accountId: 'acc-bca' },
+  { id: 'tx12', date: relativeDate(-25), description: 'Beli Obat & Vitamin', amount: 150000, type: TransactionType.EXPENSE, category: 'Kesehatan', accountId: 'acc-ovo' },
 ];
 
 // --- COMBINED TRANSACTIONS FOR THE APP ---

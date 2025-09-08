@@ -1,6 +1,6 @@
 import React from 'react';
 import { View } from '../types';
-import { DashboardIcon, ProfileIcon, ManagementIcon, TransactionsIcon, GoalsIcon } from './icons';
+import { DashboardIcon, TransactionsIcon, GoalsIcon, WalletIcon } from './icons';
 
 interface BottomNavProps {
   activeView: View;
@@ -11,12 +11,19 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeView, setView }) => {
   const navItems = [
     { view: View.DASHBOARD, label: "Dashboard", Icon: DashboardIcon },
     { view: View.TRANSACTIONS, label: "Transaksi", Icon: TransactionsIcon },
-    { view: View.REPORT, label: "Manajemen", Icon: ManagementIcon },
+    { view: View.WALLET, label: "Dompet", Icon: WalletIcon },
     { view: View.MANAGEMENT, label: "Goals", Icon: GoalsIcon },
-    { view: View.PROFILE, label: "Profil", Icon: ProfileIcon },
   ];
 
-  const activeIndex = navItems.findIndex(item => item.view === activeView);
+  const activeViewsMap: { [key in View]?: View } = {
+    [View.DEBT_DETAIL]: View.MANAGEMENT,
+    [View.SAVINGS_GOAL_DETAIL]: View.MANAGEMENT,
+    [View.DEBT_HISTORY]: View.MANAGEMENT,
+    [View.SAVINGS_GOAL_HISTORY]: View.MANAGEMENT,
+  };
+  
+  const currentActiveView = activeViewsMap[activeView as keyof typeof activeViewsMap] || activeView;
+  const activeIndex = navItems.findIndex(item => item.view === currentActiveView);
 
   return (
     // The container is made taller to accommodate the pop-out effect

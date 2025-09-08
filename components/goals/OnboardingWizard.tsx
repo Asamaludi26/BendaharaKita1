@@ -4,6 +4,7 @@ import Modal from '../Modal';
 
 interface OnboardingWizardProps {
     onComplete: (data: { debts: DebtItem[], savingsGoals: SavingsGoal[] }) => void;
+    onSkip: () => void;
 }
 
 const ProgressBar: React.FC<{ currentStep: number }> = ({ currentStep }) => {
@@ -23,12 +24,12 @@ const ProgressBar: React.FC<{ currentStep: number }> = ({ currentStep }) => {
                 return (
                     <React.Fragment key={step.name}>
                         <div className="flex flex-col items-center text-center">
-                            <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${isCompleted ? 'bg-[var(--primary-600)] text-white' : isActive ? 'scale-110 shadow-lg' : 'bg-[var(--bg-interactive)] text-[var(--text-secondary)]'}`}
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${isCompleted ? 'bg-[var(--primary-600)] text-white' : isActive ? 'text-white scale-110 shadow-lg' : 'bg-[var(--bg-interactive)] text-[var(--text-tertiary)]'}`}
                                  style={isActive ? { backgroundImage: 'var(--gradient-active-nav)' } : {}}
                             >
-                                <i className={`fa-solid ${step.icon} text-xl ${isActive ? 'text-white' : ''}`}></i>
+                                <i className={`fa-solid ${step.icon} text-xl text-inherit`}></i>
                             </div>
-                            <p className={`mt-2 text-xs font-bold transition-colors ${isActive || isCompleted ? 'text-[var(--primary-glow)]' : 'text-[var(--text-tertiary)]'}`}>{step.name}</p>
+                            <p className={`mt-2 text-xs font-bold transition-colors ${isActive || isCompleted ? 'text-[var(--text-primary)]' : 'text-[var(--text-tertiary)]'}`}>{step.name}</p>
                         </div>
                         {stepNumber < steps.length && (
                              <div className={`flex-1 h-1 mx-2 transition-colors duration-500 ${isCompleted ? 'bg-[var(--primary-600)]' : 'bg-[var(--bg-interactive)]'}`}></div>
@@ -48,7 +49,7 @@ const popularSavers = [
     'Bank BCA', 'Bank Mandiri', 'GoPay Tabungan', 'OVO', 'Bibit', 'Ajaib'
 ];
 
-const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
+const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onSkip }) => {
     const [step, setStep] = useState(1);
     const [debts, setDebts] = useState<Partial<DebtItem & { remainingAmount: string, remainingTenor: string }>[]>([]);
     const [savingsGoals, setSavingsGoals] = useState<Partial<SavingsGoal>[]>([]);
@@ -155,20 +156,25 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
     };
 
     const renderStep = () => {
-        const inputClasses = "w-full p-2 bg-[var(--bg-interactive)] text-sm rounded-md border border-[var(--border-primary)] text-[var(--text-primary)]";
-        const labelClasses = "text-xs font-medium text-[var(--text-tertiary)] mb-1.5";
+        const inputClasses = "w-full p-2 bg-[var(--bg-interactive)] text-sm rounded-md border border-[var(--border-primary)] text-[var(--text-primary)] focus:ring-2 focus:ring-[var(--primary-glow)] focus:border-transparent";
+        const labelClasses = "block text-xs font-semibold text-[var(--text-tertiary)] mb-1";
         const buttonClasses = (isSelected: boolean) => `p-2 border rounded-lg text-xs font-semibold truncate transition-all duration-200 ${isSelected ? 'bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white border-transparent shadow-md' : 'bg-[var(--bg-interactive)] text-[var(--text-secondary)] border-[var(--border-primary)] hover:border-[var(--primary-glow)]'}`;
         
         switch (step) {
             case 1:
                 return (
                     <div className="text-center p-4">
-                        <div className="flex items-center justify-center h-24 w-24 rounded-full bg-gradient-to-br from-[var(--primary-400)] to-[var(--secondary-500)] shadow-lg shadow-indigo-500/30 mx-auto mb-6">
+                        <div className="flex items-center justify-center h-24 w-24 rounded-full bg-gradient-to-br from-[var(--primary-500)] to-[var(--secondary-500)] shadow-lg shadow-[var(--primary-glow)]/30 mx-auto mb-6">
                             <i className="fa-solid fa-rocket text-5xl text-white"></i>
                         </div>
                         <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-2">Selamat Datang!</h3>
                         <p className="text-[var(--text-secondary)] mb-8">Mari siapkan kondisi keuangan Anda saat ini agar kami dapat membantu secara akurat. Proses ini hanya butuh beberapa menit.</p>
-                        <button onClick={() => setStep(2)} className="w-full bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all">Mulai</button>
+                        <div className="flex flex-col gap-3">
+                            <button onClick={() => setStep(2)} className="w-full bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all">Mulai</button>
+                            <button onClick={onSkip} className="w-full bg-transparent text-[var(--text-tertiary)] font-semibold py-3 px-6 rounded-full hover:bg-[var(--bg-interactive-hover)] transition-colors">
+                                Nanti Saja
+                            </button>
+                        </div>
                     </div>
                 );
             case 2:
@@ -180,12 +186,16 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
                                 <p className="text-center text-sm text-[var(--text-tertiary)] py-4">Tidak ada tabungan? Klik tombol di bawah untuk lanjut.</p>
                             )}
                             {savingsGoals.map((goal, index) => (
-                                <div key={goal.id} className="p-4 bg-[var(--bg-interactive)] rounded-xl space-y-3 relative">
+                                <div key={goal.id} className="p-4 bg-[var(--bg-interactive)] rounded-xl space-y-4 relative">
                                     <button onClick={() => handleRemoveSavingsGoal(goal.id!)} className="absolute top-2 right-2 text-[var(--text-tertiary)] hover:text-[var(--color-expense)] w-6 h-6 rounded-full flex items-center justify-center"><i className="fa-solid fa-times"></i></button>
-                                    <input type="text" placeholder="Nama Tujuan (misal: Dana Darurat)" className={inputClasses} onChange={e => handleSavingsChange(index, 'name', e.target.value)} />
                                     
                                     <div>
-                                        <p className={labelClasses}>Sumber Dana</p>
+                                        <label className={labelClasses}>Nama Tujuan</label>
+                                        <input type="text" placeholder="misal: Dana Darurat" className={inputClasses} onChange={e => handleSavingsChange(index, 'name', e.target.value)} />
+                                    </div>
+
+                                    <div>
+                                        <label className={labelClasses}>Sumber Dana</label>
                                         <div className="grid grid-cols-3 gap-2">
                                             {popularSavers.map(saver => (
                                                 <button key={saver} type="button" onClick={() => handleSavingsChange(index, 'source', saver)} className={buttonClasses(goal.source === saver)}>{saver}</button>
@@ -195,12 +205,18 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
                                         {goal.source === 'Lainnya' && (<input type="text" placeholder="Masukkan sumber dana lain" className={`${inputClasses} mt-2`} onChange={e => handleSavingsChange(index, 'source', e.target.value)} />)}
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <input type="text" inputMode="numeric" placeholder="Target Dana (Rp)" className={inputClasses} value={(goal.targetAmount || '') && parseInt(String(goal.targetAmount)).toLocaleString('id-ID')} onChange={e => handleSavingsChange(index, 'targetAmount', e.target.value)} />
-                                        <input type="text" inputMode="numeric" placeholder="Dana Terkumpul (Rp)" className={inputClasses} value={(goal.currentAmount || '') && parseInt(String(goal.currentAmount)).toLocaleString('id-ID')} onChange={e => handleSavingsChange(index, 'currentAmount', e.target.value)} />
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className={labelClasses}>Target Dana (Rp)</label>
+                                            <input type="text" inputMode="numeric" placeholder="10.000.000" className={inputClasses} value={(goal.targetAmount || '') && parseInt(String(goal.targetAmount)).toLocaleString('id-ID')} onChange={e => handleSavingsChange(index, 'targetAmount', e.target.value)} />
+                                        </div>
+                                        <div>
+                                            <label className={labelClasses}>Terkumpul (Rp)</label>
+                                            <input type="text" inputMode="numeric" placeholder="1.500.000" className={inputClasses} value={(goal.currentAmount || '') && parseInt(String(goal.currentAmount)).toLocaleString('id-ID')} onChange={e => handleSavingsChange(index, 'currentAmount', e.target.value)} />
+                                        </div>
                                     </div>
                                     <div>
-                                        <p className={labelClasses}>Tanggal Target Menabung</p>
+                                        <label className={labelClasses}>Tanggal Target</label>
                                         <input type="date" className={inputClasses} onChange={e => handleSavingsChange(index, 'deadline', e.target.value)} />
                                     </div>
                                 </div>
@@ -218,12 +234,16 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
                                 <p className="text-center text-sm text-[var(--text-tertiary)] py-4">Tidak ada pinjaman? Klik tombol di bawah untuk menyelesaikan.</p>
                             )}
                             {debts.map((debt, index) => (
-                                <div key={debt.id} className="p-4 bg-[var(--bg-interactive)] rounded-xl space-y-3 relative">
+                                <div key={debt.id} className="p-4 bg-[var(--bg-interactive)] rounded-xl space-y-4 relative">
                                     <button onClick={() => handleRemoveDebt(debt.id!)} className="absolute top-2 right-2 text-[var(--text-tertiary)] hover:text-[var(--color-expense)] w-6 h-6 rounded-full flex items-center justify-center"><i className="fa-solid fa-times"></i></button>
-                                    <input type="text" placeholder="Nama Pinjaman (misal: Cicilan Motor)" className={inputClasses} onChange={e => handleDebtChange(index, 'name', e.target.value)} />
                                     
                                     <div>
-                                        <p className={labelClasses}>Sumber Dana</p>
+                                        <label className={labelClasses}>Nama Pinjaman</label>
+                                        <input type="text" placeholder="misal: Cicilan Motor" className={inputClasses} onChange={e => handleDebtChange(index, 'name', e.target.value)} />
+                                    </div>
+                                    
+                                    <div>
+                                        <label className={labelClasses}>Sumber Pinjaman</label>
                                         <div className="grid grid-cols-3 gap-2">
                                             {popularLenders.map(lender => (
                                                 <button key={lender} type="button" onClick={() => handleDebtChange(index, 'source', lender)} className={buttonClasses(debt.source === lender)}>{lender}</button>
@@ -232,16 +252,28 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
                                         </div>
                                         {debt.source === 'Lainnya' && (<input type="text" placeholder="Masukkan sumber lain" className={`${inputClasses} mt-2`} onChange={e => handleDebtChange(index, 'source', e.target.value)} />)}
                                     </div>
-
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <input type="text" inputMode="numeric" placeholder="Sisa Pinjaman (Rp)" className={inputClasses} value={(debt.remainingAmount || '') && parseInt(debt.remainingAmount).toLocaleString('id-ID')} onChange={e => handleDebtChange(index, 'remainingAmount', e.target.value)} />
-                                        <input type="text" inputMode="numeric" placeholder="Sisa Tenor (bulan)" className={inputClasses} value={debt.remainingTenor} onChange={e => handleDebtChange(index, 'remainingTenor', e.target.value)} />
-                                        <input type="text" inputMode="numeric" placeholder="Cicilan /bln (Rp)" className={inputClasses} value={(debt.monthlyInstallment || '') && parseInt(String(debt.monthlyInstallment)).toLocaleString('id-ID')} onChange={e => handleDebtChange(index, 'monthlyInstallment', e.target.value)} />
-                                        <input type="text" inputMode="numeric" placeholder="Total Tenor (bulan)" className={inputClasses} value={debt.tenor} onChange={e => handleDebtChange(index, 'tenor', e.target.value)} />
+                                    
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className={labelClasses}>Sisa Pinjaman (Rp)</label>
+                                            <input type="text" inputMode="numeric" placeholder="5.000.000" className={inputClasses} value={(debt.remainingAmount || '') && parseInt(debt.remainingAmount).toLocaleString('id-ID')} onChange={e => handleDebtChange(index, 'remainingAmount', e.target.value)} />
+                                        </div>
+                                        <div>
+                                            <label className={labelClasses}>Sisa Tenor (bulan)</label>
+                                            <input type="text" inputMode="numeric" placeholder="6" className={inputClasses} value={debt.remainingTenor} onChange={e => handleDebtChange(index, 'remainingTenor', e.target.value)} />
+                                        </div>
+                                        <div>
+                                            <label className={labelClasses}>Cicilan /bln (Rp)</label>
+                                            <input type="text" inputMode="numeric" placeholder="900.000" className={inputClasses} value={(debt.monthlyInstallment || '') && parseInt(String(debt.monthlyInstallment)).toLocaleString('id-ID')} onChange={e => handleDebtChange(index, 'monthlyInstallment', e.target.value)} />
+                                        </div>
+                                        <div>
+                                            <label className={labelClasses}>Total Tenor (bulan)</label>
+                                            <input type="text" inputMode="numeric" placeholder="12" className={inputClasses} value={debt.tenor} onChange={e => handleDebtChange(index, 'tenor', e.target.value)} />
+                                        </div>
                                     </div>
                                     <div>
-                                        <p className={labelClasses}>Tanggal Jatuh Tempo</p>
-                                        <input type="text" inputMode="numeric" min="1" max="31" placeholder="Setiap tgl. (1-31)" className={inputClasses} value={debt.dueDate} onChange={e => handleDebtChange(index, 'dueDate', e.target.value)} />
+                                        <label className={labelClasses}>Tgl. Jatuh Tempo (1-31)</label>
+                                        <input type="text" inputMode="numeric" min="1" max="31" placeholder="15" className={inputClasses} value={debt.dueDate} onChange={e => handleDebtChange(index, 'dueDate', e.target.value)} />
                                     </div>
                                 </div>
                             ))}
@@ -289,9 +321,12 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
 
             {/* Savings Confirmation Modal */}
             <Modal isOpen={showSavingsConfirm} onClose={() => setShowSavingsConfirm(false)}>
-                 <div className="relative bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-xl text-center p-6">
-                     <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">Konfirmasi Langkah</h3>
-                     <p className="text-sm text-[var(--text-secondary)] mb-6">
+                 <div className="relative bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-xl text-center p-8">
+                     <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center bg-gradient-to-br from-[var(--primary-500)] to-[var(--secondary-500)]">
+                        <i className="fa-solid fa-circle-question text-3xl text-white"></i>
+                    </div>
+                     <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">Konfirmasi Langkah</h3>
+                     <p className="text-sm text-[var(--text-secondary)] mb-8">
                         {savingsGoals.length > 0
                             ? "Apakah Anda yakin telah memasukkan semua tujuan tabungan Anda?"
                             : "Anda yakin tidak memiliki tujuan tabungan untuk dicatat?"
@@ -306,16 +341,19 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
 
             {/* Debt Confirmation Modal */}
             <Modal isOpen={showDebtConfirm} onClose={() => setShowDebtConfirm(false)}>
-                 <div className="relative bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-xl text-center p-6">
-                     <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">Konfirmasi Akhir</h3>
-                     <p className="text-sm text-[var(--text-secondary)] mb-4">
+                 <div className="relative bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-xl text-center p-8">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center bg-gradient-to-br from-[var(--primary-500)] to-[var(--secondary-500)]">
+                        <i className="fa-solid fa-flag-checkered text-3xl text-white"></i>
+                    </div>
+                     <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">Konfirmasi Akhir</h3>
+                     <p className="text-sm text-[var(--text-secondary)] mb-6">
                         {debts.length > 0
                             ? "Pastikan semua data pinjaman sudah benar sebelum menyelesaikan pengaturan."
                             : "Anda yakin tidak memiliki pinjaman berjalan untuk dicatat saat ini?"
                         }
                      </p>
                      {debts.length > 0 && (
-                        <div className="mb-4 text-left p-3 bg-[var(--bg-interactive)] rounded-lg">
+                        <div className="mb-6 text-left p-3 bg-[var(--bg-interactive)] rounded-lg">
                             <label className="flex items-center space-x-3 cursor-pointer">
                                 <input 
                                     type="checkbox" 

@@ -1,10 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { ComposedChart, Area, Line, Bar, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer, Tooltip as RechartsTooltip, Cell, PieChart, Pie, Sector } from 'recharts';
-import { SummaryCardData, Transaction, ArchivedMonthlyTarget, ArchivedActualReport } from '../types';
+import { PieChart, Pie, Cell, ResponsiveContainer, Sector } from 'recharts';
+import { SummaryCardData, Transaction, ArchivedMonthlyTarget, ArchivedActualReport, View, Account } from '../types';
 import SummaryCard from './SummaryCard';
 import FinancialInsight from './FinancialInsight';
+import Modal from './Modal';
 // FIX: Import missing icon components.
-import { IncomeIcon, ExpenseIcon, BalanceIcon, SavingsIcon } from './icons';
+import { IncomeIcon, ExpenseIcon, BalanceIcon, SavingsIcon, WalletIcon } from './icons';
 
 interface DashboardProps {
     displayDate: Date;
@@ -13,13 +14,58 @@ interface DashboardProps {
     archivedTargets: ArchivedMonthlyTarget[];
     archivedActuals: ArchivedActualReport[];
     transactions: Transaction[]; // Still needed for Gemini
+    setView: (view: View) => void;
+    isTargetSet: boolean;
+    accounts: Account[];
 }
 
-interface CompositionData {
-  name: string;
-  value: number;
-  category: 'expense' | 'debt' | 'savings';
-}
+const ManagementCard: React.FC<{
+    title: string;
+    description: string;
+    icon: string;
+    gradientFrom: string;
+    gradientTo: string;
+    actionText: string;
+    onClick: () => void;
+    onHistoryClick: () => void;
+}> = ({ title, description, icon, gradientFrom, gradientTo, actionText, onClick, onHistoryClick }) => (
+    <div className="group relative bg-[var(--bg-secondary)] backdrop-blur-lg rounded-2xl shadow-lg border border-[var(--border-primary)] overflow-hidden transition-all duration-300 hover:shadow-2xl hover:border-[var(--border-secondary)] flex flex-col">
+        <div 
+            className="absolute inset-0 rounded-2xl transition-all duration-300 opacity-0 group-hover:opacity-100 pointer-events-none"
+            style={{
+                boxShadow: `inset 0 0 20px 0 ${gradientFrom}80`,
+                border: `1px solid ${gradientFrom}`
+            }}
+        ></div>
+        <div className="relative p-6 flex-grow flex flex-col justify-between">
+            <div className="flex items-start space-x-5">
+                <div className="w-16 h-16 rounded-2xl bg-[var(--bg-interactive)] flex items-center justify-center border border-[var(--border-primary)] flex-shrink-0">
+                    <i className={`fa-solid ${icon} text-4xl bg-clip-text text-transparent`} style={{ backgroundImage: `linear-gradient(to right, ${gradientFrom}, ${gradientTo})`}}></i>
+                </div>
+                <div>
+                    <h3 className="text-xl font-bold text-[var(--text-primary)]">{title}</h3>
+                    <p className="text-[var(--text-tertiary)] text-sm mt-1">{description}</p>
+                </div>
+            </div>
+        </div>
+         <div className="relative bg-[var(--bg-interactive)]/50 px-6 py-4 mt-auto border-t border-[var(--border-primary)] flex flex-col sm:flex-row gap-3">
+            <button
+                onClick={onClick}
+                className="flex-1 text-white font-bold py-2.5 px-4 rounded-full shadow-md hover:shadow-lg transform hover:scale-105 transition-all text-sm"
+                style={{ backgroundImage: `linear-gradient(to right, ${gradientFrom}, ${gradientTo})` }}
+            >
+                {actionText}
+            </button>
+            <button
+                onClick={onHistoryClick}
+                className="flex-1 bg-[var(--bg-secondary)] border border-[var(--border-secondary)] text-[var(--text-secondary)] font-semibold py-2.5 px-4 rounded-full hover:bg-[var(--bg-interactive-hover)] hover:text-[var(--text-primary)] transition-colors text-sm"
+            >
+                Lihat Riwayat
+            </button>
+        </div>
+    </div>
+);
+
 
 const DashboardSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; rightContent?: React.ReactNode }> = ({ title, children, defaultOpen = true, rightContent }) => (
     <details className="group/card relative bg-[var(--bg-interactive)] backdrop-blur-lg border border-[var(--border-primary)] rounded-2xl shadow-lg overflow-hidden transition-all duration-300" open={defaultOpen}>
@@ -116,16 +162,16 @@ const healthStatusStyles = {
         textColor: 'text-[var(--color-income)]',
     },
     "Cukup Sehat": {
-        glowColor: '#facc15', // yellow-400
-        textColor: 'text-yellow-400',
+        glowColor: 'var(--color-warning)',
+        textColor: 'text-[var(--color-warning)]',
     },
     "Perlu Perhatian": {
         glowColor: 'var(--color-expense)',
         textColor: 'text-[var(--color-expense)]',
     },
     "Data Tidak Cukup": {
-        glowColor: '#6b7280', // gray-500
-        textColor: 'text-gray-400',
+        glowColor: 'var(--text-tertiary)',
+        textColor: 'text-[var(--text-tertiary)]',
     }
 };
 
@@ -137,57 +183,6 @@ const HealthAnalysisItem: React.FC<{ icon: string; iconColor: string; text: Reac
         <p className="text-sm text-[var(--text-secondary)] flex-1">{text}</p>
     </div>
 );
-
-
-// Custom Tooltip for Cash Flow Chart
-const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-        const income = payload.find((p: any) => p.dataKey === 'income')?.value;
-        const expense = payload.find((p: any) => p.dataKey === 'expense')?.value;
-        const net = payload.find((p: any) => p.dataKey === 'netCashFlow')?.value;
-
-        return (
-            <div className="bg-[var(--bg-secondary-translucent)] backdrop-blur-xl text-[var(--text-primary)] p-4 rounded-xl shadow-2xl border border-[var(--border-secondary)] animate-fade-in">
-                <p className="font-bold text-lg mb-2 border-b border-[var(--border-primary)] pb-2">{label}</p>
-                {income !== undefined && <p className="text-[var(--color-income)]" style={{filter: 'drop-shadow(0 0 5px var(--color-income))'}}>Pemasukan: Rp {income.toLocaleString('id-ID')}</p>}
-                {expense !== undefined && <p className="text-[var(--color-expense)]" style={{filter: 'drop-shadow(0 0 5px var(--color-expense))'}}>Pengeluaran: Rp {expense.toLocaleString('id-ID')}</p>}
-                {net !== undefined && (
-                    <p className={`font-semibold mt-2 pt-2 border-t border-[var(--border-primary)] ${net >= 0 ? 'text-[var(--color-net-positive)]' : 'text-[var(--color-net-negative)]'}`} style={{filter: `drop-shadow(0 0 5px ${net >= 0 ? 'var(--color-net-positive)' : 'var(--color-net-negative)'})`}}>
-                        Arus Kas Bersih: Rp {net.toLocaleString('id-ID')}
-                    </p>
-                )}
-            </div>
-        );
-    }
-    return null;
-};
-
-// Pie chart custom active shape
-const renderActiveShape = (props: any) => {
-    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent } = props;
-
-    return (
-        <g style={{ filter: 'drop-shadow(0 0 8px #000)' }}>
-            <text x={cx} y={cy - 8} textAnchor="middle" fill={'var(--text-primary)'} className="font-bold text-sm" dominantBaseline="central">
-                {payload.name}
-            </text>
-            <text x={cx} y={cy + 12} textAnchor="middle" fill={'var(--text-secondary)'} className="text-xs">
-                {`(${(percent * 100).toFixed(1)}%)`}
-            </text>
-            <Sector
-                cx={cx}
-                cy={cy}
-                innerRadius={innerRadius}
-                outerRadius={outerRadius + 8}
-                startAngle={startAngle}
-                endAngle={endAngle}
-                fill={fill}
-                stroke={fill}
-                strokeWidth={2}
-            />
-        </g>
-    );
-};
 
 // Active shape for the Allocation Donut - now simplified
 const renderAllocationActiveShape = (props: any) => {
@@ -225,21 +220,17 @@ const DONUT_COLORS = {
 };
 type AllocationItem = { name: string; value: number; color: string };
 
-const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, handleNextMonth, archivedTargets, archivedActuals, transactions }) => {
+const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, handleNextMonth, archivedTargets, archivedActuals, transactions, setView, isTargetSet, accounts }) => {
     const [isTargetMode, setIsTargetMode] = useState(false);
-    const [chartYear, setChartYear] = useState(new Date().getFullYear());
-    const [activeCashFlowIndex, setActiveCashFlowIndex] = useState<number | null>(null);
-    const [activePieIndex, setActivePieIndex] = useState<number>(-1);
     const [activeAllocationIndex, setActiveAllocationIndex] = useState<number>(-1);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const monthYearFormatter = useMemo(() => new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' }), []);
 
     const { 
         summaryData, 
-        pieChartData, 
         currentMonthTransactions, 
         currentIncome, 
-        totalOutflowsForPie,
         financialSummary 
     } = useMemo(() => {
         const currentMonthYear = `${displayDate.getFullYear()}-${String(displayDate.getMonth() + 1).padStart(2, '0')}`;
@@ -255,7 +246,7 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
         const currentMetrics = getMetricsFromReport(currentActualReport);
         const prevMetrics = getMetricsFromReport(prevActualReport);
 
-        let targetIncome = 0, targetTotalExpenses = 0, targetNetCashFlow = 0, targetSavings = 0;
+        let targetIncome = 0, targetTotalExpenses = 0, targetSavings = 0;
         if (currentTargetReport) {
              targetIncome = currentTargetReport.target.pendapatan.reduce((sum, item) => sum + parseInt(item.amount), 0);
              const expenseSections: (keyof typeof currentTargetReport.target)[] = ['pengeluaranUtama', 'kebutuhan', 'penunjang', 'cicilanUtang', 'pendidikan'];
@@ -263,17 +254,16 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
                 targetTotalExpenses += currentTargetReport.target[section].reduce((sum, item) => sum + parseInt(item.amount), 0);
              });
              targetSavings = currentTargetReport.target.tabungan.reduce((sum, item) => sum + parseInt(item.amount), 0);
-             targetNetCashFlow = targetIncome - targetTotalExpenses;
         }
+
+        const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
 
         const data: SummaryCardData[] = [
             { title: 'Pemasukan', amount: currentMetrics.income, previousAmount: prevMetrics.income, target: targetIncome, icon: IncomeIcon, color: 'income', type: 'income' },
             { title: 'Pengeluaran', amount: currentMetrics.totalExpenses, previousAmount: prevMetrics.totalExpenses, target: targetTotalExpenses, icon: ExpenseIcon, color: 'expense', type: 'expense' },
-            { title: 'Sisa Uang', amount: currentMetrics.netCashFlow, previousAmount: prevMetrics.netCashFlow, target: targetNetCashFlow, icon: BalanceIcon, color: 'balance', type: 'balance' },
+            { title: 'Total Saldo', amount: totalBalance, previousAmount: 0, target: undefined, icon: WalletIcon, color: 'balance', type: 'balance' },
             { title: 'Tabungan Bulan Ini', amount: currentMetrics.savings, previousAmount: prevMetrics.savings, target: targetSavings, icon: SavingsIcon, color: 'savings', type: 'savings' },
         ];
-        
-        const pieData: CompositionData[] = currentMetrics.composition;
         
         const currentTxs = transactions.filter(tx => {
             const txDate = new Date(tx.date);
@@ -281,9 +271,10 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
         });
 
         // Financial Summary Calculations
-        const { income, debtInstallments, totalExpenses, netCashFlow, savings } = currentMetrics;
+        const { income, debtInstallments, totalExpenses, savings } = currentMetrics;
         const rasioHutang = income > 0 ? (debtInstallments / income) * 100 : 0;
         const rasioTabungan = income > 0 ? (savings / income) * 100 : 0;
+        const netCashFlow = income - totalExpenses;
         const rasioSisaUang = income > 0 ? (netCashFlow / income) * 100 : 0;
         
         let status = "Data Tidak Cukup";
@@ -305,10 +296,8 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
 
         return { 
             summaryData: data, 
-            pieChartData: pieData, 
             currentMonthTransactions: currentTxs,
             currentIncome: currentMetrics.income,
-            totalOutflowsForPie: currentMetrics.allOutflows,
             financialSummary: {
                 totalPendapatan: income,
                 totalSemuaPengeluaran: totalExpenses,
@@ -324,41 +313,12 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
             }
         };
 
-    }, [displayDate, archivedActuals, archivedTargets, transactions]);
+    }, [displayDate, archivedActuals, archivedTargets, transactions, accounts]);
     
-    const sortedPieData = useMemo(() => 
-        [...pieChartData].sort((a,b) => b.value - a.value), 
-    [pieChartData]);
-
-    const cashFlowData = useMemo(() => {
-        const flowData = [];
-        const monthYearShortFormatter = new Intl.DateTimeFormat('id-ID', { month: 'short' });
-
-        for (let i = 0; i < 12; i++) {
-            const date = new Date(chartYear, i, 1);
-            const monthShort = monthYearShortFormatter.format(date);
-            const report = archivedActuals.find(a => a.monthYear === `${chartYear}-${String(i + 1).padStart(2, '0')}`);
-            const metrics = getMetricsFromReport(report);
-            
-            const hasData = metrics.income > 0 || metrics.totalExpenses > 0;
-
-            flowData.push({ 
-                month: monthShort, 
-                income: hasData ? metrics.income : null, 
-                expense: hasData ? metrics.totalExpenses : null,
-                netCashFlow: hasData ? metrics.income - metrics.totalExpenses : null,
-            });
-        }
-        return flowData;
-    }, [chartYear, archivedActuals]);
-
     const isNextMonthDisabled = useMemo(() => {
         const now = new Date();
         return displayDate.getFullYear() > now.getFullYear() || (displayDate.getFullYear() === now.getFullYear() && displayDate.getMonth() >= now.getMonth());
     }, [displayDate]);
-
-    const isNextYearDisabled = useMemo(() => chartYear >= new Date().getFullYear(), [chartYear]);
-    const isPrevYearDisabled = useMemo(() => !archivedActuals.some(report => report.monthYear.startsWith(`${chartYear - 1}`)), [chartYear, archivedActuals]);
 
     const healthDetails = healthStatusDetails[financialSummary.status];
     const { totalPendapatan, totalSemuaPengeluaran, totalTabungan, sisaUang, isOverspent } = financialSummary;
@@ -382,16 +342,19 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
     const totalDonutValue = useMemo(() => {
         return donutAllocationData.reduce((sum, item) => sum + item.value, 0);
     }, [donutAllocationData]);
-
-    const PIE_CHART_COLORS: { [key in CompositionData['category']]: string } = {
-      expense: 'var(--color-expense)',
-      debt: 'var(--color-debt)',
-      savings: 'var(--color-savings)',
-    };
     
     const isSavingsRatioIdeal = isDataAvailable && financialSummary.rasioTabungan >= 10;
+    
+    const handleActualReportClick = () => {
+        if (isTargetSet) {
+            setView(View.ADD_ACTUAL);
+        } else {
+            setIsModalOpen(true);
+        }
+    };
 
     return (
+    <>
         <div className="p-4 md:p-6 space-y-6 animate-fade-in">
             <header className="flex justify-between items-center">
                 <div>
@@ -404,6 +367,9 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
                     </button>
                     <button onClick={handleNextMonth} disabled={isNextMonthDisabled} className="w-10 h-10 rounded-full bg-[var(--bg-interactive)] text-[var(--text-secondary)] flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:bg-[var(--bg-interactive-hover)] border border-[var(--border-primary)]">
                         <i className="fa-solid fa-chevron-right"></i>
+                    </button>
+                     <button onClick={() => setView(View.PROFILE)} className="w-10 h-10 rounded-full bg-[var(--bg-interactive)] text-[var(--text-secondary)] flex items-center justify-center transition-colors shadow-sm hover:bg-[var(--bg-interactive-hover)] border border-[var(--border-primary)] ml-2" aria-label="Buka Profil">
+                        <img src="https://i.pravatar.cc/150?u=budihartono" alt="Profil" className="w-full h-full rounded-full object-cover"/>
                     </button>
                 </div>
             </header>
@@ -423,6 +389,41 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
                 ))}
             </div>
             
+            <DashboardSection title="Perencanaan & Analitik">
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <ManagementCard 
+                        title="Buat/Ubah Target"
+                        description="Rencanakan alokasi pendapatan Anda untuk bulan ini."
+                        icon="fa-bullseye"
+                        gradientFrom="var(--color-expense)"
+                        gradientTo="var(--color-debt)"
+                        actionText="Mulai Merencanakan"
+                        onClick={() => setView(View.ADD_TARGET)}
+                        onHistoryClick={() => setView(View.TARGET_HISTORY)}
+                    />
+                    <ManagementCard 
+                        title="Laporan Aktual"
+                        description="Lihat realisasi keuangan Anda sesuai target yang dibuat."
+                        icon="fa-file-invoice-dollar"
+                        gradientFrom="var(--primary-glow)"
+                        gradientTo="var(--secondary-glow)"
+                        actionText="Lihat Laporan"
+                        onClick={handleActualReportClick}
+                        onHistoryClick={() => setView(View.ACTUALS_HISTORY)}
+                    />
+                     <div 
+                        onClick={() => setView(View.REPORTS_DASHBOARD)}
+                        className="group relative bg-[var(--bg-secondary)] backdrop-blur-lg rounded-2xl shadow-lg border border-[var(--border-primary)] overflow-hidden transition-all duration-300 hover:shadow-2xl hover:border-[var(--border-secondary)] flex flex-col p-6 items-center justify-center text-center cursor-pointer min-h-[260px]"
+                    >
+                        <div className="w-20 h-20 rounded-2xl bg-[var(--bg-interactive)] flex items-center justify-center border border-[var(--border-primary)] mb-4 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg">
+                             <i className="fa-solid fa-chart-pie text-4xl text-[var(--primary-glow)]"></i>
+                        </div>
+                        <h3 className="text-xl font-bold text-[var(--text-primary)]">Pusat Analitik</h3>
+                        <p className="text-[var(--text-tertiary)] text-sm mt-1">Selami data finansial Anda dengan grafik interaktif.</p>
+                     </div>
+                </div>
+            </DashboardSection>
+
              <DashboardSection title="Analisis & Kesehatan Keuangan" rightContent={
                 <span className={`hidden sm:inline-block text-xs font-bold px-2.5 py-1 rounded-full bg-[var(--bg-interactive)] ${financialSummary.styles.textColor}`}>
                     {financialSummary.status}
@@ -515,7 +516,7 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
                         <div className="space-y-3 animate-fade-in-up" style={{animationDelay: '200ms'}}>
                            <HealthAnalysisItem 
                                 icon={isDataAvailable ? (isSavingsRatioIdeal ? "fa-circle-check" : "fa-circle-exclamation") : "fa-question-circle"}
-                                iconColor={isDataAvailable ? (isSavingsRatioIdeal ? "text-[var(--color-income)]" : "text-yellow-400") : "text-[var(--text-tertiary)]"}
+                                iconColor={isDataAvailable ? (isSavingsRatioIdeal ? "text-[var(--color-income)]" : "text-[var(--color-warning)]") : "text-[var(--text-tertiary)]"}
                                 text={isDataAvailable ? 
                                     <>Rasio Tabungan Anda saat ini <strong>{financialSummary.rasioTabungan.toFixed(1)}%</strong>, {isSavingsRatioIdeal ? 'berada di atas ideal (> 10%)' : 'berada di bawah ideal (> 10%)'}.</> :
                                     <>Rasio Tabungan Anda saat ini <strong>--%</strong>.</>
@@ -523,7 +524,7 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
                            />
                            <HealthAnalysisItem 
                                 icon={isDataAvailable ? (financialSummary.rasioHutang < 35 ? "fa-circle-check" : "fa-circle-exclamation") : "fa-question-circle"} 
-                                iconColor={isDataAvailable ? (financialSummary.rasioHutang < 35 ? "text-[var(--color-income)]" : "text-yellow-400") : "text-[var(--text-tertiary)]"} 
+                                iconColor={isDataAvailable ? (financialSummary.rasioHutang < 35 ? "text-[var(--color-income)]" : "text-[var(--color-warning)]") : "text-[var(--text-tertiary)]"} 
                                 text={isDataAvailable ? 
                                     <>Rasio Utang Anda <strong>{financialSummary.rasioHutang.toFixed(1)}%</strong>, {financialSummary.rasioHutang < 35 ? 'berada dalam batas aman' : 'mendekati batas'} ({'<'} 35%).</> :
                                     <>Rasio Utang Anda <strong>--%</strong>.</>
@@ -563,160 +564,52 @@ const Dashboard: React.FC<DashboardProps> = ({ displayDate, handlePrevMonth, han
                 </div>
             </DashboardSection>
 
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                <div className="lg:col-span-3">
-                    <DashboardSection title="Arus Kas Tahunan" rightContent={
-                        <div className="flex items-center space-x-2 bg-[var(--bg-interactive)] rounded-full px-2 py-1 shadow-sm border border-[var(--border-primary)]">
-                            <button 
-                                onClick={() => setChartYear(y => y - 1)} 
-                                disabled={isPrevYearDisabled}
-                                className="w-8 h-8 rounded-full text-[var(--text-secondary)] flex items-center justify-center transition-colors hover:bg-[var(--bg-interactive-hover)] disabled:opacity-50 disabled:cursor-not-allowed">
-                                <i className="fa-solid fa-chevron-left"></i>
-                            </button>
-                            <span className="font-semibold text-sm w-16 text-center text-[var(--text-secondary)]">{chartYear}</span>
-                            <button 
-                                onClick={() => setChartYear(y => y + 1)} 
-                                disabled={isNextYearDisabled}
-                                className="w-8 h-8 rounded-full text-[var(--text-secondary)] flex items-center justify-center transition-colors hover:bg-[var(--bg-interactive-hover)] disabled:opacity-50 disabled:cursor-not-allowed">
-                                <i className="fa-solid fa-chevron-right"></i>
-                            </button>
-                        </div>
-                    }>
-                        <div className="h-80 animate-fade-in">
-                             <ResponsiveContainer width="100%" height="100%">
-                                <ComposedChart 
-                                    data={cashFlowData} 
-                                    margin={{ top: 5, right: 5, left: -25, bottom: 5 }}
-                                    onMouseMove={(state) => {
-                                        if (state.isTooltipActive && state.activeTooltipIndex != null) {
-                                            const numericIndex = Number(state.activeTooltipIndex);
-                                            setActiveCashFlowIndex(isNaN(numericIndex) ? null : numericIndex);
-                                        } else {
-                                            setActiveCashFlowIndex(null);
-                                        }
-                                    }}
-                                    onMouseLeave={() => {
-                                        setActiveCashFlowIndex(null);
-                                    }}
-                                >
-                                    <defs>
-                                        <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="var(--color-income)" stopOpacity={0.8}/>
-                                            <stop offset="95%" stopColor="var(--color-income)" stopOpacity={0}/>
-                                        </linearGradient>
-                                        <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="var(--color-expense)" stopOpacity={0.8}/>
-                                            <stop offset="95%" stopColor="var(--color-expense)" stopOpacity={0}/>
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid stroke="var(--border-primary)" strokeDasharray="3 3" />
-                                    <XAxis dataKey="month" tick={{ fill: 'var(--text-tertiary)', fontSize: 12 }} />
-                                    <YAxis tickFormatter={(value) => `${value/1000000} Jt`} tick={{ fill: 'var(--text-tertiary)', fontSize: 12 }} />
-                                    <RechartsTooltip content={<CustomTooltip />} />
-                                    <Legend wrapperStyle={{ color: 'var(--text-secondary)' }}/>
-                                    <Area type="monotone" dataKey="income" name="Pemasukan" stroke="var(--color-income)" fillOpacity={1} fill="url(#colorIncome)" />
-                                    <Area type="monotone" dataKey="expense" name="Pengeluaran" stroke="var(--color-expense)" fillOpacity={1} fill="url(#colorExpense)" />
-                                    <Line type="monotone" dataKey="income" stroke="var(--color-income)" strokeWidth={2} dot={false} legendType="none" style={{ filter: 'drop-shadow(0 0 5px var(--color-income))' }} />
-                                    <Line type="monotone" dataKey="expense" stroke="var(--color-expense)" strokeWidth={2} dot={false} legendType="none" style={{ filter: 'drop-shadow(0 0 5px var(--color-expense))' }} />
-                                    <Bar dataKey="netCashFlow" name="Arus Kas Bersih" barSize={20} >
-                                        {cashFlowData.map((entry, index) => {
-                                            const isCurrentDisplayMonth = displayDate.getFullYear() === chartYear && index === displayDate.getMonth();
-                                            const opacity = activeCashFlowIndex === null || activeCashFlowIndex === index ? 1 : 0.5;
-                                            return (
-                                                <Cell 
-                                                    key={`cell-${index}`} 
-                                                    fill={entry.netCashFlow && entry.netCashFlow >= 0 ? 'var(--color-net-positive)' : 'var(--color-net-negative)'} 
-                                                    fillOpacity={opacity}
-                                                    stroke={isCurrentDisplayMonth ? 'var(--primary-glow)' : 'none'}
-                                                    strokeWidth={isCurrentDisplayMonth ? 3 : 0}
-                                                />
-                                            );
-                                        })}
-                                    </Bar>
-                                </ComposedChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </DashboardSection>
-                </div>
-                <div className="lg:col-span-2">
-                    <DashboardSection title="Komposisi Pengeluaran & Tabungan">
-                        {pieChartData.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4 items-center">
-                                <div className="h-60 md:h-full lg:h-60 animate-fade-in">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <PieChart>
-                                            <Pie
-                                                data={pieChartData}
-                                                cx="50%"
-                                                cy="50%"
-                                                dataKey="value"
-                                                nameKey="name"
-                                                innerRadius={60}
-                                                outerRadius={80}
-                                                paddingAngle={2}
-                                                // @ts-ignore
-                                                activeIndex={activePieIndex}
-                                                activeShape={renderActiveShape}
-                                                onMouseEnter={(_, index) => setActivePieIndex(index)}
-                                                onMouseLeave={() => setActivePieIndex(-1)}
-                                            >
-                                                {pieChartData.map((entry, index) => (
-                                                    <Cell 
-                                                        key={`cell-${index}`} 
-                                                        fill={PIE_CHART_COLORS[entry.category]} 
-                                                        className="stroke-transparent focus:outline-none"
-                                                        style={{ filter: `drop-shadow(0 0 8px ${PIE_CHART_COLORS[entry.category]})` }}
-                                                    />
-                                                ))}
-                                            </Pie>
-                                             <RechartsTooltip formatter={(value: number, name: string) => [`Rp ${value.toLocaleString('id-ID')}`, name]} />
-                                        </PieChart>
-                                    </ResponsiveContainer>
-                                </div>
-                                <div className="space-y-2 overflow-y-auto max-h-60 pr-2">
-                                    {sortedPieData.map((entry, index) => {
-                                        const originalIndex = pieChartData.findIndex(p => p.name === entry.name);
-                                        const color = PIE_CHART_COLORS[entry.category];
-                                        const percentage = totalOutflowsForPie > 0 ? (entry.value / totalOutflowsForPie) * 100 : 0;
-                                        return (
-                                            <div 
-                                                key={entry.name} 
-                                                className={`p-2 rounded-lg flex items-center justify-between text-sm transition-all duration-200 cursor-pointer ${activePieIndex === originalIndex ? 'bg-[var(--bg-interactive-hover)]' : 'bg-transparent'}`}
-                                                onMouseEnter={() => setActivePieIndex(originalIndex)}
-                                                onMouseLeave={() => setActivePieIndex(-1)}
-                                            >
-                                                <div className="flex items-center space-x-3 truncate">
-                                                    <span 
-                                                        className="w-3 h-3 rounded-sm flex-shrink-0" 
-                                                        style={{ backgroundColor: color, boxShadow: `0 0 5px ${color}` }}
-                                                    ></span>
-                                                    <span className="text-[var(--text-secondary)] truncate" title={entry.name}>{entry.name}</span>
-                                                </div>
-                                                <div className="text-right flex-shrink-0 pl-2">
-                                                    <p className="font-semibold text-[var(--text-primary)]">
-                                                        Rp {entry.value.toLocaleString('id-ID')}
-                                                    </p>
-                                                    <p className="text-xs text-[var(--text-tertiary)]">
-                                                        {percentage.toFixed(1)}%
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center min-h-[20rem]">
-                                <i className="fa-solid fa-chart-pie text-4xl text-[var(--text-tertiary)] mb-4"></i>
-                                <p className="text-center text-[var(--text-tertiary)]">Data pengeluaran tidak tersedia untuk bulan ini.</p>
-                            </div>
-                        )}
-                    </DashboardSection>
-                </div>
-            </div>
-            
             <FinancialInsight transactions={currentMonthTransactions} income={currentIncome} expense={financialSummary.totalSemuaPengeluaran} />
         </div>
+
+         <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+            <div className="relative bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-xl text-center p-6 pt-16">
+                <button 
+                    onClick={() => setIsModalOpen(false)} 
+                    className="absolute top-4 right-4 w-10 h-10 rounded-full text-[var(--text-tertiary)] hover:bg-[var(--bg-interactive-hover)] flex items-center justify-center transition-colors z-10"
+                    aria-label="Close modal"
+                >
+                    <i className="fa-solid fa-times text-xl"></i>
+                </button>
+
+                <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex items-center justify-center h-24 w-24 rounded-full bg-gradient-to-br from-yellow-300 via-orange-400 to-orange-500 shadow-lg shadow-orange-500/40">
+                    <i className="fa-solid fa-bullseye text-5xl text-white"></i>
+                </div>
+                
+                <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-2">
+                    Oops, Tunggu Dulu!
+                </h3>
+                <p className="text-[var(--text-secondary)] mb-6">
+                    Anda harus membuat <strong>Target Bulanan</strong> sebelum bisa mengisi Laporan Aktual.
+                </p>
+                
+                <div className="flex flex-col gap-3">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setIsModalOpen(false);
+                            setView(View.ADD_TARGET);
+                        }}
+                        className="w-full bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl hover:shadow-[var(--primary-glow)]/30 transform hover:scale-105 transition-all duration-300"
+                    >
+                        Buat Target Sekarang
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setIsModalOpen(false)}
+                        className="w-full bg-transparent text-[var(--text-tertiary)] font-semibold py-3 px-6 rounded-full hover:bg-[var(--bg-interactive-hover)] transition-colors"
+                    >
+                        Nanti Saja
+                    </button>
+                </div>
+            </div>
+        </Modal>
+    </>
     );
 };
 

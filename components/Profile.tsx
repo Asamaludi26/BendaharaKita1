@@ -2,18 +2,38 @@ import React, { useState } from 'react';
 import Modal from './Modal';
 
 interface ProfileProps {
-  onClearAllData: () => void;
-  theme: 'light' | 'dark';
-  toggleTheme: () => void;
+    theme: 'light' | 'dark';
+    onToggleTheme: () => void;
+    onManageCategories: () => void;
+    onResetApp: () => void;
 }
 
-const Profile: React.FC<ProfileProps> = ({ onClearAllData, theme, toggleTheme }) => {
-  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+const ThemeToggle: React.FC<{ theme: string; onToggle: () => void; }> = ({ theme, onToggle }) => {
+    return (
+        <button
+            onClick={onToggle}
+            className="w-14 h-8 rounded-full bg-[var(--bg-interactive)] p-1 flex items-center transition-colors duration-300"
+            role="switch"
+            aria-checked={theme === 'dark'}
+        >
+            <div className={`w-6 h-6 rounded-full bg-white shadow-md transform transition-transform duration-300 ${theme === 'dark' ? 'translate-x-6' : 'translate-x-0'}`}>
+                <div className="relative w-full h-full flex items-center justify-center">
+                    <i className={`fa-solid fa-sun absolute text-yellow-500 transition-all duration-300 ${theme === 'light' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></i>
+                    <i className={`fa-solid fa-moon absolute text-slate-800 transition-all duration-300 ${theme === 'dark' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></i>
+                </div>
+            </div>
+        </button>
+    );
+};
 
-  const handleConfirmReset = () => {
-    onClearAllData();
-    setIsResetModalOpen(false);
-  };
+
+const Profile: React.FC<ProfileProps> = ({ theme, onToggleTheme, onManageCategories, onResetApp }) => {
+    const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+
+    const handleConfirmReset = () => {
+        onResetApp();
+        setIsResetModalOpen(false);
+    }
 
   return (
     <>
@@ -27,29 +47,17 @@ const Profile: React.FC<ProfileProps> = ({ onClearAllData, theme, toggleTheme })
           
           <div className="mt-8 w-full max-w-sm space-y-3">
               <h2 className="text-lg font-semibold text-[var(--text-secondary)] text-left">Pengaturan</h2>
-              <button className="w-full bg-[var(--bg-secondary)] backdrop-blur-lg border border-[var(--border-primary)] text-left p-4 rounded-xl flex justify-between items-center hover:bg-[var(--bg-interactive-hover)] hover:border-[var(--border-secondary)] transition-all">
-                  <span className="font-medium text-[var(--text-secondary)]">Pengaturan Akun</span>
+              <div className="w-full bg-[var(--bg-secondary)] backdrop-blur-lg border border-[var(--border-primary)] p-4 rounded-xl flex justify-between items-center">
+                  <span className="font-medium text-[var(--text-secondary)]">Mode Tampilan</span>
+                  <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+              </div>
+              <button onClick={onManageCategories} className="w-full bg-[var(--bg-secondary)] backdrop-blur-lg border border-[var(--border-primary)] text-left p-4 rounded-xl flex justify-between items-center hover:bg-[var(--bg-interactive-hover)] hover:border-[var(--border-secondary)] transition-all">
+                  <span className="font-medium text-[var(--text-secondary)]">Kelola Kategori</span>
                   <i className="fa-solid fa-chevron-right text-[var(--text-tertiary)]"></i>
               </button>
-              
-              <div className="w-full bg-[var(--bg-secondary)] backdrop-blur-lg border border-[var(--border-primary)] p-4 rounded-xl flex justify-between items-center">
-                <span className="font-medium text-[var(--text-secondary)]">{theme === 'dark' ? 'Mode Gelap' : 'Mode Terang'}</span>
-                <button onClick={toggleTheme} className={`relative inline-flex items-center h-7 rounded-full w-14 transition-colors ${theme === 'dark' ? 'bg-[var(--primary-500)]' : 'bg-[var(--border-secondary)]'}`}>
-                    <span className="sr-only">Toggle Theme</span>
-                    <span className={`inline-block w-6 h-6 transform bg-white rounded-full transition-transform ${theme === 'dark' ? 'translate-x-8' : 'translate-x-1'}`} />
-                    <i className={`fa-solid ${theme === 'dark' ? 'fa-moon' : 'fa-sun'} absolute ${theme === 'dark' ? 'left-1.5' : 'right-1.5'} text-sm ${theme === 'dark' ? 'text-yellow-300' : 'text-[var(--color-warning)]'}`}></i>
-                </button>
-              </div>
-
-          </div>
-
-          <div className="mt-8 w-full max-w-sm space-y-4">
-              <h2 className="text-lg font-semibold text-[var(--color-expense)] text-left">Zona Berbahaya</h2>
-              <button 
-                onClick={() => setIsResetModalOpen(true)}
-                className="w-full bg-[var(--bg-danger-subtle)] border border-red-500/20 text-[var(--text-danger-strong)] p-4 rounded-xl shadow-lg font-bold hover:bg-red-500/20 hover:text-red-600 transition-all"
-              >
-                  Reset Seluruh Aplikasi
+              <button onClick={() => setIsResetModalOpen(true)} className="w-full bg-[var(--bg-secondary)] backdrop-blur-lg border border-[var(--border-primary)] text-left p-4 rounded-xl flex justify-between items-center hover:bg-[var(--bg-interactive-hover)] hover:border-[var(--border-secondary)] transition-all">
+                  <span className="font-medium text-[var(--color-warning)]">Reset Seluruh Aplikasi</span>
+                  <i className="fa-solid fa-triangle-exclamation text-[var(--color-warning)]"></i>
               </button>
           </div>
 
@@ -60,7 +68,7 @@ const Profile: React.FC<ProfileProps> = ({ onClearAllData, theme, toggleTheme })
           </div>
       </div>
 
-      <Modal isOpen={isResetModalOpen} onClose={() => setIsResetModalOpen(false)}>
+       <Modal isOpen={isResetModalOpen} onClose={() => setIsResetModalOpen(false)}>
         <div className="relative bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-xl text-center p-6 pt-16">
           <button 
               onClick={() => setIsResetModalOpen(false)} 
@@ -71,14 +79,16 @@ const Profile: React.FC<ProfileProps> = ({ onClearAllData, theme, toggleTheme })
           </button>
 
           <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex items-center justify-center h-24 w-24 rounded-full bg-gradient-to-br from-red-400 via-red-500 to-red-600 shadow-lg shadow-red-500/40">
-              <i className="fa-solid fa-trash-can text-5xl text-white"></i>
+              <i className="fa-solid fa-database text-5xl text-white"></i>
           </div>
           
           <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-2">
-              Hapus Semua Data?
+              Reset Seluruh Data?
           </h3>
           <p className="text-[var(--text-secondary)] mb-6">
-              Tindakan ini akan <strong>menghapus semua data Anda secara permanen</strong>, termasuk transaksi, target, dan tujuan. Aplikasi akan kembali ke keadaan awal.
+              Tindakan ini akan <strong>menghapus semua data</strong> yang telah Anda simpan di aplikasi ini, termasuk transaksi, target, dan tujuan.
+              <br/><br/>
+              <span className="font-bold text-[var(--color-warning)]">Tindakan ini tidak dapat diurungkan.</span>
           </p>
           
           <div className="flex flex-col gap-3">

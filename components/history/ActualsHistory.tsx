@@ -22,11 +22,11 @@ const ActualsDetail: React.FC<{ report: ArchivedActualReport }> = ({ report }) =
     const sections: { key: keyof MonthlyTarget, title: string, isIncome?: boolean }[] = [
         { key: 'pendapatan', title: 'Pendapatan', isIncome: true },
         { key: 'cicilanUtang', title: 'Cicilan Utang' },
+        { key: 'tabungan', title: 'Tabungan', isIncome: true },
         { key: 'pengeluaranUtama', title: 'Pengeluaran Utama' },
         { key: 'kebutuhan', title: 'Kebutuhan' },
         { key: 'penunjang', title: 'Penunjang' },
         { key: 'pendidikan', title: 'Pendidikan' },
-        { key: 'tabungan', title: 'Tabungan', isIncome: true },
     ];
 
     return (
@@ -73,7 +73,6 @@ const ActualsDetail: React.FC<{ report: ArchivedActualReport }> = ({ report }) =
 };
 
 const ActualsReportCard: React.FC<{ report: ArchivedActualReport }> = ({ report }) => {
-    const [isOpen, setIsOpen] = useState(false);
     const { target, actuals } = report;
 
     const summary = useMemo(() => {
@@ -113,12 +112,8 @@ const ActualsReportCard: React.FC<{ report: ArchivedActualReport }> = ({ report 
         };
 
     return (
-        <div className={`rounded-2xl shadow-md border ${statusStyles.container} transition-all duration-300`}>
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="w-full p-4 text-left"
-                aria-expanded={isOpen}
-            >
+        <details className={`group rounded-2xl shadow-md border ${statusStyles.container} transition-all duration-300 overflow-hidden`}>
+            <summary className="list-none p-4 cursor-pointer">
                 <div className="flex justify-between items-center">
                     <div className="flex items-center space-x-3">
                         <h3 className="font-bold text-lg text-[var(--text-primary)]">{monthName}</h3>
@@ -127,7 +122,7 @@ const ActualsReportCard: React.FC<{ report: ArchivedActualReport }> = ({ report 
                             {summary.isAchieved ? 'Target Tercapai' : 'Tidak Tercapai'}
                         </span>
                     </div>
-                    <i className={`fa-solid fa-chevron-down text-[var(--text-tertiary)] transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}></i>
+                    <i className={`fa-solid fa-chevron-down text-[var(--text-tertiary)] transition-transform duration-300 group-open:rotate-180`}></i>
                 </div>
                 {/* Summary Row */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-1 mt-3 text-xs text-[var(--text-tertiary)]">
@@ -141,13 +136,11 @@ const ActualsReportCard: React.FC<{ report: ArchivedActualReport }> = ({ report 
                         <strong>Tabungan:</strong> <span className={`font-semibold ${getDifferenceClass(summary.savings.actualTotal, summary.savings.targetTotal, true)}`}>{formatCurrency(summary.savings.actualTotal)}</span> / {formatCurrency(summary.savings.targetTotal)}
                     </div>
                 </div>
-            </button>
-            <div className={`overflow-hidden transition-all duration-500 ease-in-out ${isOpen ? 'max-h-[3000px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                <div className="border-t border-[var(--border-primary)]">
-                    <ActualsDetail report={report} />
-                </div>
+            </summary>
+            <div className="border-t border-[var(--border-primary)]">
+                <ActualsDetail report={report} />
             </div>
-        </div>
+        </details>
     );
 };
 
@@ -160,13 +153,16 @@ const ActualsHistory: React.FC<ActualsHistoryProps> = ({ archives, setView }) =>
   const sortedArchives = [...archives].sort((a, b) => b.monthYear.localeCompare(a.monthYear));
 
   return (
-    <div className="p-4 md:p-6 space-y-4">
-      <div className="flex items-center space-x-4">
-        <button onClick={() => setView(View.REPORT)} className="text-[var(--text-secondary)]">
-            <i className="fa-solid fa-arrow-left text-xl"></i>
+    <div className="p-4 md:p-6 space-y-4 animate-fade-in">
+      <header className="flex items-center space-x-4">
+        <button onClick={() => setView(View.DASHBOARD)} className="w-10 h-10 rounded-full bg-[var(--bg-interactive)] text-[var(--text-tertiary)] flex items-center justify-center transition-colors shadow-sm hover:bg-[var(--bg-interactive-hover)] border border-[var(--border-primary)]">
+            <i className="fa-solid fa-arrow-left"></i>
         </button>
-        <h1 className="text-2xl md:text-3xl font-bold text-[var(--text-primary)]">Riwayat Laporan Aktual</h1>
-      </div>
+        <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-[var(--text-primary)]">Riwayat Laporan Aktual</h1>
+            <p className="text-[var(--text-tertiary)]">Lihat perbandingan realisasi dengan target Anda dari bulan-bulan sebelumnya.</p>
+        </div>
+      </header>
 
       {sortedArchives.length > 0 ? (
         <div className="space-y-4 pb-20">
@@ -175,8 +171,9 @@ const ActualsHistory: React.FC<ActualsHistoryProps> = ({ archives, setView }) =>
             ))}
         </div>
        ) : (
-        <div className="text-center p-8 bg-[var(--bg-secondary)] rounded-2xl">
+        <div className="text-center p-8 bg-[var(--bg-secondary)] rounded-2xl mt-8">
             <i className="fa-solid fa-folder-open text-4xl text-[var(--text-tertiary)] mb-4"></i>
+             <p className="text-[var(--text-primary)] font-semibold">Riwayat Kosong</p>
             <p className="text-[var(--text-tertiary)]">Belum ada riwayat laporan aktual yang tersimpan.</p>
         </div>
       )}

@@ -8,7 +8,7 @@
 
 **Mengelola keuangan pribadi tidak pernah semudah dan secerdas ini.**
 
-BendaharaKita bukan sekadar aplikasi pencatat keuangan biasa. Ini adalah platform finansial modern yang dirancang untuk memberdayakan Anda dengan visualisasi data yang intuitif, pelacakan yang mudah, dan saran cerdas yang didukung oleh AI untuk membantu Anda mencapai setiap tujuan finansial.
+BendaharaKita bukan sekadar aplikasi pencatat keuangan biasa. Ini adalah platform finansial modern yang dirancang untuk memberdayayakan Anda dengan visualisasi data yang intuitif, pelacakan yang mudah, dan saran cerdas yang didukung oleh AI untuk membantu Anda mencapai setiap tujuan finansial.
 
 ![React](https://img.shields.io/badge/React-19-blue?style=for-the-badge&logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?style=for-the-badge&logo=typescript)
@@ -23,43 +23,43 @@ BendaharaKita bukan sekadar aplikasi pencatat keuangan biasa. Ini adalah platfor
 
 BendaharaKita dikemas dengan fitur-fitur canggih yang dirancang untuk memberikan pengalaman manajemen keuangan terbaik.
 
+### 🏦 **Manajemen Bank & Dompet Digital**
+- **Agregasi Akun:** Hubungkan dan lihat saldo dari semua rekening bank dan dompet digital Anda (BCA, GoPay, OVO, dll.) di satu tempat.
+- **Saldo Real-Time:** Setiap transaksi secara otomatis memperbarui saldo akun terkait, memberikan gambaran finansial yang selalu akurat.
+- **Transfer Antar Akun:** Pindahkan dana antar akun Anda dengan mudah. Aplikasi secara otomatis mencatat transaksi keluar-masuk untuk Anda.
+
+### ⚡ **Manajemen Transaksi Real-Time**
+- **Tambah, Edit, Hapus:** Catat transaksi secara instan dengan *Floating Action Button*. Setiap transaksi kini terhubung ke salah satu akun Anda.
+- **Pencarian & Filter Cerdas:** Temukan transaksi spesifik dalam hitungan detik dengan pencarian deskripsi dan filter berdasarkan kategori.
+
 ### 🧠 **Insight Finansial Berbasis AI**
-- **Analisis Cerdas:** Dapatkan 2-3 insight finansial yang personal, relevan, dan mudah dipahami hanya dengan satu klik.
-- **Didukung oleh Google Gemini:** Memanfaatkan kekuatan model AI canggih untuk menganalisis transaksi, pemasukan, dan pengeluaran Anda, lalu memberikan rekomendasi yang dapat ditindaklanjuti dalam Bahasa Indonesia.
-- **Ikon Dinamis:** Setiap insight disajikan dengan ikon yang sesuai untuk pemahaman yang lebih cepat.
+- **Analisis Cerdas:** Dapatkan 2-3 insight finansial yang personal dan relevan hanya dengan satu klik.
+- **Didukung oleh Google Gemini:** Memanfaatkan kekuatan AI untuk menganalisis data Anda dan memberikan rekomendasi yang dapat ditindaklanjuti dalam Bahasa Indonesia.
 
-### 📊 **Dashboard Analitik Interaktif**
-- **Ringkasan Komprehensif:** Lihat metrik kunci (Pemasukan, Pengeluaran, Sisa Uang, Tabungan) secara real-time.
-- **Mode Perbandingan:** Beralih dengan mudah antara melihat data **Aktual** bulan ini dan membandingkannya dengan **Target** yang telah Anda tetapkan.
-- **Analisis Kesehatan Keuangan:** Dapatkan status kesehatan finansial bulanan Anda (Sehat, Cukup Sehat, Perlu Perhatian) lengkap dengan penjelasan dan rekomendasi.
-- **Visualisasi Alokasi Dana:** Lihat bagaimana pendapatan Anda dialokasikan antara pengeluaran, tabungan, dan sisa uang melalui bar alokasi yang intuitif, lengkap dengan peringatan jika pengeluaran melebihi pendapatan.
-- **Grafik Arus Kas Tahunan:** Pantau tren keuangan Anda selama 12 bulan terakhir dengan grafik arus kas yang interaktif.
-- **Komposisi Pengeluaran:** Pahami ke mana uang Anda pergi dengan diagram lingkaran (pie chart) yang merinci komposisi pengeluaran dan tabungan.
+### 📊 **Dashboard & Laporan Analitik**
+- **Dashboard Utama:** Lihat metrik kunci seperti **Total Saldo** dari semua akun, pengeluaran, dan akses perencanaan bulanan Anda di satu tempat.
+- **Halaman Laporan Khusus:** Halaman baru yang didedikasikan untuk analisis mendalam, menampilkan pengeluaran berdasarkan kategori dan tren pendapatan vs. pengeluaran dari waktu ke waktu.
+- **Analisis Kesehatan Keuangan:** Dapatkan status kesehatan finansial bulanan Anda (Sehat, Cukup Sehat, Perlu Perhatian) lengkap dengan rekomendasi.
+- **Visualisasi Data Interaktif:** Grafik dan diagram yang indah dan mudah dipahami untuk memantau tren keuangan Anda.
 
-### 🎯 **Manajemen Target & Laporan Aktual yang Fleksibel**
-- **Template Anggaran yang Dapat Disesuaikan:** **Fitur Paling Kuat!** Lupakan formulir anggaran yang kaku. Anda dapat **mengubah, menambah, atau menghapus kategori dan segmen** sesuai dengan kebutuhan unik Anda.
-- **Smart Pre-filling:** Saat memasuki bulan baru, formulir target akan secara otomatis terisi dengan data dari bulan sebelumnya, menghemat waktu Anda.
-- **Alur Kerja Interaktif:** Jika data terisi otomatis, sebuah pop-up akan muncul, memberi Anda pilihan untuk langsung mengedit, masuk ke mode "Hanya Lihat", atau kembali.
-- **Konfirmasi Cerdas Sebelum Menyimpan:** Sebuah pop-up ringkasan memastikan Anda yakin dengan data yang dimasukkan sebelum menyimpannya secara permanen.
-- **Mode Baca Otomatis:** Setelah target disimpan, formulir akan terkunci ke mode baca, mencegah perubahan yang tidak disengaja, dengan opsi mudah untuk mengedit kembali.
+### ⚙️ **Personalisasi & Kontrol Penuh**
+- **Manajemen Kategori:** Buat, edit, dan hapus kategori pemasukan dan pengeluaran Anda sendiri agar sesuai dengan gaya hidup Anda.
+- **Mode Terang & Gelap:** Beralih antara tema gelap yang elegan atau tema terang yang bersih langsung dari halaman profil Anda.
+
+### 🎯 **Perencanaan & Laporan Aktual Real-Time**
+- **Laporan Aktual Otomatis:** Lupakan entri manual. Halaman Laporan Aktual kini menjadi dasbor *real-time* yang secara otomatis menyinkronkan dan menjumlahkan semua transaksi harian, pembayaran utang, dan setoran tabungan Anda, lalu membandingkannya langsung dengan target bulanan Anda.
+- **Template Anggaran Cerdas:** Buat target bulanan dengan mudah. Target utang dan tabungan Anda akan otomatis terisi dari menu Goals.
+- **Catatan Penting:** Untuk sinkronisasi otomatis yang akurat, pastikan **nama item target** (misal: "Transportasi") **sama persis** dengan **nama kategori transaksi** Anda.
 
 ### 🚀 **Manajemen Tujuan Finansial (Utang & Tabungan)**
 - **Pelacakan Terpusat:** Kelola semua pinjaman dan tujuan tabungan Anda di satu tempat yang terorganisir.
-- **Onboarding Mudah:** Wizard penyiapan awal memandu Anda untuk memasukkan data utang dan tabungan yang sedang berjalan saat pertama kali menggunakan fitur ini.
-- **Visualisasi Progres:** Lacak progres pelunasan utang dan pengumpulan dana tabungan dengan kartu progres yang jelas dan memotivasi.
-- **Peringatan Jatuh Tempo:** Dapatkan notifikasi visual untuk utang yang akan segera jatuh tempo.
-- **Riwayat Lengkap:** Akses riwayat pinjaman yang sudah lunas dan tujuan tabungan yang telah tercapai dengan mudah.
-
-### 📈 **Riwayat Transaksi & Laporan**
-- **Daftar Transaksi Detail:** Semua transaksi Anda diurutkan secara kronologis dan dikelompokkan berdasarkan bulan.
-- **Filter Cepat:** Saring transaksi dengan mudah berdasarkan tipe (Semua, Pemasukan, Pengeluaran).
-- **Desain Rapi:** Tata letak yang bersih memastikan keterbacaan, bahkan untuk deskripsi transaksi yang panjang.
+- **Onboarding Mudah:** Wizard penyiapan awal memandu Anda untuk memasukkan data yang sedang berjalan saat pertama kali menggunakan fitur ini.
+- **Visualisasi Progres:** Lacak progres dengan kartu yang jelas dan memotivasi, lengkap dengan peringatan jatuh tempo.
 
 ### 🎨 **UI/UX Modern & Responsif**
-- **Desain Elegan:** Antarmuka bertema gelap yang modern, enak dipandang, dan tidak membuat mata lelah.
-- **Animasi Halus:** Transisi halaman yang mulus, animasi daftar yang dinamis, dan efek interaktif memberikan pengalaman pengguna yang premium.
+- **Desain Elegan:** Antarmuka yang modern, enak dipandang, dan tidak membuat mata lelah.
+- **Animasi Halus:** Transisi dan efek interaktif memberikan pengalaman pengguna yang premium.
 - **Navigasi Intuitif:** Bottom navigation bar yang selalu dapat diakses memudahkan perpindahan antar fitur utama.
-- **Notifikasi Toast:** Dapatkan umpan balik instan untuk setiap tindakan penting, seperti menyimpan data.
 
 ---
 
