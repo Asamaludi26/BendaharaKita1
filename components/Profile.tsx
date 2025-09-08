@@ -6,6 +6,8 @@ interface ProfileProps {
     onToggleTheme: () => void;
     onManageCategories: () => void;
     onResetApp: () => void;
+    onOpenTour: () => void;
+    onOpenFormGuide: () => void; // Prop to open the new form guide
 }
 
 const ThemeToggle: React.FC<{ theme: string; onToggle: () => void; }> = ({ theme, onToggle }) => {
@@ -27,7 +29,7 @@ const ThemeToggle: React.FC<{ theme: string; onToggle: () => void; }> = ({ theme
 };
 
 
-const Profile: React.FC<ProfileProps> = ({ theme, onToggleTheme, onManageCategories, onResetApp }) => {
+const Profile: React.FC<ProfileProps> = ({ theme, onToggleTheme, onManageCategories, onResetApp, onOpenTour, onOpenFormGuide }) => {
     const [isResetModalOpen, setIsResetModalOpen] = useState(false);
 
     const handleConfirmReset = () => {
@@ -46,7 +48,7 @@ const Profile: React.FC<ProfileProps> = ({ theme, onToggleTheme, onManageCategor
           <p className="text-[var(--text-tertiary)]">Karyawan Swasta / Freelancer</p>
           
           <div className="mt-8 w-full max-w-sm space-y-3">
-              <h2 className="text-lg font-semibold text-[var(--text-secondary)] text-left">Pengaturan</h2>
+              <h2 className="text-lg font-semibold text-[var(--text-secondary)] text-left">Pengaturan & Bantuan</h2>
               <div className="w-full bg-[var(--bg-secondary)] backdrop-blur-lg border border-[var(--border-primary)] p-4 rounded-xl flex justify-between items-center">
                   <span className="font-medium text-[var(--text-secondary)]">Mode Tampilan</span>
                   <ThemeToggle theme={theme} onToggle={onToggleTheme} />
@@ -54,6 +56,14 @@ const Profile: React.FC<ProfileProps> = ({ theme, onToggleTheme, onManageCategor
               <button onClick={onManageCategories} className="w-full bg-[var(--bg-secondary)] backdrop-blur-lg border border-[var(--border-primary)] text-left p-4 rounded-xl flex justify-between items-center hover:bg-[var(--bg-interactive-hover)] hover:border-[var(--border-secondary)] transition-all">
                   <span className="font-medium text-[var(--text-secondary)]">Kelola Kategori</span>
                   <i className="fa-solid fa-chevron-right text-[var(--text-tertiary)]"></i>
+              </button>
+              <button onClick={onOpenTour} className="w-full bg-[var(--bg-secondary)] backdrop-blur-lg border border-[var(--border-primary)] text-left p-4 rounded-xl flex justify-between items-center hover:bg-[var(--bg-interactive-hover)] hover:border-[var(--border-secondary)] transition-all">
+                  <span className="font-medium text-[var(--text-secondary)]">Panduan Alur Aplikasi</span>
+                  <i className="fa-solid fa-book-open text-[var(--text-tertiary)]"></i>
+              </button>
+              <button onClick={onOpenFormGuide} className="w-full bg-[var(--bg-secondary)] backdrop-blur-lg border border-[var(--border-primary)] text-left p-4 rounded-xl flex justify-between items-center hover:bg-[var(--bg-interactive-hover)] hover:border-[var(--border-secondary)] transition-all">
+                  <span className="font-medium text-[var(--text-secondary)]">Panduan Pengisian Form</span>
+                  <i className="fa-solid fa-file-pen text-[var(--text-tertiary)]"></i>
               </button>
               <button onClick={() => setIsResetModalOpen(true)} className="w-full bg-[var(--bg-secondary)] backdrop-blur-lg border border-[var(--border-primary)] text-left p-4 rounded-xl flex justify-between items-center hover:bg-[var(--bg-interactive-hover)] hover:border-[var(--border-secondary)] transition-all">
                   <span className="font-medium text-[var(--color-warning)]">Reset Seluruh Aplikasi</span>

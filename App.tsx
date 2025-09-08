@@ -1,9 +1,6 @@
-// This is the main application component. It manages all state, views, and data persistence.
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { View, Transaction, DebtItem, SavingsGoal, ArchivedMonthlyTarget, ArchivedActualReport, MonthlyTarget, UserCategory, Account, TransactionType } from './types';
-// UPDATED: Switched to cleanMockData for a fresh start experience.
-// The old historical mockData file is no longer used for the initial state.
 import { mockTransactions, mockDebts, mockSavingsGoals, mockArchivedActuals, mockArchivedTargets, mockUserCategories, mockAccounts } from './data/cleanMockData';
 
 import BottomNav from './components/BottomNav';
@@ -14,7 +11,7 @@ import Profile from './components/Profile';
 import DebtDetail from './components/goals/DebtDetail';
 import SavingsGoalDetail from './components/goals/SavingsGoalDetail';
 import AddTargetForm from './components/AddTargetForm';
-import ActualsReportView from './components/AddTransaction'; // Formerly AddTransaction, now the report view
+import ActualsReportView from './components/AddTransaction';
 import TargetHistory from './components/history/TargetHistory';
 import ActualsHistory from './components/history/ActualsHistory';
 import DebtHistory from './components/history/DebtHistory';
@@ -30,6 +27,9 @@ import CategoryManagerModal from './components/modals/CategoryManagerModal';
 import Accounts from './components/accounts/Accounts';
 import AccountFormModal from './components/modals/AccountFormModal';
 import TransferModal from './components/modals/TransferModal';
+import WelcomeTourModal from './components/modals/WelcomeTourModal';
+import FormGuideModal from './components/modals/FormGuideModal';
+import WalletOnboardingWizard from './components/accounts/WalletOnboardingWizard';
 
 // A simple hook to persist state to localStorage
 function useLocalStorage<T>(key: string, initialValue: T): [T, React.Dispatch<React.SetStateAction<T>>] {
@@ -61,7 +61,6 @@ const App: React.FC = () => {
     const [activeDetailId, setActiveDetailId] = useState<string | null>(null);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
     const [activeModal, setActiveModal] = useState<null | 'ADD_DEBT' | 'ADD_SAVINGS_GOAL' | 'ADD_ACCOUNT' | 'EDIT_ACCOUNT' | 'TRANSFER'>(null);
-    const [hasSkippedOnboarding, setHasSkippedOnboarding] = useState(false);
     
     // New states for enhanced features
     const [theme, setTheme] = useLocalStorage<'light' | 'dark'>('app_theme', 'dark');
@@ -78,8 +77,18 @@ const App: React.FC = () => {
     const [userCategories, setUserCategories] = useLocalStorage<UserCategory[]>('user_categories_data', mockUserCategories);
     const [accounts, setAccounts] = useLocalStorage<Account[]>('accounts_data', mockAccounts);
     
-    // Onboarding state
-    const [onboardingComplete, setOnboardingComplete] = useLocalStorage<boolean>('onboardingComplete_status', false);
+    // Onboarding states
+    const [goalsOnboardingComplete, setGoalsOnboardingComplete] = useLocalStorage<boolean>('goalsOnboardingComplete_status', false);
+    const [hasSkippedGoalsOnboarding, setHasSkippedGoalsOnboarding] = useState(false);
+    // FIX: The wallet onboarding was never showing because it was initialized to true due to mock data.
+    // It should initialize to false for new users.
+    const [walletOnboardingComplete, setWalletOnboardingComplete] = useLocalStorage<boolean>('walletOnboardingComplete_status', false);
+    const [hasSkippedWalletOnboarding, setHasSkippedWalletOnboarding] = useState(false);
+
+    const [isFirstVisit, setIsFirstVisit] = useLocalStorage<boolean>('is_first_visit', true);
+    const [isTourModalOpen, setIsTourModalOpen] = useState(isFirstVisit);
+    const [isFormGuideModalOpen, setIsFormGuideModalOpen] = useState(false);
+
 
     const [displayDate, setDisplayDate] = useState(new Date());
 
@@ -94,12 +103,26 @@ const App: React.FC = () => {
 
     // --- APP RESET ---
     const handleResetApp = () => {
-        // Clear all data from localStorage
         window.localStorage.clear();
-        // Force a reload to re-initialize state from mock data
         window.location.reload();
         setToast({ message: 'Aplikasi berhasil direset!', type: 'success' });
     }
+    
+    // --- GUIDES & TOURS ---
+    const handleCloseWelcomeTour = () => {
+        if (isFirstVisit) {
+            setIsFirstVisit(false);
+        }
+        setIsTourModalOpen(false);
+    };
+
+    const handleOpenWelcomeTour = () => {
+        setIsTourModalOpen(true);
+    };
+    
+    const handleOpenFormGuide = () => {
+        setIsFormGuideModalOpen(true);
+    };
 
     // --- CORE HANDLERS ---
     const handlePrevMonth = () => setDisplayDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
@@ -118,7 +141,7 @@ const App: React.FC = () => {
         return targetForMonth ? targetForMonth.target : null;
     }, [currentMonthYear, archivedTargets]);
 
-    // --- TRANSACTION & ACCOUNT BALANCE CRUD (REWORKED) ---
+    // --- TRANSACTION & ACCOUNT BALANCE CRUD ---
     const handleSaveTransaction = (transaction: Transaction) => {
         const isNew = !transactions.some(t => t.id === transaction.id);
         const originalTransaction = isNew ? null : transactions.find(t => t.id === transaction.id);
@@ -127,14 +150,12 @@ const App: React.FC = () => {
             return prevAccounts.map(acc => {
                 let newBalance = acc.balance;
     
-                // Case 1: Revert original transaction if it exists (update or account change)
                 if (originalTransaction) {
                     if (originalTransaction.accountId === acc.id) {
                         newBalance += originalTransaction.type === TransactionType.INCOME ? -originalTransaction.amount : originalTransaction.amount;
                     }
                 }
     
-                // Case 2: Apply the new transaction effect
                 if (transaction.accountId === acc.id) {
                     newBalance += transaction.type === TransactionType.INCOME ? transaction.amount : -transaction.amount;
                 }
@@ -172,10 +193,22 @@ const App: React.FC = () => {
         setEditingTransaction(null);
     };
 
-    // --- ACCOUNT MANAGEMENT ---
+    // --- ACCOUNT & WALLET MANAGEMENT ---
     const handleSaveAccount = (account: Account) => {
         const isNew = !accounts.some(a => a.id === account.id);
         if (isNew) {
+            if (account.balance > 0) {
+                const initialBalanceTransaction: Transaction = {
+                    id: uuidv4(),
+                    date: new Date().toISOString(),
+                    description: `Saldo Awal ${account.name}`,
+                    amount: account.balance,
+                    type: TransactionType.INCOME,
+                    category: 'Saldo Awal',
+                    accountId: account.id,
+                };
+                setTransactions(prev => [initialBalanceTransaction, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+            }
             setAccounts(prev => [...prev, account]);
             setToast({ message: 'Akun baru berhasil ditambahkan!', type: 'success' });
         } else {
@@ -197,27 +230,15 @@ const App: React.FC = () => {
     };
 
     const handleTransfer = (fromAccountId: string, toAccountId: string, amount: number) => {
-        // Create two transactions
         const transferOut: Transaction = {
-            id: uuidv4(),
-            date: new Date().toISOString(),
-            description: `Transfer ke ${accounts.find(a => a.id === toAccountId)?.name}`,
-            amount,
-            type: TransactionType.EXPENSE,
-            category: 'Transfer Dana',
-            accountId: fromAccountId,
+            id: uuidv4(), date: new Date().toISOString(), description: `Transfer ke ${accounts.find(a => a.id === toAccountId)?.name}`,
+            amount, type: TransactionType.EXPENSE, category: 'Transfer Dana', accountId: fromAccountId,
         };
         const transferIn: Transaction = {
-            id: uuidv4(),
-            date: new Date().toISOString(),
-            description: `Transfer dari ${accounts.find(a => a.id === fromAccountId)?.name}`,
-            amount,
-            type: TransactionType.INCOME,
-            category: 'Transfer Dana',
-            accountId: toAccountId,
+            id: uuidv4(), date: new Date().toISOString(), description: `Transfer dari ${accounts.find(a => a.id === fromAccountId)?.name}`,
+            amount, type: TransactionType.INCOME, category: 'Transfer Dana', accountId: toAccountId,
         };
 
-        // Update balances and add transactions
         setAccounts(prev => prev.map(acc => {
             if (acc.id === fromAccountId) return { ...acc, balance: acc.balance - amount };
             if (acc.id === toAccountId) return { ...acc, balance: acc.balance + amount };
@@ -228,16 +249,47 @@ const App: React.FC = () => {
         setActiveModal(null);
     };
 
+    const handleWalletOnboardingComplete = (newAccountsData: { name: string, type: 'Bank' | 'E-Wallet', balance: number }[]) => {
+        const newAccounts: Account[] = newAccountsData.map(accData => ({
+            id: uuidv4(),
+            ...accData
+        }));
+
+        const initialBalanceTransactions: Transaction[] = newAccounts
+            .filter(acc => acc.balance > 0)
+            .map(acc => ({
+                id: uuidv4(),
+                date: new Date().toISOString(),
+                description: `Saldo Awal ${acc.name}`,
+                amount: acc.balance,
+                type: TransactionType.INCOME,
+                category: 'Saldo Awal',
+                accountId: acc.id,
+            }));
+        
+        setAccounts(newAccounts);
+        setTransactions(initialBalanceTransactions);
+        setWalletOnboardingComplete(true);
+        setHasSkippedWalletOnboarding(false);
+        setToast({ message: 'Pengaturan dompet berhasil!', type: 'success' });
+    };
+    
+    const handleSkipWalletOnboarding = () => setHasSkippedWalletOnboarding(true);
+
+    const resetWalletData = () => {
+        setAccounts([]);
+        setTransactions([]);
+        setWalletOnboardingComplete(false);
+        setHasSkippedWalletOnboarding(false);
+        setView(View.WALLET);
+        setToast({ message: 'Data dompet & transaksi telah direset.', type: 'success' });
+    };
+
     // --- CATEGORY CRUD ---
     const handleSaveCategory = (category: UserCategory) => {
         const isNew = !userCategories.some(c => c.id === category.id);
-        if(isNew) {
-            setUserCategories(prev => [...prev, category]);
-            setToast({ message: 'Kategori baru ditambahkan!', type: 'success' });
-        } else {
-            setUserCategories(prev => prev.map(c => c.id === category.id ? category : c));
-            setToast({ message: 'Kategori diperbarui!', type: 'success' });
-        }
+        if(isNew) { setUserCategories(prev => [...prev, category]); setToast({ message: 'Kategori baru ditambahkan!', type: 'success' });
+        } else { setUserCategories(prev => prev.map(c => c.id === category.id ? category : c)); setToast({ message: 'Kategori diperbarui!', type: 'success' }); }
     };
     
     const handleDeleteCategory = (categoryId: string) => {
@@ -250,9 +302,7 @@ const App: React.FC = () => {
     const handleSaveTarget = (data: MonthlyTarget) => {
         setArchivedTargets(prev => {
             const existing = prev.find(p => p.monthYear === currentMonthYear);
-            if (existing) {
-                return prev.map(p => p.monthYear === currentMonthYear ? { ...p, target: data } : p);
-            }
+            if (existing) { return prev.map(p => p.monthYear === currentMonthYear ? { ...p, target: data } : p); }
             return [...prev, { monthYear: currentMonthYear, target: data }];
         });
         setView(View.DASHBOARD);
@@ -260,27 +310,19 @@ const App: React.FC = () => {
     };
     
     // --- GOALS ONBOARDING & CRUD ---
-    const handleOnboardingComplete = (data: { debts: DebtItem[], savingsGoals: SavingsGoal[] }) => {
-        setDebts(data.debts);
-        setSavingsGoals(data.savingsGoals);
-        setOnboardingComplete(true);
-        setHasSkippedOnboarding(false);
-        setActiveModal(null);
-        setToast({ message: 'Pengaturan awal berhasil!', type: 'success' });
+    const handleGoalsOnboardingComplete = (data: { debts: DebtItem[], savingsGoals: SavingsGoal[] }) => {
+        setDebts(data.debts); setSavingsGoals(data.savingsGoals); setGoalsOnboardingComplete(true); setHasSkippedGoalsOnboarding(false);
+        setActiveModal(null); setToast({ message: 'Pengaturan awal berhasil!', type: 'success' });
     };
 
     const handleAddDebt = (debtData: Omit<DebtItem, 'id'>) => {
         const newDebt: DebtItem = { ...debtData, id: `debt-${Date.now()}` };
-        setDebts(prev => [...prev, newDebt]);
-        setActiveModal(null);
-        setToast({ message: 'Pinjaman baru berhasil ditambahkan!', type: 'success' });
+        setDebts(prev => [...prev, newDebt]); setActiveModal(null); setToast({ message: 'Pinjaman baru berhasil ditambahkan!', type: 'success' });
     };
 
     const handleAddSavingsGoal = (goalData: Omit<SavingsGoal, 'id'>) => {
         const newGoal: SavingsGoal = { ...goalData, id: `sg-${Date.now()}` };
-        setSavingsGoals(prev => [...prev, newGoal]);
-        setActiveModal(null);
-        setToast({ message: 'Tujuan baru berhasil ditambahkan!', type: 'success' });
+        setSavingsGoals(prev => [...prev, newGoal]); setActiveModal(null); setToast({ message: 'Tujuan baru berhasil ditambahkan!', type: 'success' });
     };
 
     const handleAddPayment = (debtId: string, amount: number) => {
@@ -293,17 +335,11 @@ const App: React.FC = () => {
         setToast({ message: 'Dana berhasil ditambahkan!', type: 'success' });
     };
 
-    const handleSkipOnboarding = () => {
-        setHasSkippedOnboarding(true);
-    };
+    const handleSkipGoalsOnboarding = () => { setHasSkippedGoalsOnboarding(true); };
 
     const resetGoals = () => {
-        setDebts([]);
-        setSavingsGoals([]);
-        setOnboardingComplete(false);
-        setHasSkippedOnboarding(false);
-        setView(View.MANAGEMENT);
-        setToast({ message: 'Data tujuan telah direset.', type: 'success' });
+        setDebts([]); setSavingsGoals([]); setGoalsOnboardingComplete(false); setHasSkippedGoalsOnboarding(false);
+        setView(View.MANAGEMENT); setToast({ message: 'Data tujuan telah direset.', type: 'success' });
     }
     
     // --- DERIVED STATE & MEMOS ---
@@ -313,9 +349,81 @@ const App: React.FC = () => {
     const completedSavingsGoals = useMemo(() => savingsGoals.filter(g => g.currentAmount >= g.targetAmount), [savingsGoals]);
     const totalAllTimeSavings = useMemo(() => savingsGoals.reduce((sum, g) => sum + g.targetAmount, 0), [savingsGoals]);
     const totalAllTimeDebt = useMemo(() => debts.reduce((sum, d) => sum + d.totalAmount, 0), [debts]);
-    const showOnboardingWizard = view === View.MANAGEMENT && !onboardingComplete && !hasSkippedOnboarding;
+    const showGoalsOnboardingWizard = view === View.MANAGEMENT && !goalsOnboardingComplete && !hasSkippedGoalsOnboarding;
+    const showWalletOnboardingWizard = view === View.WALLET && !walletOnboardingComplete && !hasSkippedWalletOnboarding;
     
-    const allModalsClosed = !activeModal && !showOnboardingWizard && !editingTransaction && !isCategoryModalOpen && !editingAccount;
+    const allModalsClosed = !activeModal && !showGoalsOnboardingWizard && !editingTransaction && !isCategoryModalOpen && !editingAccount && !isTourModalOpen && !isFormGuideModalOpen && !showWalletOnboardingWizard;
+
+    const currentMonthReportSummary = useMemo(() => {
+        if (!currentMonthlyTarget) return null;
+
+        const monthStart = new Date(displayDate.getFullYear(), displayDate.getMonth(), 1);
+        const monthEnd = new Date(displayDate.getFullYear(), displayDate.getMonth() + 1, 0);
+        monthStart.setHours(0, 0, 0, 0); monthEnd.setHours(23, 59, 59, 999);
+    
+        const currentMonthTransactions = transactions.filter(t => {
+            const txDate = new Date(t.date); return txDate >= monthStart && txDate <= monthEnd;
+        });
+
+        let totalActualExpenses = 0;
+        const expenseKeys: (keyof MonthlyTarget)[] = ['cicilanUtang', 'pengeluaranUtama', 'kebutuhan', 'penunjang', 'pendidikan'];
+
+        expenseKeys.forEach(sectionKey => {
+            currentMonthlyTarget[sectionKey].forEach(targetItem => {
+                let actualAmount = 0;
+                if (sectionKey === 'cicilanUtang') {
+                    const debt = debts.find(d => d.name === targetItem.name);
+                    if (debt) { actualAmount = debt.payments.filter(p => new Date(p.date) >= monthStart && new Date(p.date) <= monthEnd).reduce((s, p) => s + p.amount, 0); }
+                } else {
+                    actualAmount = currentMonthTransactions.filter(t => t.category === targetItem.name).reduce((s, t) => s + t.amount, 0);
+                }
+                totalActualExpenses += actualAmount;
+            });
+        });
+        
+        let totalTargetExpenses = 0;
+        expenseKeys.forEach(sectionKey => {
+            totalTargetExpenses += currentMonthlyTarget[sectionKey].reduce((s, item) => s + parseInt(item.amount || '0'), 0);
+        });
+
+        return { totalActualExpenses, totalTargetExpenses };
+    }, [currentMonthlyTarget, transactions, debts, displayDate]);
+
+    const { realTimeSummary, healthAnalysis } = useMemo(() => {
+        const monthStart = new Date(displayDate.getFullYear(), displayDate.getMonth(), 1);
+        const monthEnd = new Date(displayDate.getFullYear(), displayDate.getMonth() + 1, 0);
+        const currentMonthTxs = transactions.filter(t => {
+            const txDate = new Date(t.date); return txDate >= monthStart && txDate <= monthEnd;
+        });
+
+        const income = currentMonthTxs.filter(t => t.type === TransactionType.INCOME).reduce((sum, t) => sum + t.amount, 0);
+        const expense = currentMonthTxs.filter(t => t.type === TransactionType.EXPENSE).reduce((sum, t) => sum + t.amount, 0);
+        const cashFlow = income - expense;
+
+        const debtPayments = currentMonthTxs.filter(t => t.category === 'Utang').reduce((sum, t) => sum + t.amount, 0);
+        const savingsContributions = currentMonthTxs.filter(t => t.category === 'Tabungan').reduce((sum, t) => sum + t.amount, 0);
+        
+        const debtRatio = income > 0 ? (debtPayments / income) * 100 : 0;
+        const savingsRatio = income > 0 ? (savingsContributions / income) * 100 : 0;
+        
+        let status = "Data Tidak Cukup";
+        if (income > 0) {
+            if (debtRatio < 35 && savingsRatio >= 10 && cashFlow > 0) {
+                status = "Sehat";
+            } else if (cashFlow > 0) {
+                status = "Perlu Perhatian";
+            }
+        }
+
+        return {
+            realTimeSummary: { income, expense, cashFlow },
+            healthAnalysis: { debtRatio, savingsRatio, status, cashFlow }
+        };
+    }, [transactions, displayDate]);
+    
+    const totalBalance = useMemo(() => accounts.reduce((sum, acc) => sum + acc.balance, 0), [accounts]);
+    const isTargetSet = !!currentMonthlyTarget;
+
 
     // --- VIEW RENDERER ---
     const renderView = () => {
@@ -325,7 +433,17 @@ const App: React.FC = () => {
 
         switch (view) {
             case View.DASHBOARD:
-                pageComponent = <Dashboard displayDate={displayDate} handlePrevMonth={handlePrevMonth} handleNextMonth={handleNextMonth} archivedTargets={archivedTargets} archivedActuals={archivedActuals} transactions={transactions} setView={setView} isTargetSet={!!currentMonthlyTarget} accounts={accounts} />;
+                pageComponent = <Dashboard 
+                    displayDate={displayDate} 
+                    handlePrevMonth={handlePrevMonth} 
+                    handleNextMonth={handleNextMonth} 
+                    archivedTargets={archivedTargets}
+                    archivedActuals={archivedActuals}
+                    transactions={transactions}
+                    setView={setView} 
+                    isTargetSet={isTargetSet} 
+                    accounts={accounts} 
+                />;
                 break;
             case View.TRANSACTIONS:
                 pageComponent = <Transactions transactions={transactions} userCategories={userCategories} onAdd={() => setEditingTransaction('new')} onEdit={(tx) => setEditingTransaction(tx)} accounts={accounts} />;
@@ -334,7 +452,7 @@ const App: React.FC = () => {
                 pageComponent = <ReportsDashboard transactions={transactions} userCategories={userCategories} />;
                 break;
              case View.WALLET:
-                pageComponent = <Accounts accounts={accounts} onAddAccount={() => setActiveModal('ADD_ACCOUNT')} onEditAccount={(acc) => { setEditingAccount(acc); setActiveModal('EDIT_ACCOUNT'); }} onDeleteAccount={handleDeleteAccount} onTransfer={() => setActiveModal('TRANSFER')} />;
+                pageComponent = <Accounts accounts={accounts} onAddAccount={() => setActiveModal('ADD_ACCOUNT')} onEditAccount={(acc) => { setEditingAccount(acc); setActiveModal('EDIT_ACCOUNT'); }} onDeleteAccount={handleDeleteAccount} onTransfer={() => setActiveModal('TRANSFER')} onReset={resetWalletData} />;
                 break;
             case View.ADD_TARGET:
                 pageComponent = <AddTargetForm setView={setView} onSave={handleSaveTarget} initialData={currentMonthlyTarget} archivedTargets={archivedTargets} currentMonthYear={currentMonthYear} activeDebts={activeDebts} activeSavingsGoals={activeSavingsGoals} onAddDebt={() => setActiveModal('ADD_DEBT')} onAddSavingsGoal={() => setActiveModal('ADD_SAVINGS_GOAL')} />;
@@ -366,28 +484,50 @@ const App: React.FC = () => {
                 pageComponent = <SavingsGoalHistory completedGoals={completedSavingsGoals} setView={setView} onSelectSavingsGoal={(id) => { setActiveDetailId(id); setView(View.SAVINGS_GOAL_DETAIL); }} />;
                 break;
             case View.PROFILE:
-                pageComponent = <Profile theme={theme} onToggleTheme={handleToggleTheme} onManageCategories={() => setIsCategoryModalOpen(true)} onResetApp={handleResetApp} />;
+                pageComponent = <Profile theme={theme} onToggleTheme={handleToggleTheme} onManageCategories={() => setIsCategoryModalOpen(true)} onResetApp={handleResetApp} onOpenTour={handleOpenWelcomeTour} onOpenFormGuide={handleOpenFormGuide} />;
                 break;
             default:
-                pageComponent = <Dashboard displayDate={displayDate} handlePrevMonth={handlePrevMonth} handleNextMonth={handleNextMonth} archivedTargets={archivedTargets} archivedActuals={archivedActuals} transactions={transactions} setView={setView} isTargetSet={!!currentMonthlyTarget} accounts={accounts} />;
+                pageComponent = <Dashboard 
+                    displayDate={displayDate} 
+                    handlePrevMonth={handlePrevMonth} 
+                    handleNextMonth={handleNextMonth} 
+                    archivedTargets={archivedTargets}
+                    archivedActuals={archivedActuals}
+                    transactions={transactions}
+                    setView={setView} 
+                    isTargetSet={isTargetSet} 
+                    accounts={accounts} 
+                />;
         }
         
-        return <div className={pageContentClass}>{pageComponent}</div>;
+        return <div className={`pb-24 ${pageContentClass}`}>{pageComponent}</div>;
     };
 
     return (
         <div className="bg-[var(--bg-primary)] text-[var(--text-secondary)] font-sans min-h-screen">
              {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
             
-            <main className="pb-24">
+            <main>
                 {renderView()}
             </main>
 
             <BottomNav activeView={view} setView={setView} />
             
             {/* --- MODAL AREA --- */}
-            <Modal isOpen={showOnboardingWizard} onClose={handleSkipOnboarding}>
-                <OnboardingWizard onComplete={handleOnboardingComplete} onSkip={handleSkipOnboarding} />
+            <Modal isOpen={isTourModalOpen} onClose={handleCloseWelcomeTour}>
+                <WelcomeTourModal onClose={handleCloseWelcomeTour} isFirstTime={isFirstVisit} />
+            </Modal>
+            
+            <Modal isOpen={isFormGuideModalOpen} onClose={() => setIsFormGuideModalOpen(false)}>
+                <FormGuideModal onClose={() => setIsFormGuideModalOpen(false)} />
+            </Modal>
+
+            <Modal isOpen={showGoalsOnboardingWizard} onClose={handleSkipGoalsOnboarding}>
+                <OnboardingWizard onComplete={handleGoalsOnboardingComplete} onSkip={handleSkipGoalsOnboarding} />
+            </Modal>
+            
+            <Modal isOpen={showWalletOnboardingWizard} onClose={handleSkipWalletOnboarding}>
+                <WalletOnboardingWizard onComplete={handleWalletOnboardingComplete} onSkip={handleSkipWalletOnboarding} />
             </Modal>
 
             <Modal isOpen={activeModal === 'ADD_DEBT'} onClose={() => setActiveModal(null)}>
