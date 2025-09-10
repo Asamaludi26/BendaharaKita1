@@ -61,19 +61,24 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ accountToEdit, onSa
                         value={formData.name} 
                         onChange={e => handleInputChange('name', e.target.value)} 
                         placeholder="Contoh: Bank BCA" 
-                        className="w-full p-2 bg-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-md focus:ring-2 focus:ring-[var(--primary-glow)]" 
+                        className="w-full p-3 bg-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-md focus:ring-2 focus:ring-[var(--primary-glow)]" 
                     />
                 </div>
                  <div>
                     <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Tipe Akun</label>
-                    <select 
-                        value={formData.type} 
-                        onChange={e => handleInputChange('type', e.target.value)} 
-                        className="w-full p-2 bg-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-md focus:ring-2 focus:ring-[var(--primary-glow)]"
-                    >
-                        <option value="Bank">Bank</option>
-                        <option value="E-Wallet">E-Wallet</option>
-                    </select>
+                    <div className="relative group">
+                        <select 
+                            value={formData.type} 
+                            onChange={e => handleInputChange('type', e.target.value)} 
+                            className="w-full appearance-none p-3 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-[var(--text-primary)] font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[var(--primary-glow)] focus:border-transparent hover:border-[var(--border-secondary)] hover:bg-[var(--bg-interactive)] pr-10"
+                        >
+                            <option value="Bank">Bank</option>
+                            <option value="E-Wallet">E-Wallet</option>
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[var(--text-tertiary)]">
+                            <i className="fa-solid fa-chevron-down text-xs transition-transform duration-300 group-focus-within:rotate-180"></i>
+                        </div>
+                    </div>
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Saldo {isEditing ? 'Saat Ini' : 'Awal'}</label>
@@ -84,7 +89,7 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ accountToEdit, onSa
                             inputMode="numeric" 
                             value={formData.balance ? parseInt(formData.balance).toLocaleString('id-ID') : ''} 
                             onChange={e => handleInputChange('balance', e.target.value.replace(/[^0-9]/g, ''))} 
-                            className="w-full p-2 pl-8 bg-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-md focus:ring-2 focus:ring-[var(--primary-glow)] text-right" 
+                            className="w-full p-3 pl-8 bg-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-md focus:ring-2 focus:ring-[var(--primary-glow)] text-right" 
                             readOnly={isEditing}
                         />
                     </div>

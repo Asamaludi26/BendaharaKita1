@@ -75,7 +75,7 @@ const WalletOnboardingWizard: React.FC<WalletOnboardingWizardProps> = ({ onCompl
     };
 
     const renderStep = () => {
-        const inputClasses = "w-full p-2 bg-[var(--bg-interactive)] text-sm rounded-md border border-[var(--border-primary)] text-[var(--text-primary)] focus:ring-2 focus:ring-[var(--primary-glow)] focus:border-transparent";
+        const inputClasses = "w-full p-3 bg-[var(--bg-interactive)] text-sm rounded-md border border-[var(--border-primary)] text-[var(--text-primary)] focus:ring-2 focus:ring-[var(--primary-glow)] focus:border-transparent";
         const labelClasses = "block text-xs font-semibold text-[var(--text-tertiary)] mb-1";
         
         switch (step) {
@@ -111,10 +111,15 @@ const WalletOnboardingWizard: React.FC<WalletOnboardingWizardProps> = ({ onCompl
                                         </div>
                                         <div>
                                             <label className={labelClasses}>Tipe Akun</label>
-                                            <select className={inputClasses} value={acc.type} onChange={e => handleAccountChange(acc.id, 'type', e.target.value)}>
-                                                <option value="Bank">Bank</option>
-                                                <option value="E-Wallet">E-Wallet</option>
-                                            </select>
+                                            <div className="relative group">
+                                                <select className="w-full appearance-none p-3 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-[var(--text-primary)] font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[var(--primary-glow)] focus:border-transparent hover:border-[var(--border-secondary)] hover:bg-[var(--bg-interactive)] pr-10" value={acc.type} onChange={e => handleAccountChange(acc.id, 'type', e.target.value)}>
+                                                    <option value="Bank">Bank</option>
+                                                    <option value="E-Wallet">E-Wallet</option>
+                                                </select>
+                                                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[var(--text-tertiary)]">
+                                                    <i className="fa-solid fa-chevron-down text-xs transition-transform duration-300 group-focus-within:rotate-180"></i>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                     <div>

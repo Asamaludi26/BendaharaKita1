@@ -291,11 +291,12 @@ const ReportsDashboard: React.FC<ReportsDashboardProps> = ({ transactions, userC
                                                 innerRadius={60}
                                                 outerRadius={80}
                                                 paddingAngle={2}
-                                                // @ts-ignore
-                                                activeIndex={activePieIndex}
                                                 activeShape={renderActiveShape}
                                                 onMouseEnter={(_, index) => setActivePieIndex(index)}
                                                 onMouseLeave={() => setActivePieIndex(-1)}
+                                                // FIX: Replaced @ts-ignore with a spread to safely pass the activeIndex prop,
+                                                // which seems to be missing from the currently used @types/recharts version.
+                                                {...{ activeIndex: activePieIndex }}
                                             >
                                                 {compositionData.map((entry, index) => (
                                                     <Cell 

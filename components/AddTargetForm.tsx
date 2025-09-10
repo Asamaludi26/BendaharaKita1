@@ -4,6 +4,7 @@ import { View } from '../types';
 import type { MonthlyTarget, TargetFormField, ArchivedMonthlyTarget, DebtItem, SavingsGoal } from '../types';
 import { AccordionSection } from './AccordionSection';
 import Modal from './Modal';
+import { generateMonthlyTarget } from '../services/geminiService';
 
 interface AddTargetFormProps {
   setView: (view: View) => void;
@@ -16,6 +17,75 @@ interface AddTargetFormProps {
   onAddDebt: () => void;
   onAddSavingsGoal: () => void;
 }
+
+const AITargetModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    onComplete: (target: MonthlyTarget) => void;
+    activeDebts: DebtItem[];
+    activeSavingsGoals: SavingsGoal[];
+}> = ({ isOpen, onClose, onComplete, activeDebts, activeSavingsGoals }) => {
+    const [prompt, setPrompt] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const handleGenerate = async () => {
+        if (!prompt) return;
+        setIsLoading(true);
+        setError(null);
+        try {
+            const result = await generateMonthlyTarget(prompt, activeDebts, activeSavingsGoals);
+            onComplete(result);
+            onClose();
+        } catch (err: any) {
+            setError(err.message || "Terjadi kesalahan.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <Modal isOpen={isOpen} onClose={onClose}>
+            <div className="bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-2xl p-6 w-full max-w-lg">
+                <header className="flex items-center justify-between mb-6">
+                    <div className="flex items-center space-x-4">
+                        <div className="w-12 h-12 rounded-xl bg-[var(--bg-interactive)] flex items-center justify-center border border-[var(--border-primary)] flex-shrink-0">
+                            <i className="fa-solid fa-wand-magic-sparkles text-2xl text-[var(--primary-glow)]"></i>
+                        </div>
+                        <div>
+                            <h1 className="text-xl font-bold text-[var(--text-primary)]">Rencanakan dengan AI</h1>
+                            <p className="text-sm text-[var(--text-tertiary)]">Biarkan AI membantu Anda.</p>
+                        </div>
+                    </div>
+                    <button onClick={onClose} className="w-8 h-8 rounded-full text-[var(--text-tertiary)] hover:bg-[var(--bg-interactive-hover)]"><i className="fa-solid fa-times"></i></button>
+                </header>
+                <div className="space-y-4">
+                    <p className="text-sm text-[var(--text-secondary)]">
+                        Jelaskan situasi keuangan Anda, dan AI akan membuatkan draf target bulanan.
+                        <br/>
+                        <strong>Contoh:</strong> "Gaji saya 12 juta per bulan, masih lajang. Prioritas untuk bayar KPR, nabung dana darurat, dan sedikit untuk hiburan."
+                    </p>
+                    <textarea
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        placeholder="Tuliskan prompt Anda di sini..."
+                        rows={4}
+                        className="w-full p-2 bg-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-md focus:ring-2 focus:ring-[var(--primary-glow)]"
+                        disabled={isLoading}
+                    />
+                    {error && <p className="text-sm text-center text-[var(--color-expense)]">{error}</p>}
+                    <div className="flex gap-3">
+                        <button onClick={onClose} disabled={isLoading} className="w-full bg-transparent text-[var(--text-tertiary)] font-semibold py-3 px-4 rounded-full hover:bg-[var(--bg-interactive-hover)]">Batal</button>
+                        <button onClick={handleGenerate} disabled={isLoading || !prompt} className="w-full bg-gradient-to-r from-[var(--secondary-600)] to-[var(--primary-500)] text-white font-bold py-3 px-4 rounded-full shadow-lg disabled:opacity-50 flex items-center justify-center">
+                            {isLoading ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> : 'Buat Target'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </Modal>
+    );
+};
+
 
 const emptyForm: MonthlyTarget = {
   pendapatan: [{ id: uuidv4(), name: 'Gaji Utama', amount: '' }],
@@ -54,6 +124,8 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({
   const [originalData, setOriginalData] = useState<MonthlyTarget | null>(initialData);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showEditOptionsModal, setShowEditOptionsModal] = useState(false);
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+
 
   useEffect(() => {
       const dataToSet = initialData || emptyForm;
@@ -189,6 +261,10 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({
     return { totalPendapatan, totalPengeluaran };
   }, [lastMonthTarget, calculateTotal]);
   
+    const handleAiComplete = (target: MonthlyTarget) => {
+        setFormData(target);
+        setIsReadOnly(false); // Make form editable after generation
+    };
 
   const renderSection = (sectionKey: keyof MonthlyTarget, title: string) => {
     const items = formData[sectionKey];
@@ -279,6 +355,7 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({
   };
   
   return (
+    <>
     <div className="p-4 md:p-6 space-y-6">
       <header className="flex items-center space-x-4">
         <button onClick={() => setView(View.DASHBOARD)} className="text-[var(--text-tertiary)]">
@@ -303,6 +380,17 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({
                 </div>
             </div>
         </div>
+
+        {!isReadOnly && (
+            <button
+                type="button"
+                onClick={() => setIsAiModalOpen(true)}
+                className="w-full flex items-center justify-center space-x-3 p-4 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
+            >
+                <i className="fa-solid fa-wand-magic-sparkles text-xl"></i>
+                <span className="font-bold">Buat Cepat dengan Bantuan AI</span>
+            </button>
+        )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-6">
@@ -388,6 +476,14 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({
         </div>
       </Modal>
     </div>
+    <AITargetModal 
+        isOpen={isAiModalOpen} 
+        onClose={() => setIsAiModalOpen(false)}
+        onComplete={handleAiComplete}
+        activeDebts={activeDebts}
+        activeSavingsGoals={activeSavingsGoals}
+    />
+    </>
   );
 };
 export default AddTargetForm;

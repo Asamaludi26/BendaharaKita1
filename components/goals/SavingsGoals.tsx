@@ -18,7 +18,7 @@ const SavingsGoals: React.FC<SavingsGoalsProps> = ({ savingsGoals, onSelectSavin
       <div className="relative">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="w-full flex justify-between items-center p-6 text-left hover:bg-[var(--bg-interactive-hover)] transition-colors"
+          className="w-full flex flex-wrap justify-between items-start p-6 text-left hover:bg-[var(--bg-interactive-hover)] transition-colors gap-y-4"
           aria-expanded={isOpen}
         >
           <div className="flex items-center space-x-4">
@@ -30,18 +30,18 @@ const SavingsGoals: React.FC<SavingsGoalsProps> = ({ savingsGoals, onSelectSavin
                 <p className="text-sm text-[var(--text-tertiary)]">Wujudkan impian finansial Anda.</p>
               </div>
           </div>
-          <div className="flex items-center space-x-4">
-            <div className="hidden md:flex items-center space-x-2">
+          <div className="flex items-start sm:items-center space-x-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                 <button
                     onClick={(e) => { e.stopPropagation(); onViewHistory(); }}
-                    className="flex items-center space-x-2 bg-[var(--bg-interactive)] text-[var(--text-secondary)] text-xs font-bold px-4 py-2 rounded-full hover:bg-[var(--bg-interactive-hover)] transition-colors border border-[var(--border-primary)]"
+                    className="flex items-center justify-center space-x-2 bg-[var(--bg-interactive)] text-[var(--text-secondary)] text-xs font-bold px-4 py-2 rounded-full hover:bg-[var(--bg-interactive-hover)] transition-colors border border-[var(--border-primary)]"
                 >
                     <i className="fa-solid fa-history"></i>
                     <span>Riwayat</span>
                 </button>
                 <button 
                     onClick={(e) => { e.stopPropagation(); onAddSavingsGoal(); }}
-                    className="flex items-center space-x-2 bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white text-xs font-bold px-4 py-2 rounded-full shadow-md hover:shadow-lg transform hover:scale-105 transition-all"
+                    className="flex items-center justify-center space-x-2 bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white text-xs font-bold px-4 py-2 rounded-full shadow-md hover:shadow-lg transform hover:scale-105 transition-all"
                 >
                     <i className="fa-solid fa-plus"></i>
                     <span>Tambah Tujuan</span>

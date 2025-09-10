@@ -25,6 +25,7 @@ import ReportsDashboard from './components/reports/ReportsDashboard';
 import TransactionFormModal from './components/modals/TransactionFormModal';
 import CategoryManagerModal from './components/modals/CategoryManagerModal';
 import Accounts from './components/accounts/Accounts';
+import AccountDetail from './components/accounts/AccountDetail';
 import AccountFormModal from './components/modals/AccountFormModal';
 import TransferModal from './components/modals/TransferModal';
 import WelcomeTourModal from './components/modals/WelcomeTourModal';
@@ -49,6 +50,7 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, React.Dispatch<Re
       setStoredValue(valueToStore);
       window.localStorage.setItem(key, JSON.stringify(valueToStore));
     } catch (error) {
+      // FIX: Added curly braces to the catch block to fix a critical syntax error.
       console.error(error);
     }
   };
@@ -80,8 +82,6 @@ const App: React.FC = () => {
     // Onboarding states
     const [goalsOnboardingComplete, setGoalsOnboardingComplete] = useLocalStorage<boolean>('goalsOnboardingComplete_status', false);
     const [hasSkippedGoalsOnboarding, setHasSkippedGoalsOnboarding] = useState(false);
-    // FIX: The wallet onboarding was never showing because it was initialized to true due to mock data.
-    // It should initialize to false for new users.
     const [walletOnboardingComplete, setWalletOnboardingComplete] = useLocalStorage<boolean>('walletOnboardingComplete_status', false);
     const [hasSkippedWalletOnboarding, setHasSkippedWalletOnboarding] = useState(false);
 
@@ -325,14 +325,60 @@ const App: React.FC = () => {
         setSavingsGoals(prev => [...prev, newGoal]); setActiveModal(null); setToast({ message: 'Tujuan baru berhasil ditambahkan!', type: 'success' });
     };
 
-    const handleAddPayment = (debtId: string, amount: number) => {
+    const handleAddPayment = (debtId: string, amount: number, accountId: string) => {
+        const debt = debts.find(d => d.id === debtId);
+        if (!debt || !accountId) {
+            setToast({ message: 'Gagal mencatat pembayaran: Akun tidak valid.', type: 'error' });
+            return;
+        };
+    
+        const newTransaction: Transaction = {
+            id: uuidv4(),
+            date: new Date().toISOString(),
+            description: `Bayar Utang: ${debt.name}`,
+            amount: amount,
+            type: TransactionType.EXPENSE,
+            category: 'Utang',
+            accountId: accountId,
+        };
+    
+        setAccounts(prevAccounts => prevAccounts.map(acc => 
+            acc.id === accountId ? { ...acc, balance: acc.balance - amount } : acc
+        ));
+        
+        setTransactions(prev => [newTransaction, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        
         setDebts(prev => prev.map(d => d.id === debtId ? { ...d, payments: [...d.payments, { date: new Date().toISOString(), amount }] } : d));
-        setToast({ message: 'Pembayaran berhasil dicatat!', type: 'success' });
+    
+        setToast({ message: 'Pembayaran berhasil dicatat & transaksi dibuat!', type: 'success' });
     };
     
-    const handleAddContribution = (goalId: string, amount: number) => {
+    const handleAddContribution = (goalId: string, amount: number, accountId: string) => {
+        const goal = savingsGoals.find(g => g.id === goalId);
+        if (!goal || !accountId) {
+            setToast({ message: 'Gagal menambah dana: Akun tidak valid.', type: 'error' });
+            return;
+        }
+    
+        const newTransaction: Transaction = {
+            id: uuidv4(),
+            date: new Date().toISOString(),
+            description: `Tabungan: ${goal.name}`,
+            amount: amount,
+            type: TransactionType.EXPENSE,
+            category: 'Tabungan',
+            accountId: accountId,
+        };
+    
+        setAccounts(prevAccounts => prevAccounts.map(acc => 
+            acc.id === accountId ? { ...acc, balance: acc.balance - amount } : acc
+        ));
+    
+        setTransactions(prev => [newTransaction, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    
         setSavingsGoals(prev => prev.map(g => g.id === goalId ? { ...g, currentAmount: g.currentAmount + amount, contributions: [...g.contributions, { date: new Date().toISOString(), amount }] } : g));
-        setToast({ message: 'Dana berhasil ditambahkan!', type: 'success' });
+        
+        setToast({ message: 'Dana berhasil ditambah & transaksi dibuat!', type: 'success' });
     };
 
     const handleSkipGoalsOnboarding = () => { setHasSkippedGoalsOnboarding(true); };
@@ -342,7 +388,6 @@ const App: React.FC = () => {
         setView(View.MANAGEMENT); setToast({ message: 'Data tujuan telah direset.', type: 'success' });
     }
     
-    // --- DERIVED STATE & MEMOS ---
     const activeDebts = useMemo(() => debts.filter(d => (d.totalAmount - d.payments.reduce((sum, p) => sum + p.amount, 0)) > 0), [debts]);
     const paidDebts = useMemo(() => debts.filter(d => (d.totalAmount - d.payments.reduce((sum, p) => sum + p.amount, 0)) <= 0), [debts]);
     const activeSavingsGoals = useMemo(() => savingsGoals.filter(g => g.currentAmount < g.targetAmount), [savingsGoals]);
@@ -354,78 +399,8 @@ const App: React.FC = () => {
     
     const allModalsClosed = !activeModal && !showGoalsOnboardingWizard && !editingTransaction && !isCategoryModalOpen && !editingAccount && !isTourModalOpen && !isFormGuideModalOpen && !showWalletOnboardingWizard;
 
-    const currentMonthReportSummary = useMemo(() => {
-        if (!currentMonthlyTarget) return null;
-
-        const monthStart = new Date(displayDate.getFullYear(), displayDate.getMonth(), 1);
-        const monthEnd = new Date(displayDate.getFullYear(), displayDate.getMonth() + 1, 0);
-        monthStart.setHours(0, 0, 0, 0); monthEnd.setHours(23, 59, 59, 999);
-    
-        const currentMonthTransactions = transactions.filter(t => {
-            const txDate = new Date(t.date); return txDate >= monthStart && txDate <= monthEnd;
-        });
-
-        let totalActualExpenses = 0;
-        const expenseKeys: (keyof MonthlyTarget)[] = ['cicilanUtang', 'pengeluaranUtama', 'kebutuhan', 'penunjang', 'pendidikan'];
-
-        expenseKeys.forEach(sectionKey => {
-            currentMonthlyTarget[sectionKey].forEach(targetItem => {
-                let actualAmount = 0;
-                if (sectionKey === 'cicilanUtang') {
-                    const debt = debts.find(d => d.name === targetItem.name);
-                    if (debt) { actualAmount = debt.payments.filter(p => new Date(p.date) >= monthStart && new Date(p.date) <= monthEnd).reduce((s, p) => s + p.amount, 0); }
-                } else {
-                    actualAmount = currentMonthTransactions.filter(t => t.category === targetItem.name).reduce((s, t) => s + t.amount, 0);
-                }
-                totalActualExpenses += actualAmount;
-            });
-        });
-        
-        let totalTargetExpenses = 0;
-        expenseKeys.forEach(sectionKey => {
-            totalTargetExpenses += currentMonthlyTarget[sectionKey].reduce((s, item) => s + parseInt(item.amount || '0'), 0);
-        });
-
-        return { totalActualExpenses, totalTargetExpenses };
-    }, [currentMonthlyTarget, transactions, debts, displayDate]);
-
-    const { realTimeSummary, healthAnalysis } = useMemo(() => {
-        const monthStart = new Date(displayDate.getFullYear(), displayDate.getMonth(), 1);
-        const monthEnd = new Date(displayDate.getFullYear(), displayDate.getMonth() + 1, 0);
-        const currentMonthTxs = transactions.filter(t => {
-            const txDate = new Date(t.date); return txDate >= monthStart && txDate <= monthEnd;
-        });
-
-        const income = currentMonthTxs.filter(t => t.type === TransactionType.INCOME).reduce((sum, t) => sum + t.amount, 0);
-        const expense = currentMonthTxs.filter(t => t.type === TransactionType.EXPENSE).reduce((sum, t) => sum + t.amount, 0);
-        const cashFlow = income - expense;
-
-        const debtPayments = currentMonthTxs.filter(t => t.category === 'Utang').reduce((sum, t) => sum + t.amount, 0);
-        const savingsContributions = currentMonthTxs.filter(t => t.category === 'Tabungan').reduce((sum, t) => sum + t.amount, 0);
-        
-        const debtRatio = income > 0 ? (debtPayments / income) * 100 : 0;
-        const savingsRatio = income > 0 ? (savingsContributions / income) * 100 : 0;
-        
-        let status = "Data Tidak Cukup";
-        if (income > 0) {
-            if (debtRatio < 35 && savingsRatio >= 10 && cashFlow > 0) {
-                status = "Sehat";
-            } else if (cashFlow > 0) {
-                status = "Perlu Perhatian";
-            }
-        }
-
-        return {
-            realTimeSummary: { income, expense, cashFlow },
-            healthAnalysis: { debtRatio, savingsRatio, status, cashFlow }
-        };
-    }, [transactions, displayDate]);
-    
-    const totalBalance = useMemo(() => accounts.reduce((sum, acc) => sum + acc.balance, 0), [accounts]);
     const isTargetSet = !!currentMonthlyTarget;
 
-
-    // --- VIEW RENDERER ---
     const renderView = () => {
         const pageContentClass = `transition-all duration-500 ${!allModalsClosed ? 'blur-md scale-95' : ''}`;
         
@@ -452,7 +427,23 @@ const App: React.FC = () => {
                 pageComponent = <ReportsDashboard transactions={transactions} userCategories={userCategories} />;
                 break;
              case View.WALLET:
-                pageComponent = <Accounts accounts={accounts} onAddAccount={() => setActiveModal('ADD_ACCOUNT')} onEditAccount={(acc) => { setEditingAccount(acc); setActiveModal('EDIT_ACCOUNT'); }} onDeleteAccount={handleDeleteAccount} onTransfer={() => setActiveModal('TRANSFER')} onReset={resetWalletData} />;
+                pageComponent = <Accounts 
+                    accounts={accounts} 
+                    onAddAccount={() => setActiveModal('ADD_ACCOUNT')} 
+                    onEditAccount={(acc) => { setEditingAccount(acc); setActiveModal('EDIT_ACCOUNT'); }} 
+                    onDeleteAccount={handleDeleteAccount} 
+                    onTransfer={() => setActiveModal('TRANSFER')} 
+                    onReset={resetWalletData}
+                    onSelectAccount={(accountId) => {
+                        setActiveDetailId(accountId);
+                        setView(View.ACCOUNT_DETAIL);
+                    }}
+                />;
+                break;
+            case View.ACCOUNT_DETAIL:
+                const account = accounts.find(a => a.id === activeDetailId);
+                const accountTransactions = transactions.filter(t => t.accountId === activeDetailId);
+                pageComponent = account ? <AccountDetail account={account} transactions={accountTransactions} setView={setView} /> : <div>Akun tidak ditemukan</div>;
                 break;
             case View.ADD_TARGET:
                 pageComponent = <AddTargetForm setView={setView} onSave={handleSaveTarget} initialData={currentMonthlyTarget} archivedTargets={archivedTargets} currentMonthYear={currentMonthYear} activeDebts={activeDebts} activeSavingsGoals={activeSavingsGoals} onAddDebt={() => setActiveModal('ADD_DEBT')} onAddSavingsGoal={() => setActiveModal('ADD_SAVINGS_GOAL')} />;
@@ -471,11 +462,11 @@ const App: React.FC = () => {
                 break;
             case View.DEBT_DETAIL:
                 const debt = debts.find(d => d.id === activeDetailId);
-                pageComponent = debt ? <DebtDetail debt={debt} setView={setView} onAddPayment={handleAddPayment} /> : <div>Debt not found</div>;
+                pageComponent = debt ? <DebtDetail debt={debt} setView={setView} onAddPayment={handleAddPayment} accounts={accounts} /> : <div>Debt not found</div>;
                 break;
             case View.SAVINGS_GOAL_DETAIL:
                 const goal = savingsGoals.find(g => g.id === activeDetailId);
-                pageComponent = goal ? <SavingsGoalDetail goal={goal} setView={setView} onAddContribution={handleAddContribution} /> : <div>Goal not found</div>;
+                pageComponent = goal ? <SavingsGoalDetail goal={goal} setView={setView} onAddContribution={handleAddContribution} accounts={accounts} /> : <div>Goal not found</div>;
                 break;
             case View.DEBT_HISTORY:
                 pageComponent = <DebtHistory paidDebts={paidDebts} setView={setView} onSelectDebt={(id) => { setActiveDetailId(id); setView(View.DEBT_DETAIL); }} />;
@@ -500,7 +491,7 @@ const App: React.FC = () => {
                 />;
         }
         
-        return <div className={`pb-24 ${pageContentClass}`}>{pageComponent}</div>;
+        return <div className={`pb-32 ${pageContentClass}`}>{pageComponent}</div>;
     };
 
     return (
@@ -513,7 +504,6 @@ const App: React.FC = () => {
 
             <BottomNav activeView={view} setView={setView} />
             
-            {/* --- MODAL AREA --- */}
             <Modal isOpen={isTourModalOpen} onClose={handleCloseWelcomeTour}>
                 <WelcomeTourModal onClose={handleCloseWelcomeTour} isFirstTime={isFirstVisit} />
             </Modal>

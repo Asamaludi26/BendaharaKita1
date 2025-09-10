@@ -24,7 +24,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
         amount: '',
         type: TransactionType.EXPENSE,
         category: '',
-        date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+        date: new Date().toISOString().split('T')[0],
         accountId: '',
     });
 
@@ -41,7 +41,6 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
                 accountId: transactionToEdit.accountId,
             });
         } else {
-            // Reset for new transaction
              const defaultCategory = userCategories.find(c => c.type === TransactionType.EXPENSE)?.name || '';
              const defaultAccount = accounts.length > 0 ? accounts[0].id : '';
              setFormData({
@@ -58,7 +57,6 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
     const handleInputChange = (field: keyof typeof formData, value: string | TransactionType) => {
         setFormData(prev => ({ ...prev, [field]: value }));
         
-        // If type changes, reset category to the first available for that type
         if (field === 'type') {
              const defaultCategory = userCategories.find(c => c.type === value)?.name || '';
              setFormData(prev => ({...prev, category: defaultCategory}));
@@ -90,6 +88,10 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
     }, [formData.type, userCategories]);
 
     const isFormValid = formData.description.trim() !== '' && parseInt(formData.amount) > 0 && formData.category !== '' && formData.accountId !== '';
+    const inputClasses = "w-full p-3 bg-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-lg focus:ring-2 focus:ring-offset-2 focus:ring-offset-[var(--bg-secondary)] focus:ring-[var(--primary-glow)] focus:border-transparent outline-none text-[var(--text-primary)]";
+    const selectClasses = "w-full appearance-none p-3 pr-10 bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-[var(--text-primary)] rounded-lg focus:ring-2 focus:ring-offset-2 focus:ring-offset-[var(--bg-secondary)] focus:ring-[var(--primary-glow)] focus:border-transparent outline-none hover:bg-[var(--bg-interactive)]";
+    const labelClasses = "block text-sm font-medium text-[var(--text-secondary)] mb-1";
+
 
     return (
         <div className="bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-2xl p-6 w-full max-w-lg">
@@ -101,59 +103,43 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
             </header>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Transaction Type Toggle */}
                  <div className="flex items-center justify-center space-x-2 p-1 bg-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-full w-full">
-                    <button type="button" onClick={() => handleInputChange('type', TransactionType.EXPENSE)} className={`px-4 py-2 rounded-full w-1/2 text-sm font-semibold transition-all ${formData.type === TransactionType.EXPENSE ? 'bg-[var(--color-expense)] text-white shadow-md' : 'text-[var(--text-secondary)]'}`}>
-                        Pengeluaran
-                    </button>
-                    <button type="button" onClick={() => handleInputChange('type', TransactionType.INCOME)} className={`px-4 py-2 rounded-full w-1/2 text-sm font-semibold transition-all ${formData.type === TransactionType.INCOME ? 'bg-[var(--color-income)] text-white shadow-md' : 'text-[var(--text-secondary)]'}`}>
-                        Pemasukan
-                    </button>
+                    <button type="button" onClick={() => handleInputChange('type', TransactionType.EXPENSE)} className={`px-4 py-2 rounded-full w-1/2 text-sm font-semibold transition-all ${formData.type === TransactionType.EXPENSE ? 'bg-[var(--color-expense)] text-white shadow-md' : 'text-[var(--text-secondary)]'}`}>Pengeluaran</button>
+                    <button type="button" onClick={() => handleInputChange('type', TransactionType.INCOME)} className={`px-4 py-2 rounded-full w-1/2 text-sm font-semibold transition-all ${formData.type === TransactionType.INCOME ? 'bg-[var(--color-income)] text-white shadow-md' : 'text-[var(--text-secondary)]'}`}>Pemasukan</button>
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Deskripsi</label>
-                    <input type="text" value={formData.description} onChange={e => handleInputChange('description', e.target.value)} placeholder="Contoh: Makan siang" className="w-full p-2 bg-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-md focus:ring-2 focus:ring-[var(--primary-glow)]" />
+                    <label className={labelClasses}>Deskripsi</label>
+                    <input type="text" value={formData.description} onChange={e => handleInputChange('description', e.target.value)} placeholder="Contoh: Makan siang" className={inputClasses} />
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                      <div>
-                        <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Jumlah</label>
-                        <div className="relative">
-                            <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-[var(--text-tertiary)]">Rp</span>
-                            <input type="text" inputMode="numeric" value={formData.amount ? parseInt(formData.amount).toLocaleString('id-ID') : ''} onChange={e => handleInputChange('amount', e.target.value.replace(/[^0-9]/g, ''))} className="w-full p-2 pl-8 bg-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-md focus:ring-2 focus:ring-[var(--primary-glow)] text-right" />
-                        </div>
+                        <label className={labelClasses}>Jumlah</label>
+                        <div className="relative"><span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-[var(--text-tertiary)]">Rp</span><input type="text" inputMode="numeric" value={formData.amount ? parseInt(formData.amount).toLocaleString('id-ID') : ''} onChange={e => handleInputChange('amount', e.target.value.replace(/[^0-9]/g, ''))} className={`${inputClasses} pl-8 text-right`} /></div>
                     </div>
                      <div>
-                        <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Tanggal</label>
-                        <input type="date" value={formData.date} onChange={e => handleInputChange('date', e.target.value)} className="w-full p-2 bg-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-md focus:ring-2 focus:ring-[var(--primary-glow)]" />
+                        <label className={labelClasses}>Tanggal</label>
+                        <input type="date" value={formData.date} onChange={e => handleInputChange('date', e.target.value)} className={inputClasses} />
                     </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Kategori</label>
-                        <select value={formData.category} onChange={e => handleInputChange('category', e.target.value)} className="w-full p-2 bg-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-md focus:ring-2 focus:ring-[var(--primary-glow)]">
-                            {availableCategories.length > 0 ? availableCategories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>) : <option disabled>Buat kategori dulu</option>}
-                        </select>
+                        <label className={labelClasses}>Kategori</label>
+                        <div className="relative group"><select value={formData.category} onChange={e => handleInputChange('category', e.target.value)} className={selectClasses}>{availableCategories.length > 0 ? availableCategories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>) : <option disabled>Buat kategori dulu</option>}</select><div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[var(--text-tertiary)]"><i className="fa-solid fa-chevron-down text-xs transition-transform duration-300 group-focus-within:rotate-180"></i></div></div>
                     </div>
                      <div>
-                        <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Akun</label>
-                        <select value={formData.accountId} onChange={e => handleInputChange('accountId', e.target.value)} className="w-full p-2 bg-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-md focus:ring-2 focus:ring-[var(--primary-glow)]">
-                            {accounts.length > 0 ? accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>) : <option disabled>Buat akun dulu</option>}
-                        </select>
+                        <label className={labelClasses}>Akun</label>
+                         <div className="relative group"><select value={formData.accountId} onChange={e => handleInputChange('accountId', e.target.value)} className={selectClasses}>{accounts.length > 0 ? accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>) : <option disabled>Buat akun dulu</option>}</select><div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[var(--text-tertiary)]"><i className="fa-solid fa-chevron-down text-xs transition-transform duration-300 group-focus-within:rotate-180"></i></div></div>
                     </div>
                 </div>
                 
                 <div className="pt-4 flex items-center justify-between gap-3">
                     {isEditing && (
-                        <button type="button" onClick={handleDeleteClick} className="bg-transparent text-[var(--color-expense)] font-bold py-3 px-6 rounded-full hover:bg-[var(--bg-danger-subtle)] transition-colors">
-                            Hapus
-                        </button>
+                        <button type="button" onClick={handleDeleteClick} className="bg-transparent text-[var(--color-expense)] font-bold py-3 px-6 rounded-lg hover:bg-[var(--bg-danger-subtle)] transition-colors">Hapus</button>
                     )}
-                    <button type="submit" disabled={!isFormValid} className="w-full bg-gradient-to-r from-[var(--secondary-600)] to-[var(--primary-500)] text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300">
-                        Simpan
-                    </button>
+                    <button type="submit" disabled={!isFormValid} className="w-full bg-[var(--gradient-primary)] text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 ml-auto">Simpan</button>
                 </div>
 
             </form>

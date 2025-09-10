@@ -41,29 +41,30 @@ const ActualsDetail: React.FC<{ report: ArchivedActualReport }> = ({ report }) =
                 return (
                     <div key={sectionInfo.key}>
                         <h4 className="font-semibold text-[var(--text-secondary)] mb-2">{sectionInfo.title}</h4>
-                        <ul className="space-y-1 text-sm">
-                             <li className="grid grid-cols-3 gap-4 font-semibold text-[var(--text-tertiary)] text-xs mb-1">
-                                <span className="col-span-1">Item</span>
-                                <span className="text-right">Target</span>
-                                <span className="text-right">Aktual</span>
-                            </li>
+                        <ul className="space-y-2 text-sm">
                             {items.map((item: TargetFormField) => {
                                 const actualAmount = parseInt(actuals[item.id] || '0');
                                 const targetAmount = parseInt(item.amount || '0');
                                 return (
-                                <li key={item.id} className="grid grid-cols-3 gap-4 items-center text-[var(--text-tertiary)]">
-                                    <span className="col-span-1 truncate">{item.name}</span>
-                                    <span className="font-mono text-right">{formatCurrency(targetAmount)}</span>
-                                    <span className={`font-mono font-semibold text-right ${getDifferenceClass(actualAmount, targetAmount, sectionInfo.isIncome)}`}>
-                                        {formatCurrency(actualAmount)}
-                                    </span>
+                                <li key={item.id} className="flex flex-col sm:flex-row sm:justify-between sm:items-center bg-[var(--bg-interactive)] p-2 rounded-md">
+                                    <span className="truncate font-semibold text-[var(--text-secondary)]">{item.name}</span>
+                                    <div className="flex justify-between sm:justify-end sm:gap-4 w-full sm:w-auto mt-1 sm:mt-0 text-xs sm:text-sm">
+                                        <div className="font-mono text-right text-[var(--text-tertiary)]">
+                                            <span className="sm:hidden">Target: </span>{formatCurrency(targetAmount)}
+                                        </div>
+                                        <div className={`font-mono font-semibold text-right ${getDifferenceClass(actualAmount, targetAmount, sectionInfo.isIncome)}`}>
+                                            <span className="sm:hidden">Aktual: </span>{formatCurrency(actualAmount)}
+                                        </div>
+                                    </div>
                                 </li>
                             )})}
                         </ul>
-                         <div className="grid grid-cols-3 gap-4 font-bold text-sm mt-2 pt-2 border-t border-[var(--border-primary)]">
-                           <span className="col-span-1 text-[var(--text-secondary)]">Total</span>
-                           <span className="text-right text-[var(--text-secondary)]">{formatCurrency(totalTarget)}</span>
-                           <span className={`text-right ${getDifferenceClass(totalActual, totalTarget, sectionInfo.isIncome)}`}>{formatCurrency(totalActual)}</span>
+                         <div className="flex justify-between font-bold text-sm mt-2 pt-2 border-t border-[var(--border-primary)]">
+                           <span className="text-[var(--text-secondary)]">Total</span>
+                           <div className="flex justify-end gap-4">
+                                <span className="text-right text-[var(--text-tertiary)]">{formatCurrency(totalTarget)}</span>
+                                <span className={`text-right ${getDifferenceClass(totalActual, totalTarget, sectionInfo.isIncome)}`}>{formatCurrency(totalActual)}</span>
+                           </div>
                         </div>
                     </div>
                 )

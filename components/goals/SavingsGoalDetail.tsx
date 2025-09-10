@@ -1,11 +1,12 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { View, SavingsGoal } from '../../types';
+import { View, SavingsGoal, Account } from '../../types';
 import Modal from '../Modal';
 
 interface SavingsGoalDetailProps {
   goal: SavingsGoal;
   setView: (view: View) => void;
-  onAddContribution: (goalId: string, amount: number) => void;
+  onAddContribution: (goalId: string, amount: number, accountId: string) => void;
+  accounts: Account[];
 }
 
 const StatCard: React.FC<{ icon: string; label: string; value: string; color: string }> = ({ icon, label, value, color }) => (
@@ -36,7 +37,7 @@ const RadialProgress: React.FC<{ percentage: number }> = ({ percentage }) => {
     const strokeDashoffset = circumference - (progress / 100) * circumference;
 
     return (
-        <div className="relative w-52 h-52">
+        <div className="relative w-44 h-44 sm:w-52 sm:h-52">
             <svg
                 height="100%"
                 width="100%"
@@ -77,9 +78,10 @@ const RadialProgress: React.FC<{ percentage: number }> = ({ percentage }) => {
 };
 
 
-const SavingsGoalDetail: React.FC<SavingsGoalDetailProps> = ({ goal, setView, onAddContribution }) => {
+const SavingsGoalDetail: React.FC<SavingsGoalDetailProps> = ({ goal, setView, onAddContribution, accounts }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [contributionAmount, setContributionAmount] = useState('');
+  const [selectedAccountId, setSelectedAccountId] = useState(accounts.length > 0 ? accounts[0].id : '');
 
   const {
       progress,
@@ -109,8 +111,8 @@ const SavingsGoalDetail: React.FC<SavingsGoalDetailProps> = ({ goal, setView, on
 
   const handleSaveContribution = () => {
     const amount = parseInt(contributionAmount);
-    if (amount > 0) {
-        onAddContribution(goal.id, amount);
+    if (amount > 0 && selectedAccountId) {
+        onAddContribution(goal.id, amount, selectedAccountId);
         setContributionAmount('');
         setIsModalOpen(false);
     }
@@ -119,6 +121,12 @@ const SavingsGoalDetail: React.FC<SavingsGoalDetailProps> = ({ goal, setView, on
   const sortedContributions = useMemo(() => {
       return [...(goal.contributions || [])].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [goal.contributions]);
+  
+  const selectedAccountBalance = useMemo(() => {
+    return accounts.find(a => a.id === selectedAccountId)?.balance ?? 0;
+  }, [accounts, selectedAccountId]);
+
+  const isContributionInvalid = !contributionAmount || parseInt(contributionAmount) <= 0 || !selectedAccountId || selectedAccountBalance < parseInt(contributionAmount);
 
   return (
     <>
@@ -186,8 +194,25 @@ const SavingsGoalDetail: React.FC<SavingsGoalDetailProps> = ({ goal, setView, on
         </div>
 
         <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-            <div className="relative bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-xl p-6">
-                 <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">Tambah Dana ke "{goal.name}"</h3>
+            <div className="relative bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-xl p-6 space-y-4">
+                 <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">Tambah Dana ke "{goal.name}"</h3>
+                 <div>
+                    <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Ambil Dari Akun</label>
+                    <div className="relative group">
+                        <select
+                            value={selectedAccountId}
+                            onChange={(e) => setSelectedAccountId(e.target.value)}
+                            className="w-full appearance-none p-3 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-[var(--text-primary)] font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[var(--primary-glow)] focus:border-transparent hover:border-[var(--border-secondary)] hover:bg-[var(--bg-interactive)] pr-10"
+                        >
+                            {accounts.length > 0 ? accounts.map(acc => (
+                                <option key={acc.id} value={acc.id}>{acc.name} (Saldo: Rp {acc.balance.toLocaleString('id-ID')})</option>
+                            )) : <option disabled>Tidak ada akun</option>}
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[var(--text-tertiary)]">
+                            <i className="fa-solid fa-chevron-down text-xs transition-transform duration-300 group-focus-within:rotate-180"></i>
+                        </div>
+                    </div>
+                 </div>
                  <div>
                     <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Jumlah Dana</label>
                     <div className="relative">
@@ -203,7 +228,7 @@ const SavingsGoalDetail: React.FC<SavingsGoalDetailProps> = ({ goal, setView, on
                         />
                     </div>
                  </div>
-                 <div className="flex gap-3 mt-6">
+                 <div className="flex gap-3 pt-2">
                     <button
                         type="button"
                         onClick={() => setIsModalOpen(false)}
@@ -214,7 +239,7 @@ const SavingsGoalDetail: React.FC<SavingsGoalDetailProps> = ({ goal, setView, on
                     <button
                         type="button"
                         onClick={handleSaveContribution}
-                        disabled={!contributionAmount || parseInt(contributionAmount) <= 0}
+                        disabled={isContributionInvalid}
                         className="w-full bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                     >
                         Simpan

@@ -21,42 +21,38 @@ const SummaryCard: React.FC<SummaryCardProps> = ({ data, isComparisonMode }) => 
 
   return (
     <div 
-        className="relative bg-[var(--bg-secondary)] backdrop-blur-lg border border-[var(--border-primary)] rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 group"
+        className="relative rounded-2xl p-px bg-gradient-to-b from-white/10 to-transparent group transition-all duration-300 hover:from-white/20"
     >
-        {/* Glow effect */}
+      <div className="relative bg-[var(--bg-secondary)] rounded-[15px] p-4 flex flex-col justify-between h-full">
         <div 
-          className="absolute inset-0 rounded-2xl transition-all duration-300 opacity-0 group-hover:opacity-100 pointer-events-none"
-          style={{
-              boxShadow: `inset 0 0 10px 0 ${mainColor}40, 0 0 15px -5px ${mainColor}`,
-              border: `1px solid ${mainColor}80`
-          }}
+          className="absolute inset-0 rounded-2xl transition-all duration-300 opacity-0 group-hover:opacity-10 pointer-events-none"
+          style={{ background: `radial-gradient(circle at 70% 20%, ${mainColor}, transparent 60%)` }}
         ></div>
         <div className="relative z-10 flex flex-col justify-between h-full">
             <div>
                 <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-medium text-[var(--text-tertiary)]">{title}</p>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center bg-[var(--bg-primary)]`} style={{boxShadow: `0 0 10px ${mainColor}80`}}>
-                    <Icon className={`w-5 h-5`} style={{ color: mainColor }}/>
-                </div>
+                    <p className="text-sm font-medium text-[var(--text-tertiary)]">{title}</p>
+                    <Icon className="w-5 h-5" style={{ color: mainColor }}/>
                 </div>
                 {isComparisonMode && target ? (
                 <div>
-                    <p className="text-lg font-bold text-[var(--text-primary)]">{formatCurrency(amount)}</p>
+                    <p className="text-xl font-bold text-[var(--text-primary)]">{formatCurrency(amount)}</p>
                     <p className="text-xs text-[var(--text-tertiary)]">/ {formatCurrency(target)}</p>
                 </div>
                 ) : (
                 <p className="text-2xl font-bold text-[var(--text-primary)]">{formatCurrency(amount)}</p>
                 )}
             </div>
-            <div className="mt-2">
+            <div className="mt-4">
                 {isComparisonMode && target ? (
-                <div className="mt-4">
+                <div>
                     <div className="w-full bg-[var(--bg-interactive)] rounded-full h-1.5">
-                    <div className="h-1.5 rounded-full" style={{ width: `${Math.min(progressPercentage, 100)}%`, backgroundColor: mainColor, boxShadow: `0 0 8px ${mainColor}` }}></div>
+                        <div className="h-1.5 rounded-full" style={{ width: `${Math.min(progressPercentage, 100)}%`, backgroundColor: mainColor, boxShadow: `0 0 8px ${mainColor}` }}></div>
                     </div>
+                    <p className="text-xs text-right text-[var(--text-tertiary)] mt-1">{Math.min(progressPercentage, 100).toFixed(0)}%</p>
                 </div>
                 ) : (
-                <div className={`text-xs font-medium flex items-center mt-2`} style={{color: changeColor}}>
+                <div className={`text-xs font-medium flex items-center`} style={{color: changeColor}}>
                     {percentageChange !== 0 && (
                         <i className={`fa-solid fa-arrow-${percentageChange > 0 ? 'up' : 'down'} mr-1`}></i>
                     )}
@@ -65,6 +61,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({ data, isComparisonMode }) => 
                 )}
             </div>
         </div>
+      </div>
     </div>
   );
 };

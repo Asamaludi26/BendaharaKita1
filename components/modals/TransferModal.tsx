@@ -42,15 +42,25 @@ const TransferModal: React.FC<TransferModalProps> = ({ accounts, onTransfer, onC
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                     <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Dari Akun</label>
-                    <select value={fromAccountId} onChange={e => setFromAccountId(e.target.value)} className="w-full p-2 bg-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-md focus:ring-2 focus:ring-[var(--primary-glow)]">
-                        {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name} (Rp {acc.balance.toLocaleString('id-ID')})</option>)}
-                    </select>
+                    <div className="relative group">
+                        <select value={fromAccountId} onChange={e => setFromAccountId(e.target.value)} className="w-full appearance-none p-3 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-[var(--text-primary)] font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[var(--primary-glow)] focus:border-transparent hover:border-[var(--border-secondary)] hover:bg-[var(--bg-interactive)] pr-10">
+                            {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name} (Rp {acc.balance.toLocaleString('id-ID')})</option>)}
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[var(--text-tertiary)]">
+                            <i className="fa-solid fa-chevron-down text-xs transition-transform duration-300 group-focus-within:rotate-180"></i>
+                        </div>
+                    </div>
                 </div>
                  <div>
                     <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Ke Akun</label>
-                    <select value={toAccountId} onChange={e => setToAccountId(e.target.value)} className="w-full p-2 bg-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-md focus:ring-2 focus:ring-[var(--primary-glow)]">
-                        {accounts.filter(acc => acc.id !== fromAccountId).map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
-                    </select>
+                    <div className="relative group">
+                        <select value={toAccountId} onChange={e => setToAccountId(e.target.value)} className="w-full appearance-none p-3 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-[var(--text-primary)] font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[var(--primary-glow)] focus:border-transparent hover:border-[var(--border-secondary)] hover:bg-[var(--bg-interactive)] pr-10">
+                            {accounts.filter(acc => acc.id !== fromAccountId).map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[var(--text-tertiary)]">
+                            <i className="fa-solid fa-chevron-down text-xs transition-transform duration-300 group-focus-within:rotate-180"></i>
+                        </div>
+                    </div>
                 </div>
                  <div>
                     <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Jumlah Transfer</label>
@@ -61,7 +71,7 @@ const TransferModal: React.FC<TransferModalProps> = ({ accounts, onTransfer, onC
                             inputMode="numeric" 
                             value={amount ? parseInt(amount).toLocaleString('id-ID') : ''} 
                             onChange={e => setAmount(e.target.value.replace(/[^0-9]/g, ''))} 
-                            className="w-full p-2 pl-8 bg-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-md focus:ring-2 focus:ring-[var(--primary-glow)] text-right" 
+                            className="w-full p-3 pl-8 bg-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-md focus:ring-2 focus:ring-[var(--primary-glow)] text-right" 
                         />
                     </div>
                     {fromAccount && parseInt(amount) > fromAccount.balance && (

@@ -20,51 +20,59 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeView, setView }) => {
     [View.SAVINGS_GOAL_DETAIL]: View.MANAGEMENT,
     [View.DEBT_HISTORY]: View.MANAGEMENT,
     [View.SAVINGS_GOAL_HISTORY]: View.MANAGEMENT,
+    [View.REPORTS_DASHBOARD]: View.DASHBOARD,
+    [View.ADD_TARGET]: View.DASHBOARD,
+    [View.TARGET_HISTORY]: View.DASHBOARD,
+    [View.ACTUALS_HISTORY]: View.DASHBOARD,
+    [View.ADD_ACTUAL]: View.DASHBOARD,
   };
   
   const currentActiveView = activeViewsMap[activeView as keyof typeof activeViewsMap] || activeView;
-  const activeIndex = navItems.findIndex(item => item.view === currentActiveView);
 
   return (
-    // The container is made taller to accommodate the pop-out effect
-    <div className="fixed bottom-0 left-0 right-0 h-24 bg-[var(--bg-secondary-translucent)] backdrop-blur-xl flex z-50 border-t border-[var(--border-primary)]">
-      {navItems.map((item, index) => {
-        const isActive = activeIndex === index;
-        return (
-          <button
-            key={item.view}
-            onClick={() => setView(item.view)}
-            className="relative z-10 flex flex-1 flex-col items-center justify-start h-full pt-3 text-center transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 focus-visible:ring-[var(--primary-400)] group"
-            aria-label={item.label}
-          >
-            {/* This is the animated element that pops out */}
-            <div
-              className={`flex flex-col items-center justify-center transition-all duration-500 ease-[cubic-bezier(0.25,1.5,0.5,1)] ${
-                isActive
-                  ? 'w-16 h-16 rounded-2xl -translate-y-8 shadow-lg shadow-[var(--primary-glow)]/30'
-                  : 'w-12 h-12'
-              }`}
-              style={isActive ? { backgroundImage: 'var(--gradient-active-nav)' } : {}}
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-sm">
+      <div className="bg-[var(--bg-secondary)]/80 backdrop-blur-xl flex items-end justify-around p-2 rounded-2xl shadow-2xl border border-[var(--border-primary)]">
+        {navItems.map((item) => {
+          const isActive = currentActiveView === item.view;
+          return (
+            <button
+              key={item.view}
+              onClick={() => setView(item.view)}
+              className={`relative flex flex-col items-center justify-center w-20 h-16 transition-all duration-500 ease-in-out rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-glow)] group
+                ${isActive ? '' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-interactive)]'}`
+              }
+              aria-label={item.label}
+              aria-current={isActive ? 'page' : undefined}
             >
-              <item.Icon
-                className={`transition-all duration-300 ${
-                  isActive ? 'w-8 h-8 text-white' : `w-7 h-7 text-[var(--text-tertiary)] group-hover:text-[var(--text-secondary)]`
-                }`}
-              />
-            </div>
-             {/* The label fades in at the bottom of the bar */}
-            <span
-                className={`absolute bottom-2 text-xs font-semibold transition-all duration-300 ${
-                  isActive
-                    ? 'opacity-100 text-[var(--text-primary)] font-bold'
-                    : 'opacity-0 pointer-events-none'
-                }`}
-              >
-                {item.label}
-            </span>
-          </button>
-        );
-      })}
+              {/* Elevating Container */}
+              <div className={`flex flex-col items-center justify-center transition-transform duration-500 ease-in-out ${isActive ? '-translate-y-4' : ''}`}>
+                {/* Icon Background */}
+                <div
+                  className={`flex items-center justify-center mx-auto transition-all duration-300 ease-in-out
+                    ${isActive ? 'w-14 h-14 rounded-full shadow-lg' : 'w-auto h-auto'}`
+                  }
+                  style={isActive ? { backgroundImage: 'var(--gradient-active-nav)' } : {}}
+                >
+                  <item.Icon
+                    className={`transition-all duration-300
+                      ${isActive ? 'w-7 h-7 text-white' : 'w-6 h-6 text-inherit mb-1'}`
+                    }
+                  />
+                </div>
+
+                {/* The label */}
+                <span
+                  className={`text-xs font-semibold transition-all duration-300
+                    ${isActive ? 'mt-3 text-[var(--text-primary)]' : 'text-inherit'}`
+                  }
+                >
+                  {item.label}
+                </span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 };

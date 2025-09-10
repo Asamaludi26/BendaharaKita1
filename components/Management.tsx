@@ -56,7 +56,7 @@ const Management: React.FC<ManagementProps> = ({
     <>
       <div className="p-4 md:p-6 space-y-6 animate-fade-in">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-[var(--text-primary)]">Tujuan Finansial</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)]">Tujuan Finansial</h1>
            <button 
             onClick={() => setIsResetModalOpen(true)}
             className="w-10 h-10 rounded-full bg-[var(--bg-secondary)] text-[var(--text-tertiary)] flex items-center justify-center transition-colors shadow-sm hover:bg-[var(--bg-interactive-hover)] border border-[var(--border-primary)]"
