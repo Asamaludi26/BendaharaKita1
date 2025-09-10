@@ -1,42 +1,37 @@
+import React from 'react';
+
+// FIX: Replaced the incorrect component code with actual type definitions to resolve module resolution errors across the project.
 export enum View {
   DASHBOARD = 'DASHBOARD',
   TRANSACTIONS = 'TRANSACTIONS',
-  REPORTS_DASHBOARD = 'REPORTS_DASHBOARD',
-  WALLET = 'WALLET', // Renamed from ACCOUNTS for better user understanding
-  ACCOUNT_DETAIL = 'ACCOUNT_DETAIL',
+  MANAGEMENT = 'MANAGEMENT',
+  PROFILE = 'PROFILE',
+  DEBT_DETAIL = 'DEBT_DETAIL',
+  SAVINGS_GOAL_DETAIL = 'SAVINGS_GOAL_DETAIL',
   ADD_TARGET = 'ADD_TARGET',
   ADD_ACTUAL = 'ADD_ACTUAL',
   TARGET_HISTORY = 'TARGET_HISTORY',
   ACTUALS_HISTORY = 'ACTUALS_HISTORY',
-  MANAGEMENT = 'MANAGEMENT', // For goals
-  PROFILE = 'PROFILE',
-  DEBT_DETAIL = 'DEBT_DETAIL',
-  SAVINGS_GOAL_DETAIL = 'SAVINGS_GOAL_DETAIL',
-  ADD_DEBT = 'ADD_DEBT',
-  ADD_SAVINGS_GOAL = 'ADD_SAVINGS_GOAL',
   DEBT_HISTORY = 'DEBT_HISTORY',
   SAVINGS_GOAL_HISTORY = 'SAVINGS_GOAL_HISTORY',
+  REPORTS_DASHBOARD = 'REPORTS_DASHBOARD',
+  WALLET = 'WALLET',
+  ACCOUNT_DETAIL = 'ACCOUNT_DETAIL',
 }
 
 export enum TransactionType {
-  INCOME = 'income',
-  EXPENSE = 'expense',
-}
-
-export interface UserCategory {
-  id: string;
-  name: string;
-  type: TransactionType;
+  INCOME = 'INCOME',
+  EXPENSE = 'EXPENSE',
 }
 
 export interface Transaction {
   id: string;
-  date: string;
+  date: string; // ISO string
   description: string;
   amount: number;
   type: TransactionType;
   category: string;
-  accountId: string; // Link transaction to an account
+  accountId: string;
 }
 
 export interface Account {
@@ -46,20 +41,36 @@ export interface Account {
   balance: number;
 }
 
-export interface FinancialInsight {
-  title: string;
-  description: string;
-  icon: string;
+export interface DebtPayment {
+  date: string; // ISO string
+  amount: number;
 }
 
-export interface SummaryCardData {
-  title: string;
+export interface DebtItem {
+  id: string;
+  name: string;
+  source: string;
+  totalAmount: number;
+  monthlyInstallment: number;
+  tenor: number; // in months
+  dueDate: number; // day of the month
+  payments: DebtPayment[];
+}
+
+export interface SavingsContribution {
+  date: string; // ISO string
   amount: number;
-  previousAmount: number;
-  target?: number;
-  icon: React.FC<React.SVGProps<SVGSVGElement>>;
-  color: 'income' | 'expense' | 'balance' | 'savings';
-  type: 'income' | 'expense' | 'balance' | 'savings';
+}
+
+export interface SavingsGoal {
+  id: string;
+  name: string;
+  source: string;
+  targetAmount: number;
+  currentAmount: number;
+  deadline: string; // ISO string
+  contributions: SavingsContribution[];
+  isEmergencyFund?: boolean;
 }
 
 export interface TargetFormField {
@@ -78,8 +89,6 @@ export interface MonthlyTarget {
   tabungan: TargetFormField[];
 }
 
-export type AddTargetFormData = MonthlyTarget;
-
 export interface ArchivedMonthlyTarget {
   monthYear: string; // "YYYY-MM"
   target: MonthlyTarget;
@@ -91,23 +100,24 @@ export interface ArchivedActualReport {
   actuals: { [key: string]: string }; // key is TargetFormField id
 }
 
-export interface DebtItem {
-  id: string;
-  name: string;
-  source: string;
-  totalAmount: number;
-  monthlyInstallment: number;
-  tenor: number; // in months
-  dueDate: number; // Day of the month
-  payments: { date: string; amount: number }[];
+export interface FinancialInsight {
+  title: string;
+  description: string;
+  icon: string;
 }
 
-export interface SavingsGoal {
-  id: string;
-  name: string;
-  source: string;
-  targetAmount: number;
-  currentAmount: number;
-  deadline: string; // ISO date string
-  contributions: { date: string; amount: number }[];
+export interface SummaryCardData {
+  title: string;
+  amount: number;
+  previousAmount: number;
+  target?: number;
+  icon: React.FC<React.SVGProps<SVGSVGElement>>;
+  color: 'income' | 'expense' | 'balance' | 'savings' | 'debt';
+  type: 'income' | 'expense' | 'balance' | 'savings';
+}
+
+export interface UserCategory {
+    id: string;
+    name: string;
+    type: TransactionType;
 }

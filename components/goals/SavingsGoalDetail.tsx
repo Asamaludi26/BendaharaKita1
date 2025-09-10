@@ -21,7 +21,7 @@ const StatCard: React.FC<{ icon: string; label: string; value: string; color: st
     </div>
 );
 
-const RadialProgress: React.FC<{ percentage: number }> = ({ percentage }) => {
+const RadialProgress: React.FC<{ percentage: number; isEmergencyFund?: boolean }> = ({ percentage, isEmergencyFund }) => {
     const [progress, setProgress] = useState(0);
 
     useEffect(() => {
@@ -35,6 +35,9 @@ const RadialProgress: React.FC<{ percentage: number }> = ({ percentage }) => {
     const radius = center - (strokeWidth / 2);
     const circumference = 2 * Math.PI * radius;
     const strokeDashoffset = circumference - (progress / 100) * circumference;
+    
+    const gradientId = isEmergencyFund ? 'progressGradientEmergency' : 'progressGradient';
+    const gradientUrl = `url(#${gradientId})`;
 
     return (
         <div className="relative w-44 h-44 sm:w-52 sm:h-52">
@@ -53,7 +56,7 @@ const RadialProgress: React.FC<{ percentage: number }> = ({ percentage }) => {
                     cy={center}
                 />
                 <circle
-                    stroke="url(#progressGradient)"
+                    stroke={gradientUrl}
                     fill="transparent"
                     strokeWidth={strokeWidth}
                     strokeDasharray={`${circumference} ${circumference}`}
@@ -67,6 +70,10 @@ const RadialProgress: React.FC<{ percentage: number }> = ({ percentage }) => {
                     <linearGradient id="progressGradient" x1="0%" y1="0%" x2="0%" y2="100%">
                         <stop offset="0%" stopColor="var(--color-net-positive)" />
                         <stop offset="100%" stopColor="var(--color-savings)" />
+                    </linearGradient>
+                     <linearGradient id="progressGradientEmergency" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stopColor="#67e8f9" />
+                        <stop offset="100%" stopColor="#0ea5e9" />
                     </linearGradient>
                 </defs>
             </svg>
@@ -88,7 +95,6 @@ const SavingsGoalDetail: React.FC<SavingsGoalDetailProps> = ({ goal, setView, on
       remainingAmount,
       daysRemaining,
       dailyTarget,
-      monthlyTarget,
       isAchieved
   } = useMemo(() => {
       const isAchieved = goal.currentAmount >= goal.targetAmount;
@@ -100,13 +106,11 @@ const SavingsGoalDetail: React.FC<SavingsGoalDetailProps> = ({ goal, setView, on
       const deadline = new Date(goal.deadline);
       deadline.setHours(0,0,0,0);
       
-      const daysRemaining = Math.max(0, Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
-      const dailyTarget = daysRemaining > 0 ? remainingAmount / daysRemaining : 0;
+      const timeDiff = deadline.getTime() - now.getTime();
+      const daysRemaining = timeDiff > 0 ? Math.ceil(timeDiff / (1000 * 60 * 60 * 24)) : 0;
+      const dailyTarget = daysRemaining > 0 && !isAchieved ? remainingAmount / daysRemaining : 0;
       
-      const monthsRemaining = (deadline.getFullYear() - now.getFullYear()) * 12 + (deadline.getMonth() - now.getMonth());
-      const monthlyTarget = monthsRemaining > 0 ? remainingAmount / monthsRemaining : 0;
-
-      return { progress, remainingAmount, daysRemaining, dailyTarget, monthlyTarget, isAchieved };
+      return { progress, remainingAmount, daysRemaining, dailyTarget, isAchieved };
   }, [goal]);
 
   const handleSaveContribution = () => {
@@ -128,6 +132,18 @@ const SavingsGoalDetail: React.FC<SavingsGoalDetailProps> = ({ goal, setView, on
 
   const isContributionInvalid = !contributionAmount || parseInt(contributionAmount) <= 0 || !selectedAccountId || selectedAccountBalance < parseInt(contributionAmount);
 
+  const mainButtonText = () => {
+      if (isAchieved) {
+          return goal.isEmergencyFund ? 'Tambah Dana Siaga' : 'Tujuan Tercapai';
+      }
+      return 'Tambah Dana';
+  };
+  
+  const mainButtonIcon = isAchieved && !goal.isEmergencyFund ? 'fa-trophy' : 'fa-plus';
+
+  const mainButtonDisabled = isAchieved && !goal.isEmergencyFund;
+
+
   return (
     <>
         <div className="p-4 md:p-6 space-y-6 animate-fade-in">
@@ -135,16 +151,19 @@ const SavingsGoalDetail: React.FC<SavingsGoalDetailProps> = ({ goal, setView, on
                 <button onClick={() => setView(View.MANAGEMENT)} className="w-10 h-10 rounded-full bg-[var(--bg-interactive)] text-[var(--text-tertiary)] flex items-center justify-center transition-colors shadow-sm hover:bg-[var(--bg-interactive-hover)] border border-[var(--border-primary)]">
                     <i className="fa-solid fa-arrow-left"></i>
                 </button>
-                <div>
-                    <h1 className="text-2xl font-bold text-[var(--text-primary)]">{goal.name}</h1>
-                    <p className="text-sm text-[var(--text-tertiary)]">{goal.source}</p>
+                <div className="flex items-center space-x-3">
+                    {goal.isEmergencyFund && <i className="fa-solid fa-shield-halved text-sky-400 text-2xl"></i>}
+                    <div>
+                        <h1 className="text-2xl font-bold text-[var(--text-primary)]">{goal.name}</h1>
+                        <p className="text-sm text-[var(--text-tertiary)]">{goal.source}</p>
+                    </div>
                 </div>
             </header>
 
             <div className="bg-[var(--bg-secondary)] backdrop-blur-lg border border-[var(--border-primary)] rounded-2xl p-6 flex flex-col items-center">
-                <RadialProgress percentage={progress} />
+                <RadialProgress percentage={progress} isEmergencyFund={goal.isEmergencyFund} />
                 <div className="text-center mt-4">
-                    <p className="text-[var(--text-tertiary)]">Terkumpul</p>
+                    <p className="text-[var(--text-tertiary)]">{isAchieved ? (goal.isEmergencyFund ? 'Dana Siaga' : 'Tercapai') : 'Terkumpul'}</p>
                     <p className="text-3xl font-bold" style={{color: 'var(--color-income)', filter: 'drop-shadow(0 0 8px var(--color-income))'}}>
                         Rp {goal.currentAmount.toLocaleString('id-ID')}
                     </p>
@@ -153,21 +172,17 @@ const SavingsGoalDetail: React.FC<SavingsGoalDetailProps> = ({ goal, setView, on
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <StatCard icon="fa-hourglass-half" label="Sisa Waktu" value={`${daysRemaining} hari`} color="var(--primary-glow)" />
+                <StatCard icon="fa-hourglass-half" label={goal.isEmergencyFund ? 'Target Waktu' : 'Sisa Waktu'} value={`${daysRemaining} hari`} color="var(--primary-glow)" />
                 <StatCard icon="fa-coins" label="Sisa Kebutuhan" value={`Rp ${remainingAmount.toLocaleString('id-ID')}`} color="var(--color-debt)" />
                 <StatCard icon="fa-calendar-day" label="Target Harian" value={`Rp ${Math.ceil(dailyTarget).toLocaleString('id-ID')}`} color="var(--secondary-glow)" />
             </div>
 
             <button
                 onClick={() => setIsModalOpen(true)}
-                disabled={isAchieved}
+                disabled={mainButtonDisabled}
                 className="w-full bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white font-bold py-4 px-6 rounded-full shadow-lg hover:shadow-xl hover:shadow-[var(--primary-glow)]/30 transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
-                {isAchieved ? (
-                    <><i className="fa-solid fa-trophy mr-2"></i> Tujuan Tercapai</>
-                ) : (
-                    <><i className="fa-solid fa-plus mr-2"></i> Tambah Dana</>
-                )}
+                <i className={`fa-solid ${mainButtonIcon} mr-2`}></i> {mainButtonText()}
             </button>
 
             <div>
@@ -175,15 +190,21 @@ const SavingsGoalDetail: React.FC<SavingsGoalDetailProps> = ({ goal, setView, on
                 <div className="bg-[var(--bg-secondary)] backdrop-blur-lg border border-[var(--border-primary)] rounded-2xl p-4 max-h-60 overflow-y-auto">
                     {sortedContributions.length > 0 ? (
                         <ul className="space-y-3">
-                            {sortedContributions.map((c, i) => (
-                                <li key={i} className="flex justify-between items-center bg-[var(--bg-interactive)] p-3 rounded-lg">
-                                    <div>
-                                        <p className="font-semibold text-[var(--text-secondary)]">Setoran Dana</p>
-                                        <p className="text-xs text-[var(--text-tertiary)]">{new Date(c.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
-                                    </div>
-                                    <p className="font-bold" style={{color: 'var(--color-income)'}}>+Rp {c.amount.toLocaleString('id-ID')}</p>
-                                </li>
-                            ))}
+                            {sortedContributions.map((c, i) => {
+                                const isWithdrawal = c.amount < 0;
+                                const title = isWithdrawal ? 'Tarik Dana' : 'Setor Dana';
+                                const amountText = `${isWithdrawal ? '-' : '+'}Rp ${Math.abs(c.amount).toLocaleString('id-ID')}`;
+                                const amountColor = isWithdrawal ? 'var(--color-expense)' : 'var(--color-income)';
+                                return (
+                                    <li key={i} className="flex justify-between items-center bg-[var(--bg-interactive)] p-3 rounded-lg">
+                                        <div>
+                                            <p className="font-semibold text-[var(--text-secondary)]">{title}</p>
+                                            <p className="text-xs text-[var(--text-tertiary)]">{new Date(c.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+                                        </div>
+                                        <p className="font-bold" style={{color: amountColor}}>{amountText}</p>
+                                    </li>
+                                );
+                            })}
                         </ul>
                     ) : (
                         <p className="text-center text-[var(--text-tertiary)] py-8">Belum ada kontribusi.</p>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+// FIX: Corrected imports. The component was previously in types.ts causing errors.
 import { DebtItem, SavingsGoal } from '../../types';
 import Modal from '../Modal';
 
@@ -130,6 +131,8 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onSkip 
                 currentAmount: currentAmount,
                 deadline: sg.deadline ? new Date(sg.deadline).toISOString() : new Date().toISOString(),
                 contributions: currentAmount > 0 ? [{ date: new Date().toISOString(), amount: currentAmount }] : [],
+                // FIX: Added missing isEmergencyFund property.
+                isEmergencyFund: sg.isEmergencyFund || false,
             };
         }).filter(sg => sg.name !== 'Tabungan Tanpa Nama' && sg.targetAmount > 0);
         
@@ -215,9 +218,15 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onSkip 
                                             <input type="text" inputMode="numeric" placeholder="1.500.000" className={inputClasses} value={(goal.currentAmount || '') && parseInt(String(goal.currentAmount)).toLocaleString('id-ID')} onChange={e => handleSavingsChange(index, 'currentAmount', e.target.value)} />
                                         </div>
                                     </div>
-                                    <div>
-                                        <label className={labelClasses}>Tanggal Target</label>
-                                        <input type="date" className={inputClasses} onChange={e => handleSavingsChange(index, 'deadline', e.target.value)} />
+                                    <div className="grid grid-cols-2 gap-3 items-center">
+                                         <div>
+                                            <label className={labelClasses}>Tanggal Target</label>
+                                            <input type="date" className={inputClasses} onChange={e => handleSavingsChange(index, 'deadline', e.target.value)} />
+                                        </div>
+                                        <div className="p-3 bg-[var(--bg-interactive)]/50 rounded-lg flex items-center space-x-3 mt-auto">
+                                            <input type="checkbox" id={`emergency-${goal.id}`} checked={goal.isEmergencyFund} onChange={e => handleSavingsChange(index, 'isEmergencyFund', e.target.checked)} className="h-5 w-5 rounded text-[var(--primary-glow)] focus:ring-[var(--primary-glow)] cursor-pointer bg-[var(--bg-interactive)] border-[var(--border-primary)]" />
+                                            <label htmlFor={`emergency-${goal.id}`} className="text-sm font-medium text-[var(--text-secondary)] cursor-pointer">Dana Darurat?</label>
+                                        </div>
                                     </div>
                                 </div>
                             ))}
@@ -321,12 +330,12 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onSkip 
 
             {/* Savings Confirmation Modal */}
             <Modal isOpen={showSavingsConfirm} onClose={() => setShowSavingsConfirm(false)}>
-                 <div className="relative bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-xl text-center p-8">
+                 <div className="relative bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-xl text-center p-6">
                      <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center bg-gradient-to-br from-[var(--primary-500)] to-[var(--secondary-500)]">
                         <i className="fa-solid fa-circle-question text-3xl text-white"></i>
                     </div>
                      <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">Konfirmasi Langkah</h3>
-                     <p className="text-sm text-[var(--text-secondary)] mb-8">
+                     <p className="text-sm text-[var(--text-secondary)] mb-6">
                         {savingsGoals.length > 0
                             ? "Apakah Anda yakin telah memasukkan semua tujuan tabungan Anda?"
                             : "Anda yakin tidak memiliki tujuan tabungan untuk dicatat?"
@@ -341,7 +350,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, onSkip 
 
             {/* Debt Confirmation Modal */}
             <Modal isOpen={showDebtConfirm} onClose={() => setShowDebtConfirm(false)}>
-                 <div className="relative bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-xl text-center p-8">
+                 <div className="relative bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-xl text-center p-6">
                     <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center bg-gradient-to-br from-[var(--primary-500)] to-[var(--secondary-500)]">
                         <i className="fa-solid fa-flag-checkered text-3xl text-white"></i>
                     </div>

@@ -81,9 +81,13 @@ const Profile: React.FC<ProfileProps> = ({ theme, onToggleTheme, onManageCategor
       </div>
 
        <Modal isOpen={isResetModalOpen} onClose={() => setIsResetModalOpen(false)}>
-        <div className="relative bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-xl text-center p-6 pt-16">
+        <div className="relative bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-xl text-center p-6">
           <button onClick={() => setIsResetModalOpen(false)} className="absolute top-4 right-4 w-10 h-10 rounded-full text-[var(--text-tertiary)] hover:bg-[var(--bg-interactive-hover)] flex items-center justify-center transition-colors z-10" aria-label="Close modal"><i className="fa-solid fa-times text-xl"></i></button>
-          <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex items-center justify-center h-24 w-24 rounded-full bg-gradient-to-br from-red-400 via-red-500 to-red-600 shadow-lg shadow-red-500/40"><i className="fa-solid fa-database text-5xl text-white"></i></div>
+          
+          <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-br from-red-400 via-red-500 to-red-600 shadow-lg shadow-red-500/40 mb-4">
+            <i className="fa-solid fa-triangle-exclamation text-3xl text-white"></i>
+          </div>
+          
           <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-2">Reset Seluruh Data?</h3>
           <p className="text-[var(--text-secondary)] mb-6">Tindakan ini akan <strong>menghapus semua data</strong> yang telah Anda simpan. <br/><br/><span className="font-bold text-[var(--color-warning)]">Tindakan ini tidak dapat diurungkan.</span></p>
           <div className="flex flex-col gap-3">

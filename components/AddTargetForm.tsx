@@ -422,11 +422,15 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({
       </form>
 
       <Modal isOpen={showConfirmModal} onClose={() => setShowConfirmModal(false)}>
-        <div className="text-center p-6 bg-[var(--bg-secondary)] backdrop-blur-lg border border-[var(--border-primary)] rounded-xl">
-            <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">Simpan Perubahan?</h3>
-            <div className="flex gap-3 mt-6">
-                <button onClick={() => setShowConfirmModal(false)} className="w-full bg-[var(--bg-interactive)] text-[var(--text-secondary)] py-2 rounded-full">Batal</button>
-                <button onClick={handleConfirmSave} className="w-full bg-[var(--primary-600)] text-white font-bold py-2 rounded-full">Ya, Simpan</button>
+        <div className="relative bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-xl text-center p-6">
+            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-br from-[var(--primary-500)] to-[var(--secondary-500)] shadow-lg shadow-[var(--primary-glow)]/30 mb-4">
+                <i className="fa-solid fa-save text-3xl text-white"></i>
+            </div>
+            <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-2">Simpan Perubahan?</h3>
+            <p className="text-[var(--text-secondary)] mb-6">Apakah Anda yakin ingin menyimpan target bulanan ini?</p>
+            <div className="flex flex-col sm:flex-row gap-3">
+                <button onClick={() => setShowConfirmModal(false)} className="w-full bg-transparent text-[var(--text-tertiary)] font-semibold py-3 px-6 rounded-full hover:bg-[var(--bg-interactive-hover)]">Batal</button>
+                <button onClick={handleConfirmSave} className="w-full bg-[var(--primary-600)] text-white font-bold py-3 px-6 rounded-full">Ya, Simpan</button>
             </div>
         </div>
       </Modal>

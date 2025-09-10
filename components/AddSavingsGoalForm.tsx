@@ -50,17 +50,22 @@ const AddSavingsGoalForm: React.FC<AddSavingsGoalFormProps> = ({ onClose, onSave
         targetAmount: '',
         deadline: '',
         currentAmount: '',
+        isEmergencyFund: false,
     });
     const [customSource, setCustomSource] = useState('');
     
     useEffect(() => {
         setStep(1);
-        setFormData({ name: '', source: '', targetAmount: '', deadline: '', currentAmount: '' });
+        setFormData({ name: '', source: '', targetAmount: '', deadline: '', currentAmount: '', isEmergencyFund: false });
         setCustomSource('');
     }, []);
 
-    const handleInputChange = (field: keyof typeof formData, value: string) => {
-         const isNumeric = ['targetAmount', 'currentAmount'].includes(field);
+    const handleInputChange = (field: keyof typeof formData, value: string | boolean) => {
+         const isNumeric = ['targetAmount', 'currentAmount'].includes(field as string);
+         if (typeof value === 'boolean') {
+             setFormData(prev => ({ ...prev, [field]: value }));
+             return;
+         }
          const processedValue = isNumeric ? value.replace(/[^0-9]/g, '') : value;
          setFormData(prev => ({ ...prev, [field]: processedValue }));
     };
@@ -104,6 +109,7 @@ const AddSavingsGoalForm: React.FC<AddSavingsGoalFormProps> = ({ onClose, onSave
             deadline: new Date(formData.deadline).toISOString(),
             currentAmount: currentAmount,
             contributions: contributions,
+            isEmergencyFund: formData.isEmergencyFund,
         });
     };
     
@@ -154,6 +160,16 @@ const AddSavingsGoalForm: React.FC<AddSavingsGoalFormProps> = ({ onClose, onSave
                                 <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-[var(--text-tertiary)]">Rp</span>
                                 <input type="text" inputMode="numeric" placeholder="0" value={formData.currentAmount ? parseInt(formData.currentAmount).toLocaleString('id-ID') : ''} onChange={e => handleInputChange('currentAmount', e.target.value)} className={`${inputClasses} pl-9 text-right`} />
                             </div>
+                         </div>
+                         <div className="p-3 bg-[var(--bg-interactive)]/50 rounded-lg flex items-center space-x-3">
+                             <input type="checkbox" id="emergencyFund" checked={formData.isEmergencyFund} onChange={e => handleInputChange('isEmergencyFund', e.target.checked)} className="h-5 w-5 rounded text-[var(--primary-glow)] focus:ring-[var(--primary-glow)] cursor-pointer bg-[var(--bg-interactive)] border-[var(--border-primary)]" />
+                             <label htmlFor="emergencyFund" className="text-sm font-medium text-[var(--text-secondary)] cursor-pointer">Tandai sebagai Dana Darurat</label>
+                             <div className="group relative">
+                                <i className="fa-solid fa-info-circle text-[var(--text-tertiary)]"></i>
+                                <div className="absolute bottom-full mb-2 -left-1/2 w-48 bg-[var(--bg-primary)] text-xs text-[var(--text-secondary)] p-2 rounded-lg shadow-lg border border-[var(--border-primary)] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                    Dana darurat tidak akan masuk ke riwayat tercapai & memiliki alur penarikan khusus.
+                                </div>
+                             </div>
                          </div>
                      </div>
                 );

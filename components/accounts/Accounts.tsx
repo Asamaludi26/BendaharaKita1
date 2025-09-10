@@ -11,6 +11,7 @@ interface AccountsProps {
   onReset: () => void;
   onSelectAccount: (accountId: string) => void;
   onInitiateTopUp: () => void;
+  onInitiateWithdrawSavings: () => void;
 }
 
 // A helper function to render highlighted text
@@ -30,7 +31,7 @@ const renderContentWithHighlight = (content: string) => {
 
 
 // A new, more prominent card for the total balance and primary actions.
-const TotalBalanceCard: React.FC<{ totalNetWorth: number; onAddAccount: () => void; onTransfer: () => void; onTopUp: () => void; }> = ({ totalNetWorth, onAddAccount, onTransfer, onTopUp }) => (
+const TotalBalanceCard: React.FC<{ totalNetWorth: number; onAddAccount: () => void; onTransfer: () => void; onTopUp: () => void; onWithdrawSavings: () => void; }> = ({ totalNetWorth, onAddAccount, onTransfer, onTopUp, onWithdrawSavings }) => (
     <div className="relative bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-3xl shadow-2xl p-6 md:p-8 overflow-hidden">
         <div className="absolute -inset-px rounded-3xl bg-gradient-to-br from-[var(--primary-glow)]/20 via-transparent to-transparent"></div>
         <div className="relative z-10">
@@ -38,7 +39,7 @@ const TotalBalanceCard: React.FC<{ totalNetWorth: number; onAddAccount: () => vo
             <p className="text-4xl md:text-5xl font-bold text-[var(--text-primary)] mt-2" style={{ filter: 'drop-shadow(0 0 10px var(--bg-primary))' }}>
                 Rp {totalNetWorth.toLocaleString('id-ID')}
             </p>
-            <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
                  <button 
                     onClick={onAddAccount} 
                     className="flex items-center justify-center space-x-3 p-4 bg-[var(--bg-interactive)] border border-[var(--border-secondary)] text-[var(--text-secondary)] rounded-xl hover:bg-[var(--bg-interactive-hover)] hover:text-[var(--text-primary)] transition-colors"
@@ -52,6 +53,13 @@ const TotalBalanceCard: React.FC<{ totalNetWorth: number; onAddAccount: () => vo
                  >
                     <i className="fa-solid fa-right-left text-xl"></i>
                     <span className="font-semibold">Transfer</span>
+                </button>
+                <button 
+                    onClick={onWithdrawSavings} 
+                    className="flex items-center justify-center space-x-3 p-4 bg-[var(--bg-interactive)] border border-[var(--border-secondary)] text-[var(--text-secondary)] rounded-xl hover:bg-[var(--bg-interactive-hover)] hover:text-[var(--text-primary)] transition-colors"
+                >
+                    <i className="fa-solid fa-vault text-xl"></i>
+                    <span className="font-semibold">Ambil Tabungan</span>
                 </button>
                 <button 
                     onClick={onTopUp} 
@@ -133,7 +141,7 @@ const AccountCard: React.FC<{ account: Account; onEdit: () => void; onDelete: ()
     );
 };
 
-const Accounts: React.FC<AccountsProps> = ({ accounts, onAddAccount, onEditAccount, onDeleteAccount, onTransfer, onReset, onSelectAccount, onInitiateTopUp }) => {
+const Accounts: React.FC<AccountsProps> = ({ accounts, onAddAccount, onEditAccount, onDeleteAccount, onTransfer, onReset, onSelectAccount, onInitiateTopUp, onInitiateWithdrawSavings }) => {
     const totalNetWorth = useMemo(() => accounts.reduce((sum, acc) => sum + acc.balance, 0), [accounts]);
     const [isResetModalOpen, setIsResetModalOpen] = useState(false);
 
@@ -163,7 +171,13 @@ const Accounts: React.FC<AccountsProps> = ({ accounts, onAddAccount, onEditAccou
                     </button>
                 </header>
 
-                <TotalBalanceCard totalNetWorth={totalNetWorth} onAddAccount={onAddAccount} onTransfer={onTransfer} onTopUp={onInitiateTopUp} />
+                <TotalBalanceCard 
+                    totalNetWorth={totalNetWorth} 
+                    onAddAccount={onAddAccount} 
+                    onTransfer={onTransfer} 
+                    onTopUp={onInitiateTopUp}
+                    onWithdrawSavings={onInitiateWithdrawSavings}
+                />
 
                 {accounts.length > 0 ? (
                     <div className="space-y-4">
@@ -198,9 +212,13 @@ const Accounts: React.FC<AccountsProps> = ({ accounts, onAddAccount, onEditAccou
             </div>
 
             <Modal isOpen={isResetModalOpen} onClose={() => setIsResetModalOpen(false)}>
-                <div className="relative bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-xl text-center p-6 pt-16">
+                <div className="relative bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-xl text-center p-6">
                     <button onClick={() => setIsResetModalOpen(false)} className="absolute top-4 right-4 w-10 h-10 rounded-full text-[var(--text-tertiary)] hover:bg-[var(--bg-interactive-hover)] flex items-center justify-center transition-colors z-10" aria-label="Close modal"><i className="fa-solid fa-times text-xl"></i></button>
-                    <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex items-center justify-center h-24 w-24 rounded-full bg-gradient-to-br from-red-400 via-red-500 to-red-600 shadow-lg shadow-red-500/40"><i className="fa-solid fa-triangle-exclamation text-5xl text-white"></i></div>
+                    
+                    <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-br from-red-400 via-red-500 to-red-600 shadow-lg shadow-red-500/40 mb-4">
+                        <i className="fa-solid fa-triangle-exclamation text-3xl text-white"></i>
+                    </div>
+
                     <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-2">Atur Ulang Data Dompet?</h3>
                     <p className="text-[var(--text-secondary)] mb-6">
                         {renderContentWithHighlight("Tindakan ini akan **menghapus semua akun dan transaksi** yang telah Anda catat. Anda akan dipandu untuk memasukkannya kembali.")}

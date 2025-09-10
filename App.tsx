@@ -33,6 +33,7 @@ import FormGuideModal from './components/modals/FormGuideModal';
 import WalletOnboardingWizard from './components/accounts/WalletOnboardingWizard';
 import TransactionDetailModal from './components/modals/TransactionDetailModal';
 import TopUpModal from './components/modals/TopUpModal';
+import WithdrawSavingsModal from './components/modals/WithdrawSavingsModal';
 
 // A simple hook to persist state to localStorage
 function useLocalStorage<T>(key: string, initialValue: T): [T, React.Dispatch<React.SetStateAction<T>>] {
@@ -64,7 +65,7 @@ const App: React.FC = () => {
     const [view, setView] = useState<View>(View.DASHBOARD);
     const [activeDetailId, setActiveDetailId] = useState<string | null>(null);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-    const [activeModal, setActiveModal] = useState<null | 'ADD_DEBT' | 'ADD_SAVINGS_GOAL' | 'ADD_ACCOUNT' | 'EDIT_ACCOUNT' | 'TRANSFER' | 'TOP_UP'>(null);
+    const [activeModal, setActiveModal] = useState<null | 'ADD_DEBT' | 'ADD_SAVINGS_GOAL' | 'ADD_ACCOUNT' | 'EDIT_ACCOUNT' | 'TRANSFER' | 'TOP_UP' | 'WITHDRAW_SAVINGS'>(null);
     
     // New states for enhanced features
     const [theme, setTheme] = useLocalStorage<'light' | 'dark'>('app_theme', 'dark');
@@ -166,6 +167,9 @@ const App: React.FC = () => {
     }, [currentMonthYear, archivedTargets]);
 
     const accountMap = useMemo(() => new Map(accounts.map(acc => [acc.id, acc.name])), [accounts]);
+    
+    // Active goals are those not yet completed, OR are emergency funds (which are never "complete")
+    const activeSavingsGoals = useMemo(() => savingsGoals.filter(g => g.currentAmount < g.targetAmount || g.isEmergencyFund), [savingsGoals]);
 
     // --- TRANSACTION & ACCOUNT BALANCE CRUD ---
     const handleSaveTransaction = (transaction: Transaction) => {
@@ -278,6 +282,53 @@ const App: React.FC = () => {
 
     const handleOpenTopUpModal = () => {
         setActiveModal('TOP_UP');
+    };
+    
+    const handleOpenWithdrawSavingsModal = () => {
+        setActiveModal('WITHDRAW_SAVINGS');
+    };
+    
+    const handleWithdrawSavings = (goalId: string, accountId: string, amount: number) => {
+        const goal = savingsGoals.find(g => g.id === goalId);
+        if (!goal || !accountId) {
+            setToast({ message: 'Gagal menarik dana: Akun atau tujuan tidak valid.', type: 'error' });
+            return;
+        }
+        if (amount > goal.currentAmount) {
+            setToast({ message: 'Jumlah penarikan melebihi saldo tabungan.', type: 'error' });
+            return;
+        }
+    
+        // Create withdrawal transaction (Income to account)
+        const withdrawalTransaction: Transaction = {
+            id: uuidv4(),
+            date: new Date().toISOString(),
+            description: `Penarikan Tabungan: ${goal.name}`,
+            amount: amount,
+            type: TransactionType.INCOME,
+            category: 'Pencairan Tabungan',
+            accountId: accountId,
+        };
+    
+        // Update account balance
+        setAccounts(prevAccounts => prevAccounts.map(acc => 
+            acc.id === accountId ? { ...acc, balance: acc.balance + amount } : acc
+        ));
+    
+        // Update transactions
+        setTransactions(prev => [withdrawalTransaction, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    
+        // Update savings goal (decrease current amount, add negative contribution for history)
+        setSavingsGoals(prev => prev.map(g => 
+            g.id === goalId ? {
+                ...g,
+                currentAmount: g.currentAmount - amount,
+                contributions: [...g.contributions, { date: new Date().toISOString(), amount: -amount }]
+            } : g
+        ));
+    
+        setToast({ message: 'Dana berhasil ditarik!', type: 'success' });
+        setActiveModal(null);
     };
 
     const handleWalletOnboardingComplete = (newAccountsData: { name: string, type: 'Bank' | 'E-Wallet', balance: number }[]) => {
@@ -421,8 +472,7 @@ const App: React.FC = () => {
     
     const activeDebts = useMemo(() => debts.filter(d => (d.totalAmount - d.payments.reduce((sum, p) => sum + p.amount, 0)) > 0), [debts]);
     const paidDebts = useMemo(() => debts.filter(d => (d.totalAmount - d.payments.reduce((sum, p) => sum + p.amount, 0)) <= 0), [debts]);
-    const activeSavingsGoals = useMemo(() => savingsGoals.filter(g => g.currentAmount < g.targetAmount), [savingsGoals]);
-    const completedSavingsGoals = useMemo(() => savingsGoals.filter(g => g.currentAmount >= g.targetAmount), [savingsGoals]);
+    const completedSavingsGoals = useMemo(() => savingsGoals.filter(g => g.currentAmount >= g.targetAmount && !g.isEmergencyFund), [savingsGoals]);
     const totalAllTimeSavings = useMemo(() => savingsGoals.reduce((sum, g) => sum + g.targetAmount, 0), [savingsGoals]);
     const totalAllTimeDebt = useMemo(() => debts.reduce((sum, d) => sum + d.totalAmount, 0), [debts]);
     const showGoalsOnboardingWizard = view === View.MANAGEMENT && !goalsOnboardingComplete && !hasSkippedGoalsOnboarding;
@@ -470,6 +520,7 @@ const App: React.FC = () => {
                         setView(View.ACCOUNT_DETAIL);
                     }}
                     onInitiateTopUp={handleOpenTopUpModal}
+                    onInitiateWithdrawSavings={handleOpenWithdrawSavingsModal}
                 />;
                 break;
             case View.ACCOUNT_DETAIL:
@@ -612,6 +663,15 @@ const App: React.FC = () => {
                     onSave={handleSaveTransaction}
                     onClose={() => setActiveModal(null)}
                     userCategories={userCategories}
+                />
+            </Modal>
+
+            <Modal isOpen={activeModal === 'WITHDRAW_SAVINGS'} onClose={() => setActiveModal(null)}>
+                <WithdrawSavingsModal
+                    savingsGoals={activeSavingsGoals}
+                    accounts={accounts}
+                    onWithdraw={handleWithdrawSavings}
+                    onClose={() => setActiveModal(null)}
                 />
             </Modal>
         </div>

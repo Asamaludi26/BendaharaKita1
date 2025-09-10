@@ -47,6 +47,7 @@ export const mockUserCategories: UserCategory[] = [
     { id: uuidv4(), name: 'Bonus', type: TransactionType.INCOME },
     { id: uuidv4(), name: 'Transfer Dana', type: TransactionType.INCOME },
     { id: uuidv4(), name: 'Isi Saldo', type: TransactionType.INCOME },
+    { id: uuidv4(), name: 'Pencairan Tabungan', type: TransactionType.INCOME },
     { id: uuidv4(), name: 'Lainnya', type: TransactionType.INCOME },
     { id: uuidv4(), name: 'Saldo Awal', type: TransactionType.INCOME },
     // Expense
@@ -91,7 +92,8 @@ export const mockSavingsGoals: SavingsGoal[] = [
         id: 'sg-dana-darurat', name: 'Dana Darurat', source: 'Bibit',
         targetAmount: 30000000, currentAmount: 12000000, 
         deadline: relativeDate(365 * 2), // 2 years from NOW
-        contributions: Array.from({ length: 12 }, (_, i) => ({ date: relativeDate(-30 * (12 - i)), amount: 1000000 }))
+        contributions: Array.from({ length: 12 }, (_, i) => ({ date: relativeDate(-30 * (12 - i)), amount: 1000000 })),
+        isEmergencyFund: true,
     },
     { 
         id: 'sg-jepang', name: 'Liburan ke Jepang', source: 'Bank BCA',
