@@ -20,7 +20,7 @@ Dokumen ini adalah panduan lengkap untuk memahami dan memaksimalkan penggunaan a
     -   [3.1. Dompet Saya: Mengelola Semua Akun](#31-dompet-saya-mengelola-semua-akun)
     -   [3.2. Transaksi: Mencatat Aktivitas Harian](#32-transaksi-mencatat-aktivitas-harian)
     -   [3.3. Perencanaan Bulanan: Target & Laporan Aktual](#33-perencanaan-bulanan-target--laporan-aktual)
-4.  [**Mencapai Tujuan Finansial (Goals)**](#4-mencapai-tujuan-finansial-goals)
+4.  [**Mencapai Tujuan Finansial**](#4-mencapai-tujuan-finansial)
     -   [4.1. Mengelola Utang](#41-mengelola-utang)
     -   [4.2. Mengelola Tujuan Tabungan](#42-mengelola-tujuan-tabungan)
 5.  [**Menganalisis Keuangan Anda**](#5-menganalisis-keuangan-anda)
@@ -46,9 +46,10 @@ BendaharaKita dirancang berdasarkan tiga filosofi utama:
 Di bagian bawah layar, Anda akan menemukan 4 menu utama untuk aktivitas sehari-hari:
 
 -   <i class="fa-solid fa-chart-pie"></i> **Dashboard:** Halaman utama yang memberikan ringkasan kondisi finansial Anda.
--   <i class="fa-solid fa-receipt"></i> **Transaksi:** Tempat untuk melihat, mencari, dan mengelola semua riwayat transaksi Anda.
 -   <i class="fa-solid fa-wallet"></i> **Dompet:** Mengelola semua akun bank dan e-wallet Anda.
--   <i class="fa-solid fa-bullseye-arrow"></i> **Goals:** Mengelola tujuan finansial jangka panjang seperti utang dan tabungan.
+-   <i class="fa-solid fa-bullseye-arrow"></i> **Tujuan:** Mengelola tujuan finansial jangka panjang seperti utang dan tabungan.
+-   <i class="fa-solid fa-receipt"></i> **Transaksi:** Tempat untuk melihat, mencari, dan mengelola semua riwayat transaksi Anda.
+
 
 ### Dashboard: Pusat Kendali Anda
 
@@ -82,15 +83,15 @@ Menu ini adalah pusat dari semua dana Anda.
 Ini adalah salah satu fitur paling cerdas yang telah dirombak total.
 
 -   **Progress di Dashboard:** Kartu "Progress Target Bulanan" di Dashboard adalah pusat dari fitur ini.
--   **Membuat/Mengubah Target:** Klik ikon gir (`⚙️`) di kartu progres untuk masuk ke halaman formulir Target Bulanan. Di sini Anda bisa merencanakan alokasi pendapatan Anda. Sistem akan secara otomatis menyarankan item untuk utang dan tabungan dari menu Goals.
+-   **Membuat/Mengubah Target:** Klik ikon gir (`⚙️`) di kartu progres untuk masuk ke halaman formulir Target Bulanan. Di sini Anda bisa merencanakan alokasi pendapatan Anda. Sistem akan secara otomatis menyarankan item untuk utang dan tabungan dari menu **Tujuan**.
 -   **Laporan Aktual Otomatis:** **Anda tidak perlu lagi mengisi laporan aktual secara manual.** Cukup klik kartu progres di Dashboard untuk melihat halaman Laporan Aktual. Halaman ini kini menjadi dasbor *read-only* yang secara otomatis menghitung realisasi keuangan Anda.
 -   **Kunci Sinkronisasi (PENTING!):** Agar laporan otomatis ini akurat, sistem bekerja dengan mencocokkan nama. Pastikan:
     -   Nama item **Target Pengeluaran** (misal: "Transportasi") **SAMA PERSIS** dengan nama **Kategori Transaksi** Anda.
-    -   Nama item **Target Utang/Tabungan** (misal: "Cicilan iPhone 15 Pro") **SAMA PERSIS** dengan nama **Tujuan (Goal)** Anda.
+    -   Nama item **Target Utang/Tabungan** (misal: "Cicilan iPhone 15 Pro") **SAMA PERSIS** dengan nama **Tujuan** Anda.
 
-## 4. Mencapai Tujuan Finansial (Goals)
+## 4. Mencapai Tujuan Finansial
 
-Menu "Goals" adalah tempat Anda mengelola komitmen dan impian jangka panjang.
+Menu "Tujuan" adalah tempat Anda mengelola komitmen dan impian jangka panjang.
 
 ### 4.1. Mengelola Utang
 - **Menambah Utang:** Catat semua pinjaman Anda di sini, baik yang baru maupun yang sedang berjalan.
@@ -129,7 +130,7 @@ Penting untuk memahami bagaimana setiap aksi Anda memberikan efek berantai di se
 | Jika Anda Melakukan... | Maka Secara Otomatis... |
 | :--- | :--- |
 | **Menambah Transaksi Baru** | 1. **Saldo Dompet** terkait akan diperbarui. <br> 2. **Total Saldo** di Dashboard akan diperbarui. <br> 3. **Semua Kartu Ringkasan** (Arus Kas, dll.) di Dashboard akan diperbarui. <br> 4. **Semua Grafik** di Pusat Analitik akan diperbarui. <br> 5. **Laporan Aktual** pada kategori yang sesuai akan diperbarui. <br> 6. **Analisis Kesehatan Keuangan** akan dihitung ulang. |
-| **Mencatat Pembayaran Utang di Menu Goals** | 1. Progres detail utang akan diperbarui. <br> 2. **Laporan Aktual** pada item utang yang sesuai akan diperbarui. |
+| **Mencatat Pembayaran Utang di Menu Tujuan** | 1. Progres detail utang akan diperbarui. <br> 2. **Laporan Aktual** pada item utang yang sesuai akan diperbarui. |
 | **Melakukan Transfer Dana** | 1. Saldo **Dompet Asal** berkurang. <br> 2. Saldo **Dompet Tujuan** bertambah. <br> 3. Dua transaksi baru ("Transfer Keluar" & "Transfer Masuk") tercatat di riwayat. |
 
 Dengan memahami alur ini, Anda akan melihat bahwa BendaharaKita bukan hanya sekadar pencatat, melainkan sebuah ekosistem finansial hidup yang merespons setiap keputusan Anda secara real-time. Selamat mengelola keuangan!

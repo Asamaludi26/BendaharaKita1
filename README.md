@@ -58,10 +58,10 @@ BendaharaKita dikemas dengan fitur-fitur canggih yang dirancang untuk memberikan
 
 ### 🎯 **Perencanaan & Laporan Aktual Real-Time**
 - **Laporan Aktual Otomatis:** Lupakan entri manual. Halaman Laporan Aktual kini menjadi dasbor *real-time* yang secara otomatis menyinkronkan dan menjumlahkan semua transaksi harian, pembayaran utang, dan setoran tabungan Anda, lalu membandingkannya langsung dengan target bulanan Anda.
-- **Template Anggaran Cerdas:** Buat target bulanan dengan mudah. Target utang dan tabungan Anda akan otomatis terisi dari menu Goals.
+- **Template Anggaran Cerdas:** Buat target bulanan dengan mudah. Target utang dan tabungan Anda akan otomatis terisi dari menu **Tujuan**.
 - **Catatan Penting:** Untuk sinkronisasi otomatis yang akurat, pastikan **nama item target** (misal: "Transportasi") **sama persis** dengan **nama kategori transaksi** Anda.
 
-### 🚀 **Manajemen Tujuan Finansial (Utang & Tabungan)**
+### 🚀 **Manajemen Tujuan Finansial**
 - **Pelacakan Terpusat:** Kelola semua pinjaman dan tujuan tabungan Anda di satu tempat yang terorganisir.
 - **Onboarding Mudah:** Wizard penyiapan awal memandu Anda untuk memasukkan data yang sedang berjalan saat pertama kali menggunakan fitur ini.
 - **Visualisasi Progres:** Lacak progres dengan kartu yang jelas dan memotivasi, lengkap dengan peringatan jatuh tempo.

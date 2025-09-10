@@ -10,9 +10,9 @@ interface BottomNavProps {
 const BottomNav: React.FC<BottomNavProps> = ({ activeView, setView }) => {
   const navItems = [
     { view: View.DASHBOARD, label: "Dashboard", Icon: DashboardIcon },
-    { view: View.TRANSACTIONS, label: "Transaksi", Icon: TransactionsIcon },
     { view: View.WALLET, label: "Dompet", Icon: WalletIcon },
-    { view: View.MANAGEMENT, label: "Goals", Icon: GoalsIcon },
+    { view: View.MANAGEMENT, label: "Tujuan", Icon: GoalsIcon },
+    { view: View.TRANSACTIONS, label: "Transaksi", Icon: TransactionsIcon },
   ];
 
   const activeViewsMap: { [key in View]?: View } = {

@@ -12,6 +12,22 @@ interface AccountsProps {
   onSelectAccount: (accountId: string) => void;
 }
 
+// A helper function to render highlighted text
+const renderContentWithHighlight = (content: string) => {
+    const parts = content.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, index) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+            return (
+                <strong key={index} className="font-bold text-[var(--primary-glow)]">
+                    {part.slice(2, -2)}
+                </strong>
+            );
+        }
+        return part;
+    });
+};
+
+
 // A new, more prominent card for the total balance and primary actions.
 const TotalBalanceCard: React.FC<{ totalNetWorth: number; onAddAccount: () => void; onTransfer: () => void; }> = ({ totalNetWorth, onAddAccount, onTransfer }) => (
     <div className="relative bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-3xl shadow-2xl p-6 md:p-8 overflow-hidden">
@@ -185,7 +201,11 @@ const Accounts: React.FC<AccountsProps> = ({ accounts, onAddAccount, onEditAccou
                     <button onClick={() => setIsResetModalOpen(false)} className="absolute top-4 right-4 w-10 h-10 rounded-full text-[var(--text-tertiary)] hover:bg-[var(--bg-interactive-hover)] flex items-center justify-center transition-colors z-10" aria-label="Close modal"><i className="fa-solid fa-times text-xl"></i></button>
                     <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex items-center justify-center h-24 w-24 rounded-full bg-gradient-to-br from-red-400 via-red-500 to-red-600 shadow-lg shadow-red-500/40"><i className="fa-solid fa-triangle-exclamation text-5xl text-white"></i></div>
                     <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-2">Atur Ulang Data Dompet?</h3>
-                    <p className="text-[var(--text-secondary)] mb-6">Tindakan ini akan **menghapus semua akun dan transaksi** yang telah Anda catat. Anda akan dipandu untuk memasukkannya kembali. <br/><br/><span className="font-semibold text-[var(--text-tertiary)]">Data Goals (Utang & Tabungan) tidak akan terpengaruh.</span></p>
+                    <p className="text-[var(--text-secondary)] mb-6">
+                        {renderContentWithHighlight("Tindakan ini akan **menghapus semua akun dan transaksi** yang telah Anda catat. Anda akan dipandu untuk memasukkannya kembali.")}
+                        <br/><br/>
+                        <span className="font-semibold text-[var(--text-tertiary)]">Data Goals (Utang & Tabungan) tidak akan terpengaruh.</span>
+                    </p>
                     <div className="flex flex-col gap-3">
                         <button type="button" onClick={handleConfirmReset} className="w-full bg-red-600 text-white font-bold py-3 px-6 rounded-full shadow-lg">Ya, Atur Ulang</button>
                         <button type="button" onClick={() => setIsResetModalOpen(false)} className="w-full bg-transparent text-[var(--text-tertiary)] font-semibold py-3 px-6 rounded-full hover:bg-[var(--bg-interactive-hover)]">Batal</button>

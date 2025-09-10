@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import type { Transaction, UserCategory, Account } from '../../types';
 import { TransactionType } from '../types';
 
@@ -7,10 +7,10 @@ interface TransactionsProps {
   userCategories: UserCategory[];
   accounts: Account[];
   onAdd: () => void;
-  onEdit: (transaction: Transaction) => void;
+  onSelect: (transaction: Transaction) => void;
 }
 
-const TransactionItem: React.FC<{ transaction: Transaction; style: React.CSSProperties, onEdit: (transaction: Transaction) => void, accountName: string | undefined }> = ({ transaction, style, onEdit, accountName }) => {
+const TransactionItem: React.FC<{ transaction: Transaction; style: React.CSSProperties, onSelect: (transaction: Transaction) => void, accountName: string | undefined }> = ({ transaction, style, onSelect, accountName }) => {
   const isIncome = transaction.type === TransactionType.INCOME;
   const indicatorColor = isIncome ? 'var(--color-income)' : 'var(--color-expense)';
 
@@ -18,10 +18,10 @@ const TransactionItem: React.FC<{ transaction: Transaction; style: React.CSSProp
     <div 
         className="relative rounded-xl p-px bg-gradient-to-b from-white/5 to-transparent group cursor-pointer transition-all duration-300 hover:from-white/10"
         style={style} 
-        onClick={() => onEdit(transaction)} 
+        onClick={() => onSelect(transaction)} 
         role="button" 
         tabIndex={0} 
-        aria-label={`Edit transaction: ${transaction.description}`}
+        aria-label={`Lihat detail transaksi: ${transaction.description}`}
     >
       <div className="relative p-4 bg-[var(--bg-secondary)] rounded-[11px] overflow-hidden">
         <div 
@@ -66,39 +66,132 @@ const CategoryBottomSheet: React.FC<{
     selectedValue: string;
     onSelect: (value: string) => void;
 }> = ({ isOpen, onClose, categories, selectedValue, onSelect }) => {
+    const sheetRef = useRef<HTMLDivElement>(null);
+    const [dragOffsetY, setDragOffsetY] = useState(0);
+    const isDraggingRef = useRef(false);
+    const dragStartYRef = useRef(0);
+    
+    // Use a ref for onClose to avoid re-running effects if onClose is redefined
+    const onCloseRef = useRef(onClose);
+    useEffect(() => {
+        onCloseRef.current = onClose;
+    }, [onClose]);
+
     const handleSelect = (value: string) => {
         onSelect(value);
         onClose();
     };
+    
+    // Define move and end handlers with useCallback for stability
+    const handleDragMove = useCallback((e: TouchEvent | MouseEvent) => {
+        if (!isDraggingRef.current) return;
+        const y = 'touches' in e ? e.touches[0].clientY : e.clientY;
+        const deltaY = y - dragStartYRef.current;
+        if (deltaY > 0) { // Only allow dragging down
+            setDragOffsetY(deltaY);
+        }
+    }, []);
+
+    const handleDragEnd = useCallback(() => {
+        if (!isDraggingRef.current) return;
+        isDraggingRef.current = false;
+
+        // Clean up global listeners
+        window.removeEventListener('mousemove', handleDragMove);
+        window.removeEventListener('touchmove', handleDragMove);
+        window.removeEventListener('mouseup', handleDragEnd);
+        window.removeEventListener('touchend', handleDragEnd);
+        
+        // Restore transition for the snap-back/close animation
+        if (sheetRef.current) {
+            sheetRef.current.style.transition = 'transform 0.3s ease-in-out';
+        }
+
+        // Use the functional update form of setState to get the latest dragOffsetY
+        setDragOffsetY(currentOffsetY => {
+            if (currentOffsetY > 100) { // Threshold to close
+                onCloseRef.current();
+            }
+            // Always reset to 0 to trigger the snap-back animation or reset before unmount
+            return 0; 
+        });
+
+    }, [handleDragMove]); // handleDragMove is a stable dependency
+
+    // Define start handler
+    const handleDragStart = (e: React.TouchEvent<HTMLDivElement> | React.MouseEvent<HTMLDivElement>) => {
+        isDraggingRef.current = true;
+        const y = 'touches' in e ? e.touches[0].clientY : e.clientY;
+        dragStartYRef.current = y;
+
+        // Disable transitions during drag for smooth movement
+        if (sheetRef.current) {
+            sheetRef.current.style.transition = 'none';
+        }
+
+        // Add listeners directly when the drag starts
+        window.addEventListener('mousemove', handleDragMove);
+        window.addEventListener('touchmove', handleDragMove);
+        window.addEventListener('mouseup', handleDragEnd);
+        window.addEventListener('touchend', handleDragEnd);
+    };
+
+    // A safety cleanup effect in case the component unmounts while dragging
+    useEffect(() => {
+        return () => {
+            window.removeEventListener('mousemove', handleDragMove);
+            window.removeEventListener('touchmove', handleDragMove);
+            window.removeEventListener('mouseup', handleDragEnd);
+            window.removeEventListener('touchend', handleDragEnd);
+        };
+    }, [handleDragMove, handleDragEnd]);
+
 
     return (
         <div 
-            className={`fixed inset-0 z-40 transition-opacity duration-300 ${isOpen ? 'bg-black/60' : 'bg-transparent pointer-events-none'}`}
+            className={`fixed inset-0 z-[90] transition-opacity duration-300 ${isOpen ? 'bg-black/60' : 'bg-transparent pointer-events-none'}`}
             onClick={onClose}
         >
             <div 
-                className={`fixed bottom-0 left-0 right-0 z-50 bg-[var(--bg-secondary)]/80 backdrop-blur-xl border-t border-[var(--border-primary)] rounded-t-2xl shadow-2xl transition-transform duration-300 ease-in-out ${isOpen ? 'translate-y-0' : 'translate-y-full'}`}
+                ref={sheetRef}
+                className="fixed bottom-0 left-0 right-0 z-[100]"
+                style={{
+                  transform: isOpen ? `translateY(${dragOffsetY}px)` : `translateY(100%)`,
+                  transition: isDraggingRef.current ? 'none' : 'transform 0.3s ease-in-out',
+                }}
                 onClick={(e) => e.stopPropagation()}
-                style={{ maxHeight: '60vh' }}
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="category-sheet-title"
             >
-                <div className="p-4 pt-3">
-                    <div className="w-12 h-1.5 bg-[var(--border-secondary)] rounded-full mx-auto mb-5"></div>
-                    <h3 id="category-sheet-title" className="text-xl font-bold text-center text-[var(--text-primary)] mb-4">Pilih Kategori</h3>
-                </div>
-                <div className="overflow-y-auto pb-8 px-4">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                        {categories.map(cat => (
-                            <button
-                                key={cat.id}
-                                onClick={() => handleSelect(cat.name)}
-                                className={`w-full p-4 rounded-xl text-center font-semibold transition-all duration-300 transform focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-glow)] ${selectedValue === cat.name ? 'bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white shadow-lg shadow-[var(--primary-glow)]/30 scale-105' : 'bg-[var(--bg-interactive)] text-[var(--text-secondary)] hover:bg-[var(--bg-interactive-hover)]'}`}
-                            >
-                                {cat.name}
-                            </button>
-                        ))}
+                <div
+                    className="bg-[var(--bg-secondary)]/80 backdrop-blur-xl border-t border-[var(--border-primary)] rounded-t-2xl shadow-2xl flex flex-col"
+                    style={{
+                        maxHeight: '60vh',
+                        paddingBottom: 'calc(env(safe-area-inset-bottom, 0rem) + 8rem)',
+                        boxSizing: 'border-box'
+                    }}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="category-sheet-title"
+                >
+                    <div 
+                      className="p-4 pt-3 flex-shrink-0"
+                      onTouchStart={handleDragStart}
+                      onMouseDown={handleDragStart}
+                    >
+                        <div className="w-12 h-1.5 bg-[var(--border-secondary)] rounded-full mx-auto mb-5 cursor-grab active:cursor-grabbing"></div>
+                        <h3 id="category-sheet-title" className="text-xl font-bold text-center text-[var(--text-primary)] mb-4">Pilih Kategori</h3>
+                    </div>
+                    <div className="overflow-y-auto px-4 flex-grow">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            {categories.map(cat => (
+                                <button
+                                    key={cat.id}
+                                    onClick={() => handleSelect(cat.name)}
+                                    className={`w-full p-4 rounded-xl text-center font-semibold transition-all duration-300 transform focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-glow)] ${selectedValue === cat.name ? 'bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white shadow-lg shadow-[var(--primary-glow)]/30 scale-105' : 'bg-[var(--bg-interactive)] text-[var(--text-secondary)] hover:bg-[var(--bg-interactive-hover)]'}`}
+                                >
+                                    {cat.name}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -107,7 +200,7 @@ const CategoryBottomSheet: React.FC<{
 };
 
 
-const Transactions: React.FC<TransactionsProps> = ({ transactions, userCategories, accounts, onAdd, onEdit }) => {
+const Transactions: React.FC<TransactionsProps> = ({ transactions, userCategories, accounts, onAdd, onSelect }) => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [isCategorySheetOpen, setIsCategorySheetOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -197,16 +290,35 @@ const Transactions: React.FC<TransactionsProps> = ({ transactions, userCategorie
           )}
       </div>
 
-      <div className="space-y-6 pb-28">
+      <div className="space-y-4 pb-28">
         {Object.keys(groupedAndFilteredTransactions).length > 0 ? (
-          Object.entries(groupedAndFilteredTransactions).map(([monthYear, txs]) => (
-            <div key={monthYear} className="animate-fade-in-up">
-              <div className="sticky z-10 -mx-4 md:-mx-6 mb-3 bg-[var(--bg-secondary)] px-4 md:px-6 py-2 shadow-md border-y border-[var(--border-primary)]" style={{ top: 'var(--filter-bar-height, 72px)' }}>
-                <h2 className="text-lg font-bold text-[var(--text-primary)]">{monthYear}</h2>
-              </div>
-              <div className="space-y-3 stagger-children">
-                {txs.map((tx, index) => <TransactionItem key={tx.id} transaction={tx} style={{ animationDelay: `${index * 50}ms` }} onEdit={onEdit} accountName={accountMap.get(tx.accountId)} />)}
-              </div>
+          Object.entries(groupedAndFilteredTransactions).map(([monthYear, txs], index) => (
+            <div key={monthYear} className="relative rounded-2xl p-px bg-gradient-to-b from-white/10 to-transparent animate-fade-in-up" style={{ animationDelay: `${index * 75}ms` }}>
+                <details className="group/card bg-[var(--bg-secondary)] rounded-[15px] overflow-hidden" open={index === 0}>
+                    <summary className="list-none p-4 cursor-pointer flex justify-between items-center transition-colors group-hover/card:bg-[var(--bg-interactive-hover)]">
+                        <h2 className="text-lg font-bold text-[var(--text-primary)]">{monthYear}</h2>
+                        <div className="w-8 h-8 flex items-center justify-center rounded-lg">
+                            <i className="fa-solid fa-chevron-down text-[var(--text-tertiary)] transition-transform duration-300 group-open/card:rotate-180"></i>
+                        </div>
+                    </summary>
+                    <div className="grid grid-rows-[0fr] transition-[grid-template-rows] duration-500 ease-in-out group-open/card:grid-rows-[1fr]">
+                        <div className="overflow-hidden">
+                            <div className="border-t border-[var(--border-primary)] p-4">
+                                <div className="space-y-3 stagger-children">
+                                    {txs.map((tx, txIndex) => (
+                                        <TransactionItem
+                                            key={tx.id}
+                                            transaction={tx}
+                                            style={{ animationDelay: `${txIndex * 50}ms` }}
+                                            onSelect={onSelect}
+                                            accountName={accountMap.get(tx.accountId)}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </details>
             </div>
           ))
         ) : (
@@ -222,7 +334,7 @@ const Transactions: React.FC<TransactionsProps> = ({ transactions, userCategorie
 
       <button
         onClick={onAdd}
-        className="fixed bottom-28 right-4 md:bottom-6 md:right-6 w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-[var(--primary-glow)]/30 transform hover:scale-110 transition-all z-30"
+        className="fixed bottom-28 right-4 md:bottom-6 md:right-6 w-14 h-14 rounded-2xl hidden md:flex items-center justify-center text-white shadow-lg shadow-[var(--primary-glow)]/30 transform hover:scale-110 transition-all z-30"
         style={{ backgroundImage: 'var(--gradient-primary)' }}
         aria-label="Tambah Transaksi Baru"
       >

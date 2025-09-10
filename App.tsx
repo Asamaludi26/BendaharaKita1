@@ -31,6 +31,7 @@ import TransferModal from './components/modals/TransferModal';
 import WelcomeTourModal from './components/modals/WelcomeTourModal';
 import FormGuideModal from './components/modals/FormGuideModal';
 import WalletOnboardingWizard from './components/accounts/WalletOnboardingWizard';
+import TransactionDetailModal from './components/modals/TransactionDetailModal';
 
 // A simple hook to persist state to localStorage
 function useLocalStorage<T>(key: string, initialValue: T): [T, React.Dispatch<React.SetStateAction<T>>] {
@@ -67,6 +68,7 @@ const App: React.FC = () => {
     // New states for enhanced features
     const [theme, setTheme] = useLocalStorage<'light' | 'dark'>('app_theme', 'dark');
     const [editingTransaction, setEditingTransaction] = useState<Transaction | 'new' | null>(null);
+    const [viewingTransaction, setViewingTransaction] = useState<Transaction | null>(null);
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
     const [editingAccount, setEditingAccount] = useState<Account | null>(null);
 
@@ -140,6 +142,8 @@ const App: React.FC = () => {
         }
         return targetForMonth ? targetForMonth.target : null;
     }, [currentMonthYear, archivedTargets]);
+
+    const accountMap = useMemo(() => new Map(accounts.map(acc => [acc.id, acc.name])), [accounts]);
 
     // --- TRANSACTION & ACCOUNT BALANCE CRUD ---
     const handleSaveTransaction = (transaction: Transaction) => {
@@ -397,7 +401,7 @@ const App: React.FC = () => {
     const showGoalsOnboardingWizard = view === View.MANAGEMENT && !goalsOnboardingComplete && !hasSkippedGoalsOnboarding;
     const showWalletOnboardingWizard = view === View.WALLET && !walletOnboardingComplete && !hasSkippedWalletOnboarding;
     
-    const allModalsClosed = !activeModal && !showGoalsOnboardingWizard && !editingTransaction && !isCategoryModalOpen && !editingAccount && !isTourModalOpen && !isFormGuideModalOpen && !showWalletOnboardingWizard;
+    const allModalsClosed = !activeModal && !showGoalsOnboardingWizard && !editingTransaction && !isCategoryModalOpen && !editingAccount && !isTourModalOpen && !isFormGuideModalOpen && !showWalletOnboardingWizard && !viewingTransaction;
 
     const isTargetSet = !!currentMonthlyTarget;
 
@@ -421,7 +425,7 @@ const App: React.FC = () => {
                 />;
                 break;
             case View.TRANSACTIONS:
-                pageComponent = <Transactions transactions={transactions} userCategories={userCategories} onAdd={() => setEditingTransaction('new')} onEdit={(tx) => setEditingTransaction(tx)} accounts={accounts} />;
+                pageComponent = <Transactions transactions={transactions} userCategories={userCategories} onAdd={() => setEditingTransaction('new')} onSelect={(tx) => setViewingTransaction(tx)} accounts={accounts} />;
                 break;
              case View.REPORTS_DASHBOARD:
                 pageComponent = <ReportsDashboard transactions={transactions} userCategories={userCategories} />;
@@ -503,6 +507,16 @@ const App: React.FC = () => {
             </main>
 
             <BottomNav activeView={view} setView={setView} />
+
+            <Modal isOpen={!!viewingTransaction} onClose={() => setViewingTransaction(null)}>
+               {viewingTransaction && (
+                   <TransactionDetailModal
+                       transaction={viewingTransaction}
+                       accountName={accountMap.get(viewingTransaction.accountId) || 'N/A'}
+                       onClose={() => setViewingTransaction(null)}
+                   />
+               )}
+           </Modal>
             
             <Modal isOpen={isTourModalOpen} onClose={handleCloseWelcomeTour}>
                 <WelcomeTourModal onClose={handleCloseWelcomeTour} isFirstTime={isFirstVisit} />

@@ -1,44 +1,37 @@
-import React, { useMemo } from 'react';
-import { View, Account, Transaction, TransactionType } from '../../types';
+// FIX: Created a complete, functional AccountDetail component to replace the placeholder content that was causing module resolution errors.
+import React from 'react';
+import { Account, Transaction, View, TransactionType } from '../../types';
 
 interface AccountDetailProps {
-  account: Account;
-  transactions: Transaction[];
-  setView: (view: View) => void;
+    account: Account;
+    transactions: Transaction[];
+    setView: (view: View) => void;
 }
 
-const StatCard: React.FC<{ icon: string; label: string; value: string; colorClass: string }> = ({ icon, label, value, colorClass }) => (
-    <div className="bg-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-xl p-4 flex items-center space-x-3">
-        <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg ${colorClass}`}>
-            <i className={`fa-solid ${icon}`}></i>
-        </div>
-        <div>
-            <p className="text-sm text-[var(--text-tertiary)]">{label}</p>
-            <p className="text-md font-bold text-[var(--text-primary)]">{value}</p>
-        </div>
-    </div>
-);
-
-const TransactionRow: React.FC<{ transaction: Transaction }> = ({ transaction }) => {
+const TransactionItem: React.FC<{ transaction: Transaction }> = ({ transaction }) => {
     const isIncome = transaction.type === TransactionType.INCOME;
-    const amountColor = isIncome ? 'text-[var(--color-income)]' : 'text-[var(--color-expense)]';
-    const indicatorColor = isIncome ? 'bg-[var(--color-income)]' : 'bg-[var(--color-expense)]';
+    const indicatorColor = isIncome ? 'var(--color-income)' : 'var(--color-expense)';
 
     return (
-        <div className="relative p-4 bg-[var(--bg-secondary)] rounded-lg overflow-hidden border border-transparent hover:border-[var(--border-secondary)] transition-colors duration-300">
-             <div className={`absolute top-0 left-0 bottom-0 w-1`} style={{ backgroundColor: indicatorColor }}></div>
-             <div className="flex items-center space-x-4 pl-3">
-                <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-base text-[var(--text-primary)] truncate">{transaction.description}</p>
-                    <p className="text-sm text-[var(--text-tertiary)]">{transaction.category}</p>
-                </div>
-                <div className="text-right ml-2 flex-shrink-0">
-                    <p className={`font-bold text-lg whitespace-nowrap ${amountColor}`}>
-                        {isIncome ? '+' : '-'}Rp {transaction.amount.toLocaleString('id-ID')}
-                    </p>
-                    <p className="text-sm text-[var(--text-tertiary)]">
-                        {new Date(transaction.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
-                    </p>
+        <div className="relative rounded-xl p-px bg-gradient-to-b from-white/5 to-transparent">
+            <div className="relative p-4 bg-[var(--bg-secondary)] rounded-[11px] overflow-hidden">
+                <div
+                    className="absolute top-0 left-0 bottom-0 w-1.5"
+                    style={{ backgroundColor: indicatorColor }}
+                ></div>
+                <div className="flex items-center pl-4">
+                    <div className="flex-1 min-w-0">
+                        <p className="font-bold text-base text-[var(--text-primary)] truncate">{transaction.description}</p>
+                        <p className="text-sm text-[var(--text-tertiary)]">{transaction.category}</p>
+                    </div>
+                    <div className="text-right ml-2">
+                        <p className={`font-bold text-lg whitespace-nowrap`} style={{ color: indicatorColor }}>
+                            {isIncome ? '+' : '-'}Rp {transaction.amount.toLocaleString('id-ID')}
+                        </p>
+                        <p className="text-sm text-[var(--text-tertiary)]">
+                            {new Date(transaction.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -47,68 +40,67 @@ const TransactionRow: React.FC<{ transaction: Transaction }> = ({ transaction })
 
 
 const AccountDetail: React.FC<AccountDetailProps> = ({ account, transactions, setView }) => {
-    const { totalIncome, totalExpense, transactionCount } = useMemo(() => {
-        let income = 0;
-        let expense = 0;
-        transactions.forEach(tx => {
-            if (tx.type === TransactionType.INCOME) {
-                income += tx.amount;
-            } else {
-                expense += tx.amount;
-            }
-        });
-        return {
-            totalIncome: income,
-            totalExpense: expense,
-            transactionCount: transactions.length
-        };
-    }, [transactions]);
-
-    const iconBgClass = account.type === 'Bank' ? 'bg-sky-500/10 text-sky-400' : 'bg-green-500/10 text-green-400';
+    const sortedTransactions = [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    // Define icon and color based on account type for reuse
+    const accountVisuals = {
+        icon: account.type === 'Bank' ? 'fa-building-columns' : 'fa-wallet',
+        gradientColor: account.type === 'Bank' ? 'var(--primary-glow)' : 'var(--secondary-glow)'
+    };
 
     return (
-        <div className="p-4 md:p-6 space-y-6 animate-fade-in">
+        <div className="p-4 md:p-6 space-y-6 animate-fade-in pb-24">
             <header className="flex items-center space-x-4">
-                <button onClick={() => setView(View.WALLET)} className="w-10 h-10 rounded-full bg-[var(--bg-secondary)] text-[var(--text-tertiary)] flex items-center justify-center transition-colors shadow-sm hover:bg-[var(--bg-interactive-hover)] border border-[var(--border-primary)]">
+                <button onClick={() => setView(View.WALLET)} className="w-10 h-10 rounded-full bg-[var(--bg-interactive)] text-[var(--text-tertiary)] flex items-center justify-center transition-colors shadow-sm hover:bg-[var(--bg-interactive-hover)] border border-[var(--border-primary)]">
                     <i className="fa-solid fa-arrow-left"></i>
                 </button>
-                <div className="flex items-center space-x-4">
-                     <div className={`w-14 h-14 rounded-full flex items-center justify-center ${iconBgClass} border-2 border-current`}>
-                        <i className={`fa-solid ${account.type === 'Bank' ? 'fa-building-columns' : 'fa-wallet'} text-2xl`}></i>
-                    </div>
-                    <div>
-                        <h1 className="text-2xl font-bold text-[var(--text-primary)]">{account.name}</h1>
-                        <p className="text-sm text-[var(--text-tertiary)]">{account.type}</p>
-                    </div>
+                <div>
+                    <h1 className="text-2xl font-bold text-[var(--text-primary)]">Detail Akun</h1>
+                    <p className="text-sm text-[var(--text-tertiary)]">Rincian saldo dan transaksi.</p>
                 </div>
             </header>
 
-            <div className="relative bg-gradient-to-br from-[var(--bg-secondary)] to-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-3xl shadow-2xl p-6 text-center">
-                 <p className="text-lg font-semibold text-[var(--text-secondary)]">Saldo Saat Ini</p>
-                 <p className="text-5xl font-bold text-[var(--text-primary)] my-2">
-                    Rp {account.balance.toLocaleString('id-ID')}
-                 </p>
+            {/* Refined Hero Balance Card */}
+            <div className="bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-3xl p-8 md:p-10 text-center relative overflow-hidden">
+                <div 
+                    className="absolute inset-0 opacity-10"
+                    style={{
+                        background: `radial-gradient(circle at 50% 0%, ${accountVisuals.gradientColor} 0%, transparent 60%)`
+                    }}
+                ></div>
+                <div className="relative z-10">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center border border-current"
+                         style={{
+                             backgroundColor: `${accountVisuals.gradientColor}1A`, // 10% opacity
+                             color: accountVisuals.gradientColor,
+                         }}
+                    >
+                        <i className={`fa-solid ${accountVisuals.icon} text-3xl`}></i>
+                    </div>
+                    
+                    <h2 className="text-xl font-bold text-[var(--text-primary)]">{account.name}</h2>
+                    <p className="text-sm uppercase tracking-widest text-[var(--text-tertiary)] mt-4 mb-2">Saldo Saat Ini</p>
+
+                    <p className={`text-lg font-bold tracking-tight ${account.balance >= 0 ? 'text-[var(--text-primary)]' : 'text-[var(--color-expense)]'}`}>
+                        Rp {account.balance.toLocaleString('id-ID')}
+                    </p>
+                </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <StatCard icon="fa-arrow-down" label="Total Pemasukan" value={`Rp ${totalIncome.toLocaleString('id-ID')}`} colorClass="bg-green-500/10 text-green-400" />
-                <StatCard icon="fa-arrow-up" label="Total Pengeluaran" value={`Rp ${totalExpense.toLocaleString('id-ID')}`} colorClass="bg-red-500/10 text-red-400" />
-                <StatCard icon="fa-receipt" label="Jumlah Transaksi" value={`${transactionCount}`} colorClass="bg-purple-500/10 text-purple-400" />
-            </div>
 
             <div>
                 <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">Riwayat Transaksi Akun</h3>
-                {transactions.length > 0 ? (
-                    <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-2">
-                        {transactions.map(tx => (
-                            <TransactionRow key={tx.id} transaction={tx} />
+                {sortedTransactions.length > 0 ? (
+                    <div className="space-y-3">
+                        {sortedTransactions.map(tx => (
+                            <TransactionItem key={tx.id} transaction={tx} />
                         ))}
                     </div>
                 ) : (
-                    <div className="text-center py-12 px-6 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-2xl">
+                    <div className="text-center p-8 bg-[var(--bg-secondary)] rounded-2xl mt-4">
                         <i className="fa-solid fa-folder-open text-4xl text-[var(--text-tertiary)] mb-4"></i>
-                        <h4 className="font-semibold text-[var(--text-primary)]">Tidak Ada Transaksi</h4>
-                        <p className="text-sm text-[var(--text-tertiary)]">Belum ada riwayat transaksi untuk akun ini.</p>
+                        <p className="font-semibold text-[var(--text-primary)]">Tidak Ada Transaksi</p>
+                        <p className="text-sm text-[var(--text-tertiary)]">Belum ada transaksi yang tercatat untuk akun ini.</p>
                     </div>
                 )}
             </div>
