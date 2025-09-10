@@ -32,6 +32,7 @@ import WelcomeTourModal from './components/modals/WelcomeTourModal';
 import FormGuideModal from './components/modals/FormGuideModal';
 import WalletOnboardingWizard from './components/accounts/WalletOnboardingWizard';
 import TransactionDetailModal from './components/modals/TransactionDetailModal';
+import TopUpModal from './components/modals/TopUpModal';
 
 // A simple hook to persist state to localStorage
 function useLocalStorage<T>(key: string, initialValue: T): [T, React.Dispatch<React.SetStateAction<T>>] {
@@ -63,7 +64,7 @@ const App: React.FC = () => {
     const [view, setView] = useState<View>(View.DASHBOARD);
     const [activeDetailId, setActiveDetailId] = useState<string | null>(null);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-    const [activeModal, setActiveModal] = useState<null | 'ADD_DEBT' | 'ADD_SAVINGS_GOAL' | 'ADD_ACCOUNT' | 'EDIT_ACCOUNT' | 'TRANSFER'>(null);
+    const [activeModal, setActiveModal] = useState<null | 'ADD_DEBT' | 'ADD_SAVINGS_GOAL' | 'ADD_ACCOUNT' | 'EDIT_ACCOUNT' | 'TRANSFER' | 'TOP_UP'>(null);
     
     // New states for enhanced features
     const [theme, setTheme] = useLocalStorage<'light' | 'dark'>('app_theme', 'dark');
@@ -176,6 +177,7 @@ const App: React.FC = () => {
             setToast({ message: 'Transaksi berhasil diperbarui!', type: 'success' });
         }
         setEditingTransaction(null);
+        setActiveModal(null); // Close top up modal as well
     };
     
     const handleDeleteTransaction = (transactionId: string) => {
@@ -251,6 +253,10 @@ const App: React.FC = () => {
         setTransactions(prev => [transferIn, transferOut, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
         setToast({ message: 'Transfer dana berhasil!', type: 'success' });
         setActiveModal(null);
+    };
+
+    const handleOpenTopUpModal = () => {
+        setActiveModal('TOP_UP');
     };
 
     const handleWalletOnboardingComplete = (newAccountsData: { name: string, type: 'Bank' | 'E-Wallet', balance: number }[]) => {
@@ -442,6 +448,7 @@ const App: React.FC = () => {
                         setActiveDetailId(accountId);
                         setView(View.ACCOUNT_DETAIL);
                     }}
+                    onInitiateTopUp={handleOpenTopUpModal}
                 />;
                 break;
             case View.ACCOUNT_DETAIL:
@@ -575,6 +582,15 @@ const App: React.FC = () => {
                     accounts={accounts}
                     onTransfer={handleTransfer}
                     onClose={() => setActiveModal(null)}
+                />
+            </Modal>
+
+            <Modal isOpen={activeModal === 'TOP_UP'} onClose={() => setActiveModal(null)}>
+                <TopUpModal
+                    accounts={accounts}
+                    onSave={handleSaveTransaction}
+                    onClose={() => setActiveModal(null)}
+                    userCategories={userCategories}
                 />
             </Modal>
         </div>

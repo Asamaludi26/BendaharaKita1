@@ -6,12 +6,13 @@ const formatCurrency = (value: string | number) => {
     return `Rp ${num.toLocaleString('id-ID')}`;
 };
 
-const getDifferenceClass = (actual: number, target: number, isIncome = false) => {
-    if (isIncome) { // For income and savings, higher is better
+const getDifferenceClass = (actual: number, target: number, isPositiveGoal = false) => {
+    // For income and savings (positive goals), higher is better
+    if (isPositiveGoal) {
         if (actual >= target) return 'text-[var(--color-income)]';
         return 'text-[var(--color-expense)]';
     }
-    // For expenses, lower is better
+    // For expenses (negative goals), lower is better
     if (actual <= target) return 'text-[var(--color-income)]';
     return 'text-[var(--color-expense)]';
 }
@@ -19,10 +20,10 @@ const getDifferenceClass = (actual: number, target: number, isIncome = false) =>
 const ActualsDetail: React.FC<{ report: ArchivedActualReport }> = ({ report }) => {
     const { target, actuals } = report;
 
-    const sections: { key: keyof MonthlyTarget, title: string, isIncome?: boolean }[] = [
-        { key: 'pendapatan', title: 'Pendapatan', isIncome: true },
-        { key: 'cicilanUtang', title: 'Cicilan Utang' },
-        { key: 'tabungan', title: 'Tabungan', isIncome: true },
+    const sections: { key: keyof MonthlyTarget, title: string, isPositiveGoal?: boolean }[] = [
+        { key: 'pendapatan', title: 'Pendapatan', isPositiveGoal: true },
+        { key: 'cicilanUtang', title: 'Cicilan Utang', isPositiveGoal: true }, // Higher payment is good
+        { key: 'tabungan', title: 'Tabungan', isPositiveGoal: true }, // Higher saving is good
         { key: 'pengeluaranUtama', title: 'Pengeluaran Utama' },
         { key: 'kebutuhan', title: 'Kebutuhan' },
         { key: 'penunjang', title: 'Penunjang' },
@@ -52,7 +53,7 @@ const ActualsDetail: React.FC<{ report: ArchivedActualReport }> = ({ report }) =
                                         <div className="font-mono text-right text-[var(--text-tertiary)]">
                                             <span className="sm:hidden">Target: </span>{formatCurrency(targetAmount)}
                                         </div>
-                                        <div className={`font-mono font-semibold text-right ${getDifferenceClass(actualAmount, targetAmount, sectionInfo.isIncome)}`}>
+                                        <div className={`font-mono font-semibold text-right ${getDifferenceClass(actualAmount, targetAmount, sectionInfo.isPositiveGoal)}`}>
                                             <span className="sm:hidden">Aktual: </span>{formatCurrency(actualAmount)}
                                         </div>
                                     </div>
@@ -63,7 +64,7 @@ const ActualsDetail: React.FC<{ report: ArchivedActualReport }> = ({ report }) =
                            <span className="text-[var(--text-secondary)]">Total</span>
                            <div className="flex justify-end gap-4">
                                 <span className="text-right text-[var(--text-tertiary)]">{formatCurrency(totalTarget)}</span>
-                                <span className={`text-right ${getDifferenceClass(totalActual, totalTarget, sectionInfo.isIncome)}`}>{formatCurrency(totalActual)}</span>
+                                <span className={`text-right ${getDifferenceClass(totalActual, totalTarget, sectionInfo.isPositiveGoal)}`}>{formatCurrency(totalActual)}</span>
                            </div>
                         </div>
                     </div>
@@ -82,19 +83,30 @@ const ActualsReportCard: React.FC<{ report: ArchivedActualReport }> = ({ report 
             const actualTotal = items.reduce((sum, item) => sum + (parseInt(actuals[item.id]) || 0), 0);
             return { targetTotal, actualTotal };
         };
+
         const income = calculateTotals(target.pendapatan || []);
-        const expenses = calculateTotals([
+        const savings = calculateTotals(target.tabungan || []);
+        const debt = calculateTotals(target.cicilanUtang || []);
+        const spending = calculateTotals([
             ...(target.pengeluaranUtama || []),
             ...(target.kebutuhan || []),
             ...(target.penunjang || []),
-            ...(target.pendidikan || []),
-            ...(target.cicilanUtang || [])
+            ...(target.pendidikan || [])
         ]);
-        const savings = calculateTotals(target.tabungan || []);
         
-        const isAchieved = income.actualTotal >= income.targetTotal && expenses.actualTotal <= expenses.targetTotal && savings.actualTotal >= savings.targetTotal;
+        const totalExpensesForDisplay = {
+            targetTotal: spending.targetTotal + debt.targetTotal,
+            actualTotal: spending.actualTotal + debt.actualTotal,
+        };
+        
+        // Smarter "isAchieved" logic
+        const isAchieved = 
+            income.actualTotal >= income.targetTotal &&
+            spending.actualTotal <= spending.targetTotal &&
+            debt.actualTotal >= debt.targetTotal &&
+            savings.actualTotal >= savings.targetTotal;
 
-        return { income, expenses, savings, isAchieved };
+        return { income, expenses: totalExpensesForDisplay, savings, isAchieved };
     }, [target, actuals]);
 
     const [year, month] = report.monthYear.split('-');
