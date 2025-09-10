@@ -99,10 +99,31 @@ const App: React.FC = () => {
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
     }, [theme]);
-
+    
+    // FIX: Defined the missing 'handleToggleTheme' function to fix 'Cannot find name' error.
     const handleToggleTheme = () => {
-        setTheme(prevTheme => prevTheme === 'dark' ? 'light' : 'dark');
+        setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
     };
+
+    // --- MOBILE KEYBOARD FIX ---
+    useEffect(() => {
+        const handleFocus = (event: FocusEvent) => {
+            const target = event.target as HTMLElement;
+            if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') {
+                // Delay to allow keyboard to appear
+                setTimeout(() => {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 300);
+            }
+        };
+
+        // 'focusin' bubbles, 'focus' does not. Use 'focusin' for event delegation.
+        document.addEventListener('focusin', handleFocus);
+
+        return () => {
+            document.removeEventListener('focusin', handleFocus);
+        };
+    }, []); // Empty dependency array to run only once on mount
 
     // --- APP RESET ---
     const handleResetApp = () => {
