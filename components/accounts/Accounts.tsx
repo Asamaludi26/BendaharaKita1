@@ -105,7 +105,7 @@ const AccountCard: React.FC<{ account: Account; onEdit: () => void; onDelete: ()
 
                 {/* Balance and Actions Area */}
                 <div className="flex items-center space-x-3 ml-2">
-                    <p className={`hidden sm:block text-lg sm:text-xl font-bold ${isPositive ? 'text-[var(--text-primary)]' : 'text-[var(--color-expense)]'}`}>
+                    <p className={`text-lg sm:text-xl font-bold ${isPositive ? 'text-[var(--text-primary)]' : 'text-[var(--color-expense)]'}`}>
                         Rp {account.balance.toLocaleString('id-ID')}
                     </p>
 

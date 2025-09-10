@@ -37,6 +37,7 @@ BendaharaKita dikemas dengan fitur-fitur canggih yang dirancang untuk memberikan
 - **Agregasi Akun:** Hubungkan dan lihat saldo dari semua rekening bank dan dompet digital Anda (BCA, GoPay, OVO, dll.) di satu tempat.
 - **Saldo Real-Time:** Setiap transaksi secara otomatis memperbarui saldo akun terkait, memberikan gambaran finansial yang selalu akurat.
 - **Transfer Antar Akun:** Pindahkan dana antar akun Anda dengan mudah. Aplikasi secara otomatis mencatat transaksi keluar-masuk untuk Anda.
+- **Isi Saldo (Top-Up):** Catat pemasukan dana ke akun Anda dengan mudah, seperti saat menerima uang tunai atau transfer yang tidak terlacak, untuk memastikan saldo Anda selalu sinkron dengan kenyataan.
 
 ### ⚡ **Manajemen Transaksi Real-Time**
 - **Tambah, Edit, Hapus:** Catat transaksi secara instan dengan *Floating Action Button*. Setiap transaksi kini terhubung ke salah satu akun Anda.

@@ -93,7 +93,11 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({ accountToEdit, onSa
                             readOnly={isEditing}
                         />
                     </div>
-                    {isEditing && <p className="text-xs text-[var(--text-tertiary)] mt-1">Saldo tidak dapat diubah. Gunakan fitur transfer atau tambah transaksi.</p>}
+                    {isEditing && (
+                        <p className="text-xs text-[var(--text-tertiary)] mt-1">
+                            Saldo diperbarui otomatis dari transaksi. Gunakan fitur <strong className="font-semibold text-[var(--text-secondary)]">Isi Saldo</strong> untuk menambah dana, atau <strong className="font-semibold text-[var(--text-secondary)]">Transfer</strong> untuk memindahkan dana.
+                        </p>
+                    )}
                 </div>
                  <div className="pt-4 flex items-center justify-end gap-3">
                     <button type="button" onClick={onClose} className="bg-transparent text-[var(--text-secondary)] font-semibold py-3 px-6 rounded-full hover:bg-[var(--bg-interactive-hover)] transition-colors">

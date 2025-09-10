@@ -71,6 +71,7 @@ Menu ini adalah pusat dari semua dana Anda.
 -   **Menambah Akun Baru:** Klik tombol "Tambah Akun", isi nama, pilih tipe (Bank/E-Wallet), dan masukkan saldo awal. Saldo awal ini akan dicatat sebagai transaksi "Saldo Awal" untuk menjaga konsistensi data.
 -   **Saldo Otomatis:** Anda **tidak perlu mengubah saldo secara manual**. Setiap transaksi yang Anda catat akan secara otomatis menambah atau mengurangi saldo dompet yang bersangkutan.
 -   **Transfer Dana:** Gunakan fitur "Transfer Dana" untuk memindahkan uang antar dompet Anda. Sistem akan secara otomatis membuat 2 transaksi (satu pengeluaran, satu pemasukan) dan menyeimbangkan saldo kedua dompet.
+-   **Isi Saldo:** Gunakan tombol "Isi Saldo" di kartu ringkasan total saldo. Fitur ini berguna untuk mencatat pemasukan yang bukan dari transfer antar akun, misalnya saat Anda menyetor uang tunai atau menerima pendapatan lain. Fitur ini akan membuat transaksi "Pemasukan" baru ke akun yang Anda pilih.
 
 ### 3.2. Transaksi: Mencatat Aktivitas Harian
 
