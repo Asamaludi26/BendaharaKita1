@@ -600,7 +600,7 @@ const App: React.FC = () => {
                 />;
                 break;
             case View.TRANSACTIONS:
-                pageComponent = <Transactions transactions={transactions} userCategories={userCategories} onAdd={handleAddNewTransaction} onSelect={handleViewTransaction} accounts={accounts} />;
+                pageComponent = <Transactions transactions={transactions} userCategories={userCategories} onSelect={handleViewTransaction} accounts={accounts} />;
                 break;
              case View.WALLET:
                 pageComponent = <Accounts 

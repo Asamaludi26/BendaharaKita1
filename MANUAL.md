@@ -1,4 +1,5 @@
 
+
 <div align="center">
 <img width="800" alt="Banner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 
@@ -75,7 +76,7 @@ Menu ini adalah pusat dari semua dana Anda.
 
 ### 3.2. Transaksi: Mencatat Aktivitas Harian
 
--   **Menambah Transaksi:** Klik tombol `+` melayang di pojok kanan bawah. Isi formulir dengan deskripsi, jumlah, tipe (Pemasukan/Pengeluaran), kategori, tanggal, dan yang terpenting, pilih dari **Dompet** mana transaksi itu berasal.
+-   **Menambah Transaksi:** Transaksi dicatat melalui menu **Dompet**. Gunakan fitur seperti 'Isi Saldo', 'Pengeluaran', atau 'Transfer' untuk membuat catatan transaksi yang akurat.
 -   **Mengubah/Menghapus:** Cukup klik transaksi mana pun dari daftar untuk membuka kembali formulir dan mengubahnya atau menghapusnya. Setiap perubahan akan langsung memperbaiki saldo dompet Anda.
 -   **Mencari & Memfilter:** Gunakan bilah pencarian di bagian atas untuk mencari deskripsi, atau gunakan dropdown untuk memfilter transaksi berdasarkan kategori spesifik (baik pemasukan maupun pengeluaran).
 

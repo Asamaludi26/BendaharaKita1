@@ -6,7 +6,6 @@ interface TransactionsProps {
   transactions: Transaction[];
   userCategories: UserCategory[];
   accounts: Account[];
-  onAdd: () => void;
   onSelect: (transaction: Transaction) => void;
 }
 
@@ -211,7 +210,7 @@ const CategoryBottomSheet: React.FC<{
 };
 
 
-const Transactions: React.FC<TransactionsProps> = ({ transactions, userCategories, accounts, onAdd, onSelect }) => {
+const Transactions: React.FC<TransactionsProps> = ({ transactions, userCategories, accounts, onSelect }) => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [isCategorySheetOpen, setIsCategorySheetOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -342,15 +341,6 @@ const Transactions: React.FC<TransactionsProps> = ({ transactions, userCategorie
             </div>
         )}
       </div>
-
-      <button
-        onClick={onAdd}
-        className="fixed bottom-28 right-4 md:bottom-6 md:right-6 w-14 h-14 rounded-2xl flex md:flex items-center justify-center text-white shadow-lg shadow-[var(--primary-glow)]/30 transform hover:scale-110 transition-all z-30"
-        style={{ backgroundImage: 'var(--gradient-primary)' }}
-        aria-label="Tambah Transaksi Baru"
-      >
-        <i className="fa-solid fa-plus text-xl"></i>
-      </button>
     </div>
     <CategoryBottomSheet 
         isOpen={isCategorySheetOpen}

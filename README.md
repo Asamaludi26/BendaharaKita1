@@ -40,7 +40,7 @@ BendaharaKita dikemas dengan fitur-fitur canggih yang dirancang untuk memberikan
 - **Isi Saldo (Top-Up):** Catat pemasukan dana ke akun Anda dengan mudah, seperti saat menerima uang tunai atau transfer yang tidak terlacak, untuk memastikan saldo Anda selalu sinkron dengan kenyataan.
 
 ### ⚡ **Manajemen Transaksi Real-Time**
-- **Tambah, Edit, Hapus:** Catat transaksi secara instan dengan *Floating Action Button*. Setiap transaksi kini terhubung ke salah satu akun Anda.
+- **Tambah, Edit, Hapus:** Catat transaksi melalui berbagai alur di menu **Dompet**. Setiap transaksi terhubung ke salah satu akun Anda.
 - **Pencarian & Filter Cerdas:** Temukan transaksi spesifik dalam hitungan detik dengan pencarian deskripsi dan filter berdasarkan kategori.
 
 ### 🧠 **Insight Finansial Berbasis AI**
