@@ -25,7 +25,7 @@ BendaharaKita dibangun di atas tiga pilar utama untuk memberikan pengalaman mana
 
 -   **⚡ Real-Time & Responsif:** Setiap transaksi yang Anda catat akan langsung tercermin di seluruh aplikasi—mulai dari saldo dompet hingga laporan analitik.
 -   **🔗 Terintegrasi Penuh:** Semua fitur saling terhubung. Laporan bulanan, analisis kesehatan, dan saldo dompet Anda bersumber dari satu data inti yang sama: riwayat transaksi Anda. Ini menjamin konsistensi dan akurasi.
--   **🧠 Cerdas & Memberdayakan:** Kami tidak hanya mencatat. Dengan bantuan AI dari Google Gemini, kami memberikan wawasan yang dapat ditindaklanjuti untuk membantu Anda membuat keputusan finansial yang lebih cerdas.
+-   **🧠 Cerdas & Memberdayakan:** Kami tidak hanya mencatat. Dengan bantuan AI dari Google Gemini, kami memberikan wawasan yang dapat ditindaklanuti untuk membantu Anda membuat keputusan finansial yang lebih cerdas.
 
 ---
 
@@ -86,17 +86,71 @@ BendaharaKita dikemas dengan fitur-fitur canggih yang dirancang untuk memberikan
 
 ## 🚀 Menjalankan Aplikasi
 
-Aplikasi ini dirancang untuk berjalan di lingkungan di mana kunci API sudah dikonfigurasi sebelumnya.
+Aplikasi ini dirancang untuk berjalan di lingkungan di mana kunci API sudah dikonfigurasi sebelumnya, seperti Google AI Studio. Namun, Anda juga dapat mengedit dan menjalankannya secara lokal dengan beberapa langkah penyiapan.
 
 ### Prasyarat
 
--   **Kunci API Google Gemini:** Kunci API **harus** tersedia sebagai variabel lingkungan (`environment variable`) dengan nama `API_KEY`. Aplikasi akan mengaksesnya melalui `process.env.API_KEY`. **Jangan pernah menulis kunci API langsung di dalam kode.**
+-   **Kunci API Google Gemini:** Anda harus memiliki kunci API dari [Google AI Studio](https://aistudiodeveloper.google.com/). Kunci ini **harus** tersedia sebagai variabel lingkungan (`environment variable`) dengan nama `API_KEY`. **Jangan pernah menulis kunci API langsung di dalam kode.**
 
-### Menjalankan di AI Studio
+### Menjalankan di AI Studio (Direkomendasikan)
 
-Lingkungan AI Studio secara otomatis menyediakan `API_KEY` yang diperlukan. Cukup buka tautan di bawah untuk menjalankan aplikasi.
+Lingkungan AI Studio secara otomatis menyediakan `API_KEY` yang diperlukan. Ini adalah cara termudah dan tercepat untuk menjalankan aplikasi.
 
 [Buka Aplikasi di AI Studio](https://ai.studio/apps/drive/1L2WA5PMFm9ox5wm5OxeKfvXZ40aK4uPS)
+
+### Menjalankan & Mengedit Secara Lokal
+
+Untuk mengedit kode atau menjalankan aplikasi di komputer Anda sendiri, ikuti langkah-langkah berikut:
+
+#### 1. Lingkungan Teknologi
+Aplikasi ini dibangun menggunakan:
+- **React 19** & **TypeScript** sebagai pondasi utama.
+- **Tailwind CSS** untuk styling.
+- **Tanpa Proses Build:** Aplikasi ini menggunakan ES6 Modules dan `importmap` langsung di browser, sehingga tidak memerlukan langkah `npm install` atau proses build seperti Vite/Webpack.
+
+#### 2. Prasyarat Lokal
+- **[Node.js](https://nodejs.org/)**: Versi 18.x atau yang lebih baru. Diperlukan untuk menjalankan server pengembangan lokal.
+- **Editor Kode**: Seperti [Visual Studio Code](https://code.visualstudio.com/).
+- **Git**: Untuk mengunduh kode sumber.
+
+#### 3. Tutorial Instalasi
+1. **Unduh Kode Sumber:**
+   Buka terminal atau command prompt dan jalankan perintah berikut:
+   ```bash
+   git clone <URL_REPOSITORI_ANDA>
+   cd <nama-direktori-proyek>
+   ```
+   *(Ganti `<URL_REPOSITORI_ANDA>` dan `<nama-direktori-proyek>` dengan informasi yang sesuai).*
+
+2. **Siapkan Kunci API:**
+   Karena aplikasi ini berjalan langsung di browser tanpa proses build, kita perlu mensimulasikan variabel lingkungan `process.env.API_KEY`.
+   - Buat file baru di direktori utama proyek dengan nama `env.js`.
+   - Isi file `env.js` dengan konten berikut, ganti `MASUKKAN_KUNCI_API_ANDA_DI_SINI` dengan kunci API Google Gemini Anda:
+     ```javascript
+     // env.js
+     window.process = {
+       env: {
+         API_KEY: 'MASUKKAN_KUNCI_API_ANDA_DI_SINI'
+       }
+     };
+     ```
+   - Buka file `index.html` dan tambahkan baris berikut **sebelum** baris `<script type="module" src="/index.tsx"></script>`:
+     ```html
+     <script src="env.js"></script>
+     ```
+   **Penting:** Pastikan file `env.js` tidak pernah Anda unggah ke repositori Git publik untuk menjaga kerahasiaan kunci API Anda.
+
+3. **Jalankan Server Lokal:**
+   Aplikasi ini perlu dijalankan melalui server web lokal. Cara termudah adalah menggunakan `serve`. Buka terminal di direktori proyek dan jalankan:
+   ```bash
+   npx serve
+   ```
+   Jika Anda belum memiliki `serve`, perintah di atas akan menanyakan apakah Anda ingin menginstalnya. Setujui, dan server akan berjalan.
+
+4. **Buka Aplikasi di Browser:**
+   Setelah server berjalan, terminal akan menampilkan alamat lokal, biasanya `http://localhost:3000`. Buka alamat tersebut di browser Anda untuk melihat aplikasi berjalan.
+
+Kini Anda siap untuk mengedit kode. Setiap perubahan yang Anda simpan akan langsung terlihat saat Anda me-refresh halaman browser.
 
 ---
 
