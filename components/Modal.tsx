@@ -39,7 +39,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
     >
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm"></div>
         <div 
-            className="relative w-full max-w-sm m-4 animate-fade-in-up max-h-full overflow-y-auto no-scrollbar"
+            className="relative w-full max-w-lg m-4 animate-fade-in-up max-h-full overflow-y-auto no-scrollbar"
             onClick={e => e.stopPropagation()}
         >
           {children}

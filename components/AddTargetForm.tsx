@@ -1,10 +1,18 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { View } from '../types';
-import type { MonthlyTarget, TargetFormField, ArchivedMonthlyTarget, DebtItem, SavingsGoal } from '../types';
-import { AccordionSection } from './AccordionSection';
-import Modal from './Modal';
+import {
+    View,
+    MonthlyTarget,
+    TargetFormField,
+    UserCategory,
+    TransactionType,
+    DebtItem,
+    SavingsGoal,
+    ArchivedMonthlyTarget
+} from '../types';
 import { generateMonthlyTarget } from '../services/geminiService';
+import Modal from './Modal';
+import { AccordionSection } from './AccordionSection';
 
 interface AddTargetFormProps {
   setView: (view: View) => void;
@@ -16,478 +24,323 @@ interface AddTargetFormProps {
   activeSavingsGoals: SavingsGoal[];
   onAddDebt: () => void;
   onAddSavingsGoal: () => void;
+  userCategories: UserCategory[];
+  onManageCategories: () => void;
 }
 
-const AITargetModal: React.FC<{
-    isOpen: boolean;
-    onClose: () => void;
-    onComplete: (target: MonthlyTarget) => void;
-    activeDebts: DebtItem[];
-    activeSavingsGoals: SavingsGoal[];
-}> = ({ isOpen, onClose, onComplete, activeDebts, activeSavingsGoals }) => {
-    const [prompt, setPrompt] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+const SummaryCard: React.FC<{ title: string; amount: number; colorClass: string }> = ({ title, amount, colorClass }) => (
+    <div className="bg-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-xl p-3 text-center">
+        <p className="text-xs font-semibold text-[var(--text-tertiary)]">{title}</p>
+        <p className={`text-lg font-bold ${colorClass}`}>Rp {amount.toLocaleString('id-ID')}</p>
+    </div>
+);
 
-    const handleGenerate = async () => {
-        if (!prompt) return;
-        setIsLoading(true);
-        setError(null);
+const TargetItem: React.FC<{
+    item: TargetFormField;
+    isLocked?: boolean;
+    onChange: (field: 'name' | 'amount', value: string) => void;
+    onRemove: () => void;
+}> = ({ item, isLocked = false, onChange, onRemove }) => (
+    <div className="flex items-center space-x-2">
+        <input
+            type="text"
+            placeholder="Nama item"
+            value={item.name}
+            onChange={(e) => onChange('name', e.target.value)}
+            className={`flex-1 p-2 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-md text-sm ${isLocked ? 'cursor-not-allowed opacity-70' : ''}`}
+            readOnly={isLocked}
+        />
+        <div className="relative">
+            <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2 text-[var(--text-tertiary)] text-sm">Rp</span>
+            <input
+                type="text"
+                inputMode="numeric"
+                placeholder="0"
+                value={Number(item.amount || '0').toLocaleString('id-ID')}
+                onChange={(e) => onChange('amount', e.target.value.replace(/[^0-9]/g, ''))}
+                className="w-32 p-2 pl-7 text-right bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-md text-sm"
+                readOnly={isLocked}
+            />
+        </div>
+        <button
+            type="button"
+            onClick={onRemove}
+            disabled={isLocked}
+            className="w-8 h-8 flex-shrink-0 flex items-center justify-center text-[var(--text-tertiary)] rounded-md hover:bg-[var(--bg-interactive-hover)] hover:text-[var(--color-expense)] disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+            <i className="fa-solid fa-trash-can text-sm"></i>
+        </button>
+    </div>
+);
+
+const AddTargetForm: React.FC<AddTargetFormProps> = ({
+    setView,
+    onSave,
+    initialData,
+    archivedTargets,
+    currentMonthYear,
+    activeDebts,
+    activeSavingsGoals,
+    onAddDebt,
+    onAddSavingsGoal,
+    userCategories,
+    onManageCategories,
+}) => {
+    const [target, setTarget] = useState<MonthlyTarget>({});
+    const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+    const [aiPrompt, setAiPrompt] = useState('');
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [openAccordions, setOpenAccordions] = useState<Record<string, boolean>>({});
+
+    const categoryMap = useMemo(() => new Map(userCategories.map(c => [c.id, c])), [userCategories]);
+    
+    const { debtCategories, savingsCategories, incomeCategories, expenseCategories } = useMemo(() => {
+        const debtNames = new Set(activeDebts.map(d => d.name));
+        const savingsNames = new Set(activeSavingsGoals.map(sg => sg.name));
+        
+        const debtCats: UserCategory[] = [];
+        const savingsCats: UserCategory[] = [];
+        const incomeCats: UserCategory[] = [];
+        const expenseCats: UserCategory[] = [];
+
+        userCategories.forEach(cat => {
+            if (debtNames.has(cat.name)) {
+                debtCats.push(cat);
+            } else if (savingsNames.has(cat.name)) {
+                savingsCats.push(cat);
+            } else if (cat.isActive) {
+                if (cat.type === TransactionType.INCOME) {
+                    incomeCats.push(cat);
+                } else {
+                    expenseCats.push(cat);
+                }
+            }
+        });
+        return { debtCategories: debtCats, savingsCategories: savingsCats, incomeCategories: incomeCats, expenseCategories: expenseCats };
+    }, [userCategories, activeDebts, activeSavingsGoals]);
+
+    useEffect(() => {
+        const autoPopulatedTarget: MonthlyTarget = {};
+        if (initialData) {
+            Object.assign(autoPopulatedTarget, initialData);
+        }
+
+        activeDebts.forEach(debt => {
+            const category = debtCategories.find(c => c.name === debt.name);
+            if (category) {
+                autoPopulatedTarget[category.id] = [{
+                    id: `goal-${debt.id}`, name: debt.name, amount: String(debt.monthlyInstallment)
+                }];
+            }
+        });
+        activeSavingsGoals.forEach(goal => {
+            const category = savingsCategories.find(c => c.name === goal.name);
+            if (category) {
+                const existingItems = autoPopulatedTarget[category.id] || [];
+                if (!existingItems.some(item => item.id === `goal-${goal.id}`)) {
+                     autoPopulatedTarget[category.id] = [...existingItems, {
+                        id: `goal-${goal.id}`, name: goal.name, amount: ''
+                    }];
+                }
+            }
+        });
+        setTarget(autoPopulatedTarget);
+
+        // Auto-open accordions for goals
+        const goalAccordionStates: Record<string, boolean> = {};
+        [...debtCategories, ...savingsCategories].forEach(cat => {
+            goalAccordionStates[cat.id] = true;
+        });
+        setOpenAccordions(prev => ({...prev, ...goalAccordionStates}));
+
+    }, [initialData, activeDebts, activeSavingsGoals, debtCategories, savingsCategories]);
+
+
+    const handleCopyFromLastMonth = () => {
+        const lastMonth = new Date();
+        lastMonth.setMonth(lastMonth.getMonth() - 1);
+        const lastMonthYear = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
+        const lastMonthTarget = archivedTargets.find(t => t.monthYear === lastMonthYear);
+        if (lastMonthTarget) {
+            setTarget(lastMonthTarget.target);
+        } else {
+            alert('Tidak ada data target dari bulan sebelumnya.');
+        }
+    };
+    
+    const handleGenerateWithAI = async () => {
+        if (!aiPrompt.trim()) return;
+        setIsGenerating(true);
         try {
-            const result = await generateMonthlyTarget(prompt, activeDebts, activeSavingsGoals);
-            onComplete(result);
-            onClose();
-        } catch (err: any) {
-            setError(err.message || "Terjadi kesalahan.");
+            const result = await generateMonthlyTarget(aiPrompt, activeDebts, activeSavingsGoals, userCategories);
+            setTarget(result);
+            setIsAiModalOpen(false);
+        } catch (error) {
+            console.error(error);
+            alert("Gagal membuat target dengan AI. Silakan coba lagi.");
         } finally {
-            setIsLoading(false);
+            setIsGenerating(false);
         }
     };
 
-    return (
-        <Modal isOpen={isOpen} onClose={onClose}>
-            <div className="bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-2xl p-6 w-full max-w-lg">
-                <header className="flex items-center justify-between mb-6">
-                    <div className="flex items-center space-x-4">
-                        <div className="w-12 h-12 rounded-xl bg-[var(--bg-interactive)] flex items-center justify-center border border-[var(--border-primary)] flex-shrink-0">
-                            <i className="fa-solid fa-wand-magic-sparkles text-2xl text-[var(--primary-glow)]"></i>
-                        </div>
-                        <div>
-                            <h1 className="text-xl font-bold text-[var(--text-primary)]">Rencanakan dengan AI</h1>
-                            <p className="text-sm text-[var(--text-tertiary)]">Biarkan AI membantu Anda.</p>
-                        </div>
-                    </div>
-                    <button onClick={onClose} className="w-8 h-8 rounded-full text-[var(--text-tertiary)] hover:bg-[var(--bg-interactive-hover)]"><i className="fa-solid fa-times"></i></button>
-                </header>
-                <div className="space-y-4">
-                    <p className="text-sm text-[var(--text-secondary)]">
-                        Jelaskan situasi keuangan Anda, dan AI akan membuatkan draf target bulanan.
-                        <br/>
-                        <strong>Contoh:</strong> "Gaji saya 12 juta per bulan, masih lajang. Prioritas untuk bayar KPR, nabung dana darurat, dan sedikit untuk hiburan."
-                    </p>
-                    <textarea
-                        value={prompt}
-                        onChange={(e) => setPrompt(e.target.value)}
-                        placeholder="Tuliskan prompt Anda di sini..."
-                        rows={4}
-                        className="w-full p-2 bg-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-md focus:ring-2 focus:ring-[var(--primary-glow)]"
-                        disabled={isLoading}
-                    />
-                    {error && <p className="text-sm text-center text-[var(--color-expense)]">{error}</p>}
-                    <div className="flex gap-3">
-                        <button onClick={onClose} disabled={isLoading} className="w-full bg-transparent text-[var(--text-tertiary)] font-semibold py-3 px-4 rounded-full hover:bg-[var(--bg-interactive-hover)]">Batal</button>
-                        <button onClick={handleGenerate} disabled={isLoading || !prompt} className="w-full bg-gradient-to-r from-[var(--secondary-600)] to-[var(--primary-500)] text-white font-bold py-3 px-4 rounded-full shadow-lg disabled:opacity-50 flex items-center justify-center">
-                            {isLoading ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> : 'Buat Target'}
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </Modal>
-    );
-};
-
-
-const emptyForm: MonthlyTarget = {
-  pendapatan: [{ id: uuidv4(), name: 'Gaji Utama', amount: '' }],
-  cicilanUtang: [],
-  pengeluaranUtama: [{ id: uuidv4(), name: 'Sewa Kos/Rumah', amount: '' }],
-  kebutuhan: [{ id: uuidv4(), name: 'Belanja Dapur', amount: '' }],
-  penunjang: [{ id: uuidv4(), name: 'Transportasi', amount: '' }],
-  pendidikan: [],
-  tabungan: [],
-};
-
-const sectionAccentColors: { [key in keyof MonthlyTarget]: string } = {
-  pendapatan: 'border-l-[var(--color-income)]',
-  cicilanUtang: 'border-l-[var(--color-debt)]',
-  pengeluaranUtama: 'border-l-[var(--color-expense)]',
-  kebutuhan: 'border-l-[var(--color-expense)]',
-  penunjang: 'border-l-[var(--color-expense)]',
-  pendidikan: 'border-l-[var(--color-expense)]',
-  tabungan: 'border-l-[var(--color-savings)]',
-};
-
-
-const AddTargetForm: React.FC<AddTargetFormProps> = ({
-  setView,
-  onSave,
-  initialData,
-  archivedTargets,
-  currentMonthYear,
-  activeDebts,
-  activeSavingsGoals,
-  onAddDebt,
-  onAddSavingsGoal,
-}) => {
-  const [formData, setFormData] = useState<MonthlyTarget>(initialData || emptyForm);
-  const [isReadOnly, setIsReadOnly] = useState(!!initialData);
-  const [originalData, setOriginalData] = useState<MonthlyTarget | null>(initialData);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [showEditOptionsModal, setShowEditOptionsModal] = useState(false);
-  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
-
-
-  useEffect(() => {
-      const dataToSet = initialData || emptyForm;
-      setFormData(dataToSet);
-      setOriginalData(dataToSet);
-      setIsReadOnly(!!initialData);
-  }, [initialData]);
-
-  const handleFieldChange = (section: keyof MonthlyTarget, id: string, field: 'name' | 'amount', value: string) => {
-    const numericValue = field === 'amount' ? value.replace(/[^0-9]/g, '') : value;
-    setFormData(prev => ({
-      ...prev,
-      [section]: prev[section].map(item =>
-        item.id === id ? { ...item, [field]: numericValue } : item
-      ),
-    }));
-  };
-
-  const addField = (section: keyof MonthlyTarget) => {
-    setFormData(prev => ({
-      ...prev,
-      [section]: [...prev[section], { id: uuidv4(), name: '', amount: '' }],
-    }));
-  };
-  
-  const removeField = (section: keyof MonthlyTarget, id: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [section]: prev[section].filter(item => item.id !== id),
-    }));
-  };
-
-  const handleEdit = (mode: 'adjust' | 'blank' | 'copy') => {
-    setShowEditOptionsModal(false);
-
-    if (mode === 'adjust') {
-      setIsReadOnly(false);
-    } else if (mode === 'blank') {
-      const syncedEmptyForm = prePopulateGoals(emptyForm);
-      setFormData(syncedEmptyForm);
-      setIsReadOnly(false);
-    } else if (mode === 'copy') {
-      const lastMonth = new Date();
-      lastMonth.setMonth(lastMonth.getMonth() - 1);
-      const lastMonthYear = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
-      const lastTarget = archivedTargets.find(t => t.monthYear === lastMonthYear);
-      if (lastTarget) {
-        const syncedForm = prePopulateGoals(lastTarget.target);
-        setFormData(syncedForm);
-        setIsReadOnly(false);
-      }
-    }
-  };
-
-  const handleCancel = () => {
-    setFormData(originalData || emptyForm);
-    setIsReadOnly(true);
-  };
-  
-  const calculateTotal = useCallback((items: TargetFormField[]) => {
-    return items.reduce((sum, item) => sum + (parseInt(item.amount) || 0), 0);
-  }, []);
-  
-  const totalPendapatan = useMemo(() => calculateTotal(formData.pendapatan), [formData.pendapatan, calculateTotal]);
-  const totalPengeluaran = useMemo(() => 
-      calculateTotal(formData.cicilanUtang) +
-      calculateTotal(formData.pengeluaranUtama) +
-      calculateTotal(formData.kebutuhan) +
-      calculateTotal(formData.penunjang) +
-      calculateTotal(formData.pendidikan), 
-  [formData, calculateTotal]);
-  const totalTabungan = useMemo(() => calculateTotal(formData.tabungan), [formData.tabungan, calculateTotal]);
-  const sisa = useMemo(() => totalPendapatan - totalPengeluaran - totalTabungan, [totalPendapatan, totalPengeluaran, totalTabungan]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setShowConfirmModal(true);
-  };
-
-  const handleConfirmSave = () => {
-    onSave(formData);
-    setShowConfirmModal(false);
-    setIsReadOnly(true);
-    setOriginalData(formData);
-  };
-  
-  const prePopulateGoals = (baseForm: MonthlyTarget): MonthlyTarget => {
-    const newForm = JSON.parse(JSON.stringify(baseForm));
-
-    newForm.cicilanUtang = activeDebts.map(debt => ({
-      id: `debt-${debt.id}`,
-      name: debt.name,
-      amount: String(debt.monthlyInstallment)
-    }));
-
-    const savingsMap = new Map(newForm.tabungan.map((item: TargetFormField) => [item.name, item]));
-    activeSavingsGoals.forEach(goal => {
-      const remainingAmount = goal.targetAmount - goal.currentAmount;
-      if (remainingAmount > 0 && !savingsMap.has(goal.name)) {
-        const deadline = new Date(goal.deadline);
-        const now = new Date();
-        const monthsRemaining = Math.max(1, (deadline.getFullYear() - now.getFullYear()) * 12 + deadline.getMonth() - now.getMonth());
-        const suggestedAmount = Math.ceil(remainingAmount / monthsRemaining);
-        
-        savingsMap.set(goal.name, {
-          id: `sg-${goal.id}`,
-          name: goal.name,
-          amount: String(suggestedAmount > 0 ? suggestedAmount : 0)
-        });
-      }
-    });
-    newForm.tabungan = Array.from(savingsMap.values());
-    
-    return newForm;
-  };
-
-  const lastMonthTarget = useMemo(() => {
-    if (archivedTargets.length === 0) return null;
-    const lastMonth = new Date();
-    lastMonth.setMonth(lastMonth.getMonth() - 1);
-    const lastMonthYear = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
-    return archivedTargets.find(t => t.monthYear === lastMonthYear);
-  }, [archivedTargets]);
-
-  const lastMonthSummary = useMemo(() => {
-    if (!lastMonthTarget) return null;
-    const totalPendapatan = calculateTotal(lastMonthTarget.target.pendapatan);
-    const totalPengeluaran = calculateTotal(lastMonthTarget.target.cicilanUtang) +
-                           calculateTotal(lastMonthTarget.target.pengeluaranUtama) +
-                           calculateTotal(lastMonthTarget.target.kebutuhan) +
-                           calculateTotal(lastMonthTarget.target.penunjang) +
-                           calculateTotal(lastMonthTarget.target.pendidikan);
-    return { totalPendapatan, totalPengeluaran };
-  }, [lastMonthTarget, calculateTotal]);
-  
-    const handleAiComplete = (target: MonthlyTarget) => {
-        setFormData(target);
-        setIsReadOnly(false); // Make form editable after generation
+    const handleItemChange = (categoryId: string, itemId: string, field: 'name' | 'amount', value: string) => {
+        setTarget(prev => ({
+            ...prev,
+            [categoryId]: (prev[categoryId] || []).map(item =>
+                item.id === itemId ? { ...item, [field]: value } : item
+            ),
+        }));
     };
 
-  const renderSection = (sectionKey: keyof MonthlyTarget, title: string) => {
-    const items = formData[sectionKey];
-    const sectionTotal = calculateTotal(items);
-    const allowAdd = !['cicilanUtang', 'tabungan'].includes(sectionKey);
+    const handleAddItem = (categoryId: string) => {
+        const newItem: TargetFormField = { id: uuidv4(), name: '', amount: '' };
+        setTarget(prev => ({
+            ...prev,
+            [categoryId]: [...(prev[categoryId] || []), newItem],
+        }));
+        setOpenAccordions(prev => ({...prev, [categoryId]: true}));
+    };
     
-    const hasItems = items.length > 0;
-    const hasActiveGoals = (sectionKey === 'cicilanUtang' && activeDebts.length > 0) || (sectionKey === 'tabungan' && activeSavingsGoals.length > 0);
-    const showEmptyStateButton = !hasItems && !hasActiveGoals && ['cicilanUtang', 'tabungan'].includes(sectionKey);
+    const handleRemoveItem = (categoryId: string, itemId: string) => {
+        setTarget(prev => ({
+            ...prev,
+            [categoryId]: (prev[categoryId] || []).filter(item => item.id !== itemId),
+        }));
+    };
+
+    const { income, expenses, savings, potentialBalance } = useMemo(() => {
+        let income = 0, expenses = 0, savings = 0;
+        
+        const calculateTotal = (categories: UserCategory[]) => {
+            return categories.reduce((sum, cat) => {
+                const categoryTotal = (target[cat.id] || []).reduce((itemSum, item) => itemSum + (parseInt(item.amount) || 0), 0);
+                return sum + categoryTotal;
+            }, 0);
+        };
+        
+        income = calculateTotal(incomeCategories);
+        expenses = calculateTotal(expenseCategories) + calculateTotal(debtCategories);
+        savings = calculateTotal(savingsCategories);
+
+        return { income, expenses, savings, potentialBalance: income - expenses - savings };
+    }, [target, incomeCategories, expenseCategories, debtCategories, savingsCategories]);
+    
+    const SectionHeader: React.FC<{title: string, color: string, icon: string}> = ({title, color, icon}) => (
+        <div className="flex items-center space-x-3 mb-3 border-b-2 pb-2" style={{borderColor: `var(--color-${color})`}}>
+            <i className={`fa-solid ${icon} text-lg`} style={{color: `var(--color-${color})`}}></i>
+            <h2 className="text-lg font-semibold" style={{color: `var(--color-${color})`}}>{title}</h2>
+        </div>
+    );
 
     return (
-      <AccordionSection title={title} isOpen={sectionKey === 'pendapatan'} headerClassName={`border-l-4 ${sectionAccentColors[sectionKey]}`}>
-        <div className="space-y-3">
-            {items.map((field) => (
-              <div key={field.id} className="grid grid-cols-12 gap-2 items-center">
-                {isReadOnly ? (
-                  <>
-                    <p className="col-span-7 p-2 text-[var(--text-secondary)] truncate">{field.name}</p>
-                    <p className="col-span-5 p-2 text-[var(--text-primary)] text-right font-semibold">Rp {parseInt(field.amount || '0').toLocaleString('id-ID')}</p>
-                  </>
-                ) : (
-                  <>
-                    <input
-                      type="text"
-                      placeholder="Nama item"
-                      value={field.name}
-                      readOnly={field.id.startsWith('debt-') || field.id.startsWith('sg-')}
-                      onChange={e => handleFieldChange(sectionKey, field.id, 'name', e.target.value)}
-                      className="col-span-7 p-2 bg-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-md focus:ring-2 focus:ring-[var(--primary-glow)] focus:border-transparent read-only:bg-[var(--bg-interactive-hover)] read-only:text-[var(--text-tertiary)] text-[var(--text-primary)]"
-                    />
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="Jumlah (Rp)"
-                      value={field.amount ? parseInt(field.amount).toLocaleString('id-ID') : ''}
-                      onChange={e => handleFieldChange(sectionKey, field.id, 'amount', e.target.value)}
-                      className="col-span-4 p-2 bg-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-md focus:ring-2 focus:ring-[var(--primary-glow)] focus:border-transparent text-right text-[var(--text-primary)]"
-                    />
-                    {allowAdd ? (
-                        <button
-                        type="button"
-                        onClick={() => removeField(sectionKey, field.id)}
-                        className="col-span-1 text-[var(--text-tertiary)] hover:text-[var(--color-expense)] transition-colors"
-                        aria-label={`Hapus ${field.name}`}
-                        >
-                        <i className="fa-solid fa-trash-can"></i>
-                        </button>
-                    ) : <div className="col-span-1"></div>}
-                  </>
-                )}
-              </div>
-            ))}
-            
-            {showEmptyStateButton && (
-                 <button
-                    type="button"
-                    onClick={sectionKey === 'cicilanUtang' ? onAddDebt : onAddSavingsGoal}
-                    className="w-full text-center py-6 px-4 border-2 border-dashed border-[var(--border-secondary)] rounded-xl hover:bg-[var(--bg-interactive-hover)] hover:border-[var(--primary-glow)] transition-all duration-300 group"
-                  >
-                      <p className="font-semibold text-[var(--text-secondary)] group-hover:text-[var(--primary-glow)] transition-colors duration-300">
-                        {sectionKey === 'cicilanUtang' 
-                            ? "Belum ada utang tercatat. Klik untuk mulai." 
-                            : "Anda belum punya tujuan. Klik untuk wujudkan impianmu!"
-                        }
-                      </p>
-                  </button>
-            )}
+        <>
+            <div className="p-4 md:p-6 space-y-6">
+                <header className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                        <button onClick={() => setView(View.DASHBOARD)} className="text-[var(--text-tertiary)]"><i className="fa-solid fa-arrow-left text-xl"></i></button>
+                        <div>
+                            <h1 className="text-2xl font-bold text-[var(--text-primary)]">Target Bulanan</h1>
+                            <p className="text-[var(--text-tertiary)]">Rencanakan keuangan Anda untuk bulan ini.</p>
+                        </div>
+                    </div>
+                     <button onClick={onManageCategories} className="hidden sm:flex items-center space-x-2 text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors p-2 rounded-lg hover:bg-[var(--bg-interactive-hover)]">
+                        <i className="fa-solid fa-cog"></i>
+                        <span>Kelola Kategori</span>
+                    </button>
+                </header>
 
-            {!isReadOnly && allowAdd && (
-                <button 
-                  type="button" 
-                  onClick={() => addField(sectionKey)} 
-                  className="w-full border-2 border-dashed border-[var(--border-secondary)] rounded-lg py-2 text-sm font-semibold text-[var(--text-tertiary)] hover:border-[var(--primary-glow)] hover:text-[var(--primary-glow)] transition-all duration-300"
-                >
-                    <i className="fa-solid fa-plus mr-2"></i>Tambah Item
-                </button>
-            )}
-
-            {hasItems && (
-                 <div className="flex justify-between items-center mt-3 pt-3 border-t border-[var(--border-primary)]">
-                     <span className="font-bold text-[var(--text-secondary)]">TOTAL</span>
-                     <span className="text-lg font-bold text-[var(--text-primary)]">Rp {sectionTotal.toLocaleString('id-ID')}</span>
-                 </div>
-            )}
-        </div>
-      </AccordionSection>
-    );
-  };
-  
-  return (
-    <>
-    <div className="p-4 md:p-6 space-y-6">
-      <header className="flex items-center space-x-4">
-        <button onClick={() => setView(View.DASHBOARD)} className="text-[var(--text-tertiary)]">
-            <i className="fa-solid fa-arrow-left text-xl"></i>
-        </button>
-        <h1 className="text-2xl font-bold text-[var(--text-primary)]">Target Bulanan</h1>
-      </header>
-      
-        <div className="sticky top-0 z-20 p-4 bg-[var(--bg-secondary)] backdrop-blur-lg border border-[var(--border-primary)] rounded-2xl shadow-2xl">
-            <h3 className="font-bold text-[var(--text-primary)] mb-3 text-lg">Ringkasan Target</h3>
-            <div className="space-y-2 text-sm">
-                <div className="flex justify-between items-center"><span className="flex items-center text-[var(--text-secondary)]"><div className="w-2.5 h-2.5 rounded-sm bg-[var(--color-income)] mr-2"></div>Pemasukan</span><span className="font-bold" style={{color: 'var(--color-income)'}}>Rp {totalPendapatan.toLocaleString('id-ID')}</span></div>
-                <div className="flex justify-between items-center"><span className="flex items-center text-[var(--text-secondary)]"><div className="w-2.5 h-2.5 rounded-sm bg-[var(--color-expense)] mr-2"></div>Pengeluaran</span><span className="font-bold" style={{color: 'var(--color-expense)'}}>Rp {totalPengeluaran.toLocaleString('id-ID')}</span></div>
-                <div className="flex justify-between items-center"><span className="flex items-center text-[var(--text-secondary)]"><div className="w-2.5 h-2.5 rounded-sm bg-[var(--color-savings)] mr-2"></div>Tabungan</span><span className="font-bold" style={{color: 'var(--color-savings)'}}>Rp {totalTabungan.toLocaleString('id-ID')}</span></div>
-                <div className="border-t border-[var(--border-primary)] my-2"></div>
-                <div className="flex justify-between items-center pt-1">
-                    <span className="font-bold text-[var(--text-secondary)]">Potensi Sisa Uang</span>
-                    <span className={`font-bold text-lg ${sisa >= 0 ? 'text-[var(--text-primary)]' : 'text-[var(--color-warning)]'}`}>
-                        {sisa < 0 && <i className="fa-solid fa-triangle-exclamation mr-2"></i>}
-                        Rp {sisa.toLocaleString('id-ID')}
-                    </span>
+                <div className="sticky top-0 z-10 bg-[var(--bg-primary)]/80 backdrop-blur-lg -mx-4 md:-mx-6 px-4 md:px-6 py-3 border-b border-[var(--border-primary)]">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <SummaryCard title="Pemasukan" amount={income} colorClass="text-[var(--color-income)]" />
+                        <SummaryCard title="Pengeluaran" amount={expenses} colorClass="text-[var(--color-expense)]" />
+                        <SummaryCard title="Tabungan" amount={savings} colorClass="text-[var(--color-savings)]" />
+                        <SummaryCard title="Sisa Uang" amount={potentialBalance} colorClass={potentialBalance >= 0 ? 'text-[var(--text-primary)]' : 'text-[var(--color-warning)]'} />
+                    </div>
                 </div>
-            </div>
-        </div>
 
-        {!isReadOnly && (
-            <button
-                type="button"
-                onClick={() => setIsAiModalOpen(true)}
-                className="w-full flex items-center justify-center space-x-3 p-4 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
-            >
-                <i className="fa-solid fa-wand-magic-sparkles text-xl"></i>
-                <span className="font-bold">Buat Cepat dengan Bantuan AI</span>
-            </button>
-        )}
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-6">
-            {renderSection('pendapatan', 'Pemasukan')}
-            {renderSection('cicilanUtang', 'Hutang')}
-            {renderSection('tabungan', 'Tabungan')}
-            {renderSection('pengeluaranUtama', 'Pengeluaran Utama')}
-            {renderSection('kebutuhan', 'Kebutuhan')}
-            {renderSection('penunjang', 'Penunjang')}
-            {renderSection('pendidikan', 'Pendidikan')}
-        </div>
-        
-        <div className="pt-4 pb-20 flex gap-3">
-            {isReadOnly ? (
-                 <button type="button" onClick={() => setShowEditOptionsModal(true)} className="w-full bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white font-bold py-4 px-6 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all">
-                    Ubah Target
-                </button>
-            ) : (
-                <>
-                    <button type="button" onClick={handleCancel} className="w-full bg-[var(--bg-interactive)] border border-[var(--border-primary)] text-[var(--text-secondary)] font-bold py-4 px-6 rounded-full hover:bg-[var(--bg-interactive-hover)] transition-colors">
-                        Batal
-                    </button>
-                    <button type="submit" className="w-full bg-gradient-to-r from-[var(--secondary-600)] to-[var(--primary-500)] text-white font-bold py-4 px-6 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all">
-                        Simpan Perubahan
-                    </button>
-                </>
-            )}
-        </div>
-      </form>
-
-      <Modal isOpen={showConfirmModal} onClose={() => setShowConfirmModal(false)}>
-        <div className="relative bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-xl text-center p-6">
-            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-br from-[var(--primary-500)] to-[var(--secondary-500)] shadow-lg shadow-[var(--primary-glow)]/30 mb-4">
-                <i className="fa-solid fa-save text-3xl text-white"></i>
-            </div>
-            <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-2">Simpan Perubahan?</h3>
-            <p className="text-[var(--text-secondary)] mb-6">Apakah Anda yakin ingin menyimpan target bulanan ini?</p>
-            <div className="flex flex-col sm:flex-row gap-3">
-                <button onClick={() => setShowConfirmModal(false)} className="w-full bg-transparent text-[var(--text-tertiary)] font-semibold py-3 px-6 rounded-full hover:bg-[var(--bg-interactive-hover)]">Batal</button>
-                <button onClick={handleConfirmSave} className="w-full bg-[var(--primary-600)] text-white font-bold py-3 px-6 rounded-full">Ya, Simpan</button>
-            </div>
-        </div>
-      </Modal>
-
-       <Modal isOpen={showEditOptionsModal} onClose={() => setShowEditOptionsModal(false)}>
-        <div className="p-4 bg-[var(--bg-secondary)] backdrop-blur-lg border border-[var(--border-primary)] rounded-xl">
-            <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-4 text-center">Ubah Target</h3>
-            <div className="space-y-3">
-                <button onClick={() => handleEdit('adjust')} className="w-full text-left p-4 bg-[var(--bg-interactive)] hover:border-[var(--primary-glow)] rounded-xl transition-all duration-300 border border-[var(--border-primary)] group">
-                    <div className="flex items-start space-x-4">
-                        <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-[var(--bg-primary)] rounded-lg text-[var(--primary-glow)] border border-[var(--border-primary)]"><i className="fa-solid fa-sliders text-xl"></i></div>
-                        <div>
-                            <p className="font-bold text-[var(--text-secondary)]">Sesuaikan Target Saat Ini</p>
-                            <p className="text-sm text-[var(--text-tertiary)]">Ubah angka-angka dari target yang ditampilkan.</p>
-                        </div>
-                    </div>
-                </button>
+                <div className="flex flex-wrap gap-2">
+                     <button onClick={() => setIsAiModalOpen(true)} className="flex-1 text-sm bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:shadow-xl"><i className="fa-solid fa-robot mr-2"></i>Buat dengan AI</button>
+                     <button onClick={handleCopyFromLastMonth} className="flex-1 text-sm bg-[var(--bg-interactive)] border border-[var(--border-secondary)] text-[var(--text-secondary)] font-semibold py-3 px-4 rounded-lg"><i className="fa-solid fa-copy mr-2"></i>Salin Bulan Lalu</button>
+                </div>
                 
-                <button onClick={() => handleEdit('blank')} className="w-full text-left p-4 bg-[var(--bg-interactive)] hover:border-[var(--primary-glow)] rounded-xl transition-all duration-300 border border-[var(--border-primary)] group">
-                     <div className="flex items-start space-x-4">
-                        <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-[var(--bg-primary)] rounded-lg text-[var(--primary-glow)] border border-[var(--border-primary)]"><i className="fa-solid fa-file text-xl"></i></div>
-                        <div>
-                            <p className="font-bold text-[var(--text-secondary)]">Mulai dari Awal (Kosong)</p>
-                            <p className="text-sm text-[var(--text-tertiary)]">Buat target baru dari formulir kosong.</p>
+                <form onSubmit={(e) => { e.preventDefault(); onSave(target); }} className="space-y-6 pb-20">
+                    {/* PENDAPATAN */}
+                    <div>
+                        <SectionHeader title="Pendapatan" color="income" icon="fa-arrow-down" />
+                        <div className="space-y-3">
+                        {incomeCategories.map(cat => (
+                            <AccordionSection key={cat.id} title={cat.name} isOpen={openAccordions[cat.id]}>
+                                {(target[cat.id] || []).map(item => <TargetItem key={item.id} item={item} onChange={(f, v) => handleItemChange(cat.id, item.id, f, v)} onRemove={() => handleRemoveItem(cat.id, item.id)} />)}
+                                <button type="button" onClick={() => handleAddItem(cat.id)} className="text-sm font-semibold text-[var(--primary-glow)] hover:text-[var(--text-primary)] mt-2">+ Tambah Item</button>
+                            </AccordionSection>
+                        ))}
                         </div>
                     </div>
-                </button>
-
-                {lastMonthTarget && (
-                    <button onClick={() => handleEdit('copy')} className="w-full text-left p-4 bg-[var(--bg-interactive)] hover:border-[var(--primary-glow)] rounded-xl transition-all duration-300 border border-[var(--border-primary)] group">
-                         <div className="flex items-start space-x-4">
-                            <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-[var(--bg-primary)] rounded-lg text-[var(--primary-glow)] border border-[var(--border-primary)]"><i className="fa-solid fa-copy text-xl"></i></div>
-                            <div>
-                                <p className="font-bold text-[var(--text-secondary)]">Salin dari Bulan Lalu</p>
-                                <p className="text-sm text-[var(--text-tertiary)]">Gunakan data bulan sebelumnya sebagai dasar.</p>
-                                {lastMonthSummary && (
-                                     <div className="mt-2 text-xs flex space-x-4 text-[var(--text-tertiary)] border-t border-[var(--border-primary)] pt-2">
-                                         <span>Pemasukan: <strong style={{color: 'var(--color-income)'}}>Rp {lastMonthSummary.totalPendapatan.toLocaleString('id-ID')}</strong></span>
-                                         <span>Pengeluaran: <strong style={{color: 'var(--color-expense)'}}>Rp {lastMonthSummary.totalPengeluaran.toLocaleString('id-ID')}</strong></span>
-                                     </div>
-                                )}
-                            </div>
+                    {/* HUTANG */}
+                    <div>
+                        <SectionHeader title="Hutang" color="debt" icon="fa-file-invoice-dollar" />
+                        <div className="space-y-3">
+                        {debtCategories.map(cat => (
+                            <AccordionSection key={cat.id} title={cat.name} isOpen={true} headerClassName="bg-[var(--bg-interactive)]/50" badge={<i className="fa-solid fa-lock text-xs text-[var(--text-tertiary)]"></i>}>
+                                {(target[cat.id] || []).map(item => <TargetItem key={item.id} item={item} isLocked={true} onChange={() => {}} onRemove={() => {}} />)}
+                            </AccordionSection>
+                        ))}
+                        {debtCategories.length === 0 && <p className="text-xs text-center text-[var(--text-tertiary)] py-2">Tidak ada utang aktif.</p>}
                         </div>
-                    </button>
-                )}
+                    </div>
+                    {/* TABUNGAN */}
+                    <div>
+                        <SectionHeader title="Tabungan" color="savings" icon="fa-piggy-bank" />
+                        <div className="space-y-3">
+                        {savingsCategories.map(cat => (
+                            <AccordionSection key={cat.id} title={cat.name} isOpen={true} headerClassName="bg-[var(--bg-interactive)]/50" badge={<i className="fa-solid fa-lock text-xs text-[var(--text-tertiary)]"></i>}>
+                                {(target[cat.id] || []).map(item => <TargetItem key={item.id} item={item} isLocked={!item.id.includes('goal-')} onChange={(f, v) => handleItemChange(cat.id, item.id, f, v)} onRemove={() => handleRemoveItem(cat.id, item.id)} />)}
+                            </AccordionSection>
+                        ))}
+                        {savingsCategories.length === 0 && <p className="text-xs text-center text-[var(--text-tertiary)] py-2">Tidak ada tujuan tabungan aktif.</p>}
+                        </div>
+                    </div>
+                    {/* PENGELUARAN */}
+                     <div>
+                        <SectionHeader title="Pengeluaran" color="expense" icon="fa-arrow-up" />
+                        <div className="space-y-3">
+                        {expenseCategories.map(cat => (
+                            <AccordionSection key={cat.id} title={cat.name} isOpen={openAccordions[cat.id]}>
+                                {(target[cat.id] || []).map(item => <TargetItem key={item.id} item={item} onChange={(f, v) => handleItemChange(cat.id, item.id, f, v)} onRemove={() => handleRemoveItem(cat.id, item.id)} />)}
+                                <button type="button" onClick={() => handleAddItem(cat.id)} className="text-sm font-semibold text-[var(--primary-glow)] hover:text-[var(--text-primary)] mt-2">+ Tambah Item</button>
+                            </AccordionSection>
+                        ))}
+                        </div>
+                    </div>
+
+                    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20 w-full max-w-lg px-4">
+                        <button type="submit" className="w-full bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white font-bold py-4 px-6 rounded-full shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all">
+                            Simpan Target
+                        </button>
+                    </div>
+                </form>
             </div>
-        </div>
-      </Modal>
-    </div>
-    <AITargetModal 
-        isOpen={isAiModalOpen} 
-        onClose={() => setIsAiModalOpen(false)}
-        onComplete={handleAiComplete}
-        activeDebts={activeDebts}
-        activeSavingsGoals={activeSavingsGoals}
-    />
-    </>
-  );
+
+            <Modal isOpen={isAiModalOpen} onClose={() => setIsAiModalOpen(false)}>
+                <div className="bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-2xl p-6 w-full max-w-lg">
+                    <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">Buat Target dengan AI</h2>
+                    <p className="text-sm text-[var(--text-secondary)] mb-4">Jelaskan kondisi keuangan atau tujuan Anda bulan ini. AI akan membantu membuatkan draf target untuk Anda. Contoh: "Bulan ini saya mau lebih hemat, coba kurangi jajan dan hiburan 20%".</p>
+                    <textarea
+                        value={aiPrompt}
+                        onChange={(e) => setAiPrompt(e.target.value)}
+                        placeholder="Ketikkan prompt Anda di sini..."
+                        className="w-full h-32 p-3 bg-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-md text-sm"
+                    />
+                    <div className="mt-4 flex justify-end gap-3">
+                        <button onClick={() => setIsAiModalOpen(false)} className="font-semibold text-[var(--text-secondary)] py-2 px-4 rounded-md">Batal</button>
+                        <button onClick={handleGenerateWithAI} disabled={isGenerating || !aiPrompt.trim()} className="font-bold text-white bg-[var(--primary-600)] py-2 px-4 rounded-md disabled:opacity-50">
+                            {isGenerating ? 'Memproses...' : 'Buat Target'}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+        </>
+    );
 };
+
 export default AddTargetForm;

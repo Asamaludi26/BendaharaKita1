@@ -21,7 +21,6 @@ import AddDebtForm from './components/AddDebtForm';
 import AddSavingsGoalForm from './components/AddSavingsGoalForm';
 import Toast from './components/Toast';
 import Modal from './components/Modal';
-import ReportsDashboard from './components/reports/ReportsDashboard';
 import TransactionFormModal from './components/modals/TransactionFormModal';
 import CategoryManagerModal from './components/modals/CategoryManagerModal';
 import Accounts from './components/accounts/Accounts';
@@ -70,6 +69,7 @@ const App: React.FC = () => {
     // New states for enhanced features
     const [theme, setTheme] = useLocalStorage<'light' | 'dark'>('app_theme', 'dark');
     const [editingTransaction, setEditingTransaction] = useState<Transaction | 'new' | null>(null);
+    const [forcedTransactionType, setForcedTransactionType] = useState<TransactionType | null>(null);
     const [viewingTransaction, setViewingTransaction] = useState<Transaction | null>(null);
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
     const [editingAccount, setEditingAccount] = useState<Account | null>(null);
@@ -93,10 +93,9 @@ const App: React.FC = () => {
     const [isTourModalOpen, setIsTourModalOpen] = useState(isFirstVisit);
     const [isFormGuideModalOpen, setIsFormGuideModalOpen] = useState(false);
 
-
     const [displayDate, setDisplayDate] = useState(new Date());
 
-    // --- THEME ---
+    // --- CACHE & THEME ---
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
     }, [theme]);
@@ -105,6 +104,25 @@ const App: React.FC = () => {
     const handleToggleTheme = () => {
         setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
     };
+
+    // --- AUTO-UPDATE TO CURRENT MONTH ---
+    useEffect(() => {
+        const intervalId = setInterval(() => {
+        setDisplayDate(prevDate => {
+            const now = new Date();
+            // Check if the month or year has changed since the last check.
+            if (now.getMonth() !== prevDate.getMonth() || now.getFullYear() !== prevDate.getFullYear()) {
+            return now; // Update to the new current date
+            }
+            return prevDate; // No change needed, prevent re-render
+        });
+        }, 60000); // Check every 60 seconds (1 minute)
+
+        return () => {
+        clearInterval(intervalId); // Cleanup on component unmount
+        };
+    }, []); // Empty dependency array ensures this runs only once
+
 
     // --- MOBILE KEYBOARD FIX ---
     useEffect(() => {
@@ -125,13 +143,6 @@ const App: React.FC = () => {
             document.removeEventListener('focusin', handleFocus);
         };
     }, []); // Empty dependency array to run only once on mount
-
-    // --- APP RESET ---
-    const handleResetApp = () => {
-        window.localStorage.clear();
-        window.location.reload();
-        setToast({ message: 'Aplikasi berhasil direset!', type: 'success' });
-    }
     
     // --- GUIDES & TOURS ---
     const handleCloseWelcomeTour = () => {
@@ -158,11 +169,7 @@ const App: React.FC = () => {
     }, [displayDate]);
 
     const currentMonthlyTarget = useMemo(() => {
-        let targetForMonth = archivedTargets.find(t => t.monthYear === currentMonthYear);
-        if (!targetForMonth && archivedTargets.length > 0) {
-            const lastTargetArchive = [...archivedTargets].sort((a, b) => b.monthYear.localeCompare(a.monthYear))[0];
-            return lastTargetArchive.target;
-        }
+        const targetForMonth = archivedTargets.find(t => t.monthYear === currentMonthYear);
         return targetForMonth ? targetForMonth.target : null;
     }, [currentMonthYear, archivedTargets]);
 
@@ -176,17 +183,18 @@ const App: React.FC = () => {
         const isNew = !transactions.some(t => t.id === transaction.id);
         const originalTransaction = isNew ? null : transactions.find(t => t.id === transaction.id);
     
+        // 1. Update account balances (this logic is correct for both new and edits)
         setAccounts(prevAccounts => {
             return prevAccounts.map(acc => {
                 let newBalance = acc.balance;
     
-                if (originalTransaction) {
+                if (originalTransaction) { // Revert original amount if editing
                     if (originalTransaction.accountId === acc.id) {
                         newBalance += originalTransaction.type === TransactionType.INCOME ? -originalTransaction.amount : originalTransaction.amount;
                     }
                 }
     
-                if (transaction.accountId === acc.id) {
+                if (transaction.accountId === acc.id) { // Apply new amount
                     newBalance += transaction.type === TransactionType.INCOME ? transaction.amount : -transaction.amount;
                 }
     
@@ -194,21 +202,85 @@ const App: React.FC = () => {
             });
         });
     
+        // 2. Update transaction list
         if (isNew) {
             setTransactions(prev => [transaction, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-            setToast({ message: 'Transaksi berhasil ditambahkan!', type: 'success' });
         } else {
             setTransactions(prev => prev.map(t => t.id === transaction.id ? transaction : t));
+            // For now, goal updates only happen on NEW transactions to avoid complexity.
+            // A more advanced implementation would revert the old transaction's goal impact.
             setToast({ message: 'Transaksi berhasil diperbarui!', type: 'success' });
         }
-        setEditingTransaction(null);
+    
+        // 3. NEW LOGIC: If it's a new expense, try to link it to a goal
+        if (isNew && transaction.type === TransactionType.EXPENSE) {
+            let goalUpdated = false;
+    
+            // Check for matching debt
+            const matchingDebt = debts.find(d => d.name === transaction.category);
+            if (matchingDebt) {
+                setDebts(prevDebts => prevDebts.map(d =>
+                    d.id === matchingDebt.id
+                        ? { ...d, payments: [...d.payments, { date: transaction.date, amount: transaction.amount }] }
+                        : d
+                ));
+                setToast({ message: 'Pembayaran utang & transaksi dicatat!', type: 'success' });
+                goalUpdated = true;
+            } 
+            
+            // Check for matching savings goal (if not already a debt payment)
+            if (!goalUpdated) {
+                const matchingSavingsGoal = savingsGoals.find(sg => sg.name === transaction.category);
+                if (matchingSavingsGoal) {
+                    setSavingsGoals(prevGoals => prevGoals.map(sg =>
+                        sg.id === matchingSavingsGoal.id
+                            ? {
+                                ...sg,
+                                currentAmount: sg.currentAmount + transaction.amount,
+                                contributions: [...sg.contributions, { date: transaction.date, amount: transaction.amount }]
+                              }
+                            : sg
+                    ));
+                    setToast({ message: 'Setoran tabungan & transaksi dicatat!', type: 'success' });
+                    goalUpdated = true;
+                }
+            }
+            
+            // If it was a new expense but didn't match any goal
+            if (!goalUpdated) {
+                setToast({ message: 'Transaksi berhasil ditambahkan!', type: 'success' });
+            }
+        } else if (isNew) {
+            // Toast for new income
+            setToast({ message: 'Transaksi berhasil ditambahkan!', type: 'success' });
+        }
+    
+        // 4. Close modal and update display date
+        handleCloseTransactionModal();
         setActiveModal(null); // Close top up modal as well
+    
+        const newTxDate = new Date(transaction.date);
+        if (newTxDate.getFullYear() > displayDate.getFullYear() || 
+            (newTxDate.getFullYear() === displayDate.getFullYear() && newTxDate.getMonth() > displayDate.getMonth())) {
+            setDisplayDate(newTxDate);
+        }
+    };
+
+    const handleOpenExpenseModal = () => {
+        setForcedTransactionType(TransactionType.EXPENSE);
+        setEditingTransaction('new');
+    };
+    
+    const handleCloseTransactionModal = () => {
+        setEditingTransaction(null);
+        setForcedTransactionType(null);
     };
     
     const handleDeleteTransaction = (transactionId: string) => {
         const transactionToDelete = transactions.find(t => t.id === transactionId);
         if (!transactionToDelete) return;
     
+        // Revert account balance
         setAccounts(prevAccounts => {
             return prevAccounts.map(acc => {
                 if (acc.id === transactionToDelete.accountId) {
@@ -218,10 +290,23 @@ const App: React.FC = () => {
                 return acc;
             });
         });
+        
+        // Revert goal progress if it was a linked transaction
+        if (transactionToDelete.type === TransactionType.EXPENSE) {
+             const matchingDebt = debts.find(d => d.name === transactionToDelete.category);
+             if (matchingDebt) {
+                 setDebts(prev => prev.map(d => d.id === matchingDebt.id ? { ...d, payments: d.payments.filter(p => p.date !== transactionToDelete.date || p.amount !== transactionToDelete.amount) } : d));
+             } else {
+                 const matchingSavingsGoal = savingsGoals.find(sg => sg.name === transactionToDelete.category);
+                 if (matchingSavingsGoal) {
+                     setSavingsGoals(prev => prev.map(sg => sg.id === matchingSavingsGoal.id ? { ...sg, currentAmount: sg.currentAmount - transactionToDelete.amount, contributions: sg.contributions.filter(c => c.date !== transactionToDelete.date || c.amount !== transactionToDelete.amount)} : sg));
+                 }
+             }
+        }
     
         setTransactions(prev => prev.filter(t => t.id !== transactionId));
         setToast({ message: 'Transaksi berhasil dihapus!', type: 'error' });
-        setEditingTransaction(null);
+        handleCloseTransactionModal();
     };
 
     // --- ACCOUNT & WALLET MANAGEMENT ---
@@ -420,7 +505,7 @@ const App: React.FC = () => {
             description: `Bayar Utang: ${debt.name}`,
             amount: amount,
             type: TransactionType.EXPENSE,
-            category: 'Utang',
+            category: debt.name, // Use debt name as category
             accountId: accountId,
         };
     
@@ -448,7 +533,7 @@ const App: React.FC = () => {
             description: `Tabungan: ${goal.name}`,
             amount: amount,
             type: TransactionType.EXPENSE,
-            category: 'Tabungan',
+            category: goal.name, // Use goal name as category
             accountId: accountId,
         };
     
@@ -481,6 +566,14 @@ const App: React.FC = () => {
     const allModalsClosed = !activeModal && !showGoalsOnboardingWizard && !editingTransaction && !isCategoryModalOpen && !editingAccount && !isTourModalOpen && !isFormGuideModalOpen && !showWalletOnboardingWizard && !viewingTransaction;
 
     const isTargetSet = !!currentMonthlyTarget;
+    
+    const handleAddNewTransaction = useCallback(() => {
+        setEditingTransaction('new');
+    }, []);
+
+    const handleViewTransaction = useCallback((transaction: Transaction) => {
+        setViewingTransaction(transaction);
+    }, []);
 
     const renderView = () => {
         const pageContentClass = `transition-all duration-500 ${!allModalsClosed ? 'blur-md scale-95' : ''}`;
@@ -499,13 +592,14 @@ const App: React.FC = () => {
                     setView={setView} 
                     isTargetSet={isTargetSet} 
                     accounts={accounts} 
+                    activeDebts={activeDebts}
+                    savingsGoals={savingsGoals}
+                    activeSavingsGoals={activeSavingsGoals}
+                    userCategories={userCategories}
                 />;
                 break;
             case View.TRANSACTIONS:
-                pageComponent = <Transactions transactions={transactions} userCategories={userCategories} onAdd={() => setEditingTransaction('new')} onSelect={(tx) => setViewingTransaction(tx)} accounts={accounts} />;
-                break;
-             case View.REPORTS_DASHBOARD:
-                pageComponent = <ReportsDashboard transactions={transactions} userCategories={userCategories} />;
+                pageComponent = <Transactions transactions={transactions} userCategories={userCategories} onAdd={handleAddNewTransaction} onSelect={handleViewTransaction} accounts={accounts} />;
                 break;
              case View.WALLET:
                 pageComponent = <Accounts 
@@ -521,6 +615,7 @@ const App: React.FC = () => {
                     }}
                     onInitiateTopUp={handleOpenTopUpModal}
                     onInitiateWithdrawSavings={handleOpenWithdrawSavingsModal}
+                    onAddExpense={handleOpenExpenseModal}
                 />;
                 break;
             case View.ACCOUNT_DETAIL:
@@ -529,10 +624,10 @@ const App: React.FC = () => {
                 pageComponent = account ? <AccountDetail account={account} transactions={accountTransactions} setView={setView} /> : <div>Akun tidak ditemukan</div>;
                 break;
             case View.ADD_TARGET:
-                pageComponent = <AddTargetForm setView={setView} onSave={handleSaveTarget} initialData={currentMonthlyTarget} archivedTargets={archivedTargets} currentMonthYear={currentMonthYear} activeDebts={activeDebts} activeSavingsGoals={activeSavingsGoals} onAddDebt={() => setActiveModal('ADD_DEBT')} onAddSavingsGoal={() => setActiveModal('ADD_SAVINGS_GOAL')} />;
+                pageComponent = <AddTargetForm setView={setView} onSave={handleSaveTarget} initialData={currentMonthlyTarget} archivedTargets={archivedTargets} currentMonthYear={currentMonthYear} activeDebts={activeDebts} activeSavingsGoals={activeSavingsGoals} onAddDebt={() => setActiveModal('ADD_DEBT')} onAddSavingsGoal={() => setActiveModal('ADD_SAVINGS_GOAL')} userCategories={userCategories} onManageCategories={() => setIsCategoryModalOpen(true)} />;
                 break;
             case View.ADD_ACTUAL:
-                pageComponent = <ActualsReportView setView={setView} monthlyTarget={currentMonthlyTarget} transactions={transactions} debts={debts} savingsGoals={savingsGoals} displayDate={displayDate} />;
+                pageComponent = <ActualsReportView setView={setView} monthlyTarget={currentMonthlyTarget} transactions={transactions} debts={debts} savingsGoals={savingsGoals} displayDate={displayDate} userCategories={userCategories} />;
                 break;
             case View.TARGET_HISTORY:
                 pageComponent = <TargetHistory archives={archivedTargets} setView={setView} />;
@@ -558,7 +653,7 @@ const App: React.FC = () => {
                 pageComponent = <SavingsGoalHistory completedGoals={completedSavingsGoals} setView={setView} onSelectSavingsGoal={(id) => { setActiveDetailId(id); setView(View.SAVINGS_GOAL_DETAIL); }} />;
                 break;
             case View.PROFILE:
-                pageComponent = <Profile theme={theme} onToggleTheme={handleToggleTheme} onManageCategories={() => setIsCategoryModalOpen(true)} onResetApp={handleResetApp} onOpenTour={handleOpenWelcomeTour} onOpenFormGuide={handleOpenFormGuide} />;
+                pageComponent = <Profile theme={theme} onToggleTheme={handleToggleTheme} onOpenTour={handleOpenWelcomeTour} onOpenFormGuide={handleOpenFormGuide} />;
                 break;
             default:
                 pageComponent = <Dashboard 
@@ -571,6 +666,10 @@ const App: React.FC = () => {
                     setView={setView} 
                     isTargetSet={isTargetSet} 
                     accounts={accounts} 
+                    activeDebts={activeDebts}
+                    savingsGoals={savingsGoals}
+                    activeSavingsGoals={activeSavingsGoals}
+                    userCategories={userCategories}
                 />;
         }
         
@@ -621,14 +720,16 @@ const App: React.FC = () => {
                 <AddSavingsGoalForm onSave={handleAddSavingsGoal} onClose={() => setActiveModal(null)} />
             </Modal>
 
-            <Modal isOpen={!!editingTransaction} onClose={() => setEditingTransaction(null)}>
+            <Modal isOpen={!!editingTransaction} onClose={handleCloseTransactionModal}>
                 <TransactionFormModal
                     transactionToEdit={editingTransaction === 'new' ? null : editingTransaction}
                     onSave={handleSaveTransaction}
                     onDelete={handleDeleteTransaction}
-                    onClose={() => setEditingTransaction(null)}
+                    onClose={handleCloseTransactionModal}
                     userCategories={userCategories}
                     accounts={accounts}
+                    forcedType={forcedTransactionType}
+                    currentMonthlyTarget={currentMonthlyTarget}
                 />
             </Modal>
             
@@ -638,6 +739,8 @@ const App: React.FC = () => {
                     onSave={handleSaveCategory}
                     onDelete={handleDeleteCategory}
                     onClose={() => setIsCategoryModalOpen(false)}
+                    activeDebts={activeDebts}
+                    activeSavingsGoals={activeSavingsGoals}
                 />
             </Modal>
 
@@ -663,6 +766,7 @@ const App: React.FC = () => {
                     onSave={handleSaveTransaction}
                     onClose={() => setActiveModal(null)}
                     userCategories={userCategories}
+                    currentMonthlyTarget={currentMonthlyTarget}
                 />
             </Modal>
 

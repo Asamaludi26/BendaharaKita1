@@ -1,7 +1,8 @@
 
 
+
 import { GoogleGenAI, Type } from "@google/genai";
-import type { FinancialInsight, Transaction, MonthlyTarget, DebtItem, SavingsGoal } from '../types';
+import type { FinancialInsight, Transaction, MonthlyTarget, DebtItem, SavingsGoal, UserCategory, TargetFormField, TransactionType } from '../types';
 
 // Aligned with @google/genai guidelines to assume API_KEY is always present.
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -58,21 +59,25 @@ export const getFinancialInsight = async (transactions: Transaction[], income: n
   }
 };
 
-export const generateMonthlyTarget = async (prompt: string, debts: DebtItem[], savingsGoals: SavingsGoal[]): Promise<MonthlyTarget> => {
+// FIX: Added the 'userCategories' parameter to the function signature to resolve a TypeScript error where it was being called with an incorrect number of arguments.
+export const generateMonthlyTarget = async (prompt: string, debts: DebtItem[], savingsGoals: SavingsGoal[], userCategories: UserCategory[]): Promise<MonthlyTarget> => {
     const debtDetails = debts.map(d => `- ${d.name}: Cicilan bulanan Rp ${d.monthlyInstallment.toLocaleString('id-ID')}`).join('\n');
     const savingsDetails = savingsGoals.map(s => `- ${s.name}: Target Rp ${s.targetAmount.toLocaleString('id-ID')}`).join('\n');
+    const availableCategoryNames = userCategories.map(c => c.name).join(', ');
 
     const systemInstruction = `You are a helpful financial planning assistant for a user in Indonesia. Your task is to generate a detailed monthly budget based on the user's prompt and existing financial goals.
     - Currency is Indonesian Rupiah (Rp).
     - Automatically include all provided debts and suggest a reasonable monthly savings amount for each savings goal.
-    - Create other common expense items based on the user's prompt (e.g., rent, food, transport).
+    - Create other common expense and income items based on the user's prompt.
     - All amounts must be numbers without commas or symbols.
-    - Structure the output strictly according to the provided JSON schema. Do not add any extra fields. The 'id' for each item must be a unique string.
+    - Structure the output as a JSON array of category objects. Each object must have a 'categoryName' (string) and 'items' (an array of budget items).
+    - **Crucially, you must only use category names from this provided list**: ${availableCategoryNames}.
+    - The 'id' for each item must be a unique string.
 
-    **Existing User Debts (must be included in 'cicilanUtang'):**
+    **Existing User Debts (must be placed in an appropriate expense category):**
     ${debtDetails || 'No active debts.'}
     
-    **Existing User Savings Goals (must be included in 'tabungan'):**
+    **Existing User Savings Goals (must be placed in an appropriate expense/savings category):**
     ${savingsDetails || 'No active savings goals.'}
     `;
 
@@ -87,17 +92,15 @@ export const generateMonthlyTarget = async (prompt: string, debts: DebtItem[], s
     };
 
     const responseSchema = {
-        type: Type.OBJECT,
-        properties: {
-            pendapatan: { type: Type.ARRAY, items: targetFormFieldSchema },
-            cicilanUtang: { type: Type.ARRAY, items: targetFormFieldSchema },
-            pengeluaranUtama: { type: Type.ARRAY, items: targetFormFieldSchema },
-            kebutuhan: { type: Type.ARRAY, items: targetFormFieldSchema },
-            penunjang: { type: Type.ARRAY, items: targetFormFieldSchema },
-            pendidikan: { type: Type.ARRAY, items: targetFormFieldSchema },
-            tabungan: { type: Type.ARRAY, items: targetFormFieldSchema },
-        },
-        required: ['pendapatan', 'cicilanUtang', 'pengeluaranUtama', 'kebutuhan', 'penunjang', 'pendidikan', 'tabungan']
+        type: Type.ARRAY,
+        items: {
+            type: Type.OBJECT,
+            properties: {
+                categoryName: { type: Type.STRING },
+                items: { type: Type.ARRAY, items: targetFormFieldSchema }
+            },
+            required: ['categoryName', 'items']
+        }
     };
 
     try {
@@ -112,21 +115,46 @@ export const generateMonthlyTarget = async (prompt: string, debts: DebtItem[], s
         });
 
         const jsonString = response.text.trim();
-        const generatedTarget: MonthlyTarget = JSON.parse(jsonString);
-        
-        // Ensure all items have a unique ID, fallback if model fails
-        Object.keys(generatedTarget).forEach(key => {
-            const section = key as keyof MonthlyTarget;
-            if (Array.isArray(generatedTarget[section])) {
-                generatedTarget[section].forEach(item => {
-                    if (!item.id) {
-                        item.id = `gen-${Math.random().toString(36).substr(2, 9)}`;
-                    }
-                });
+        const generatedCategories: { categoryName: string; items: TargetFormField[] }[] = JSON.parse(jsonString);
+
+        const newTarget: MonthlyTarget = {};
+        const categoryNameMap = new Map(userCategories.map(c => [c.name, c.id]));
+
+        generatedCategories.forEach(genCat => {
+            const catId = categoryNameMap.get(genCat.categoryName);
+            if (catId) {
+                newTarget[catId] = genCat.items.map(item => ({
+                    ...item,
+                    id: item.id || `gen-${Math.random().toString(36).substr(2, 9)}`
+                }));
             }
         });
 
-        return generatedTarget;
+        // Safety override: ensure debts and savings from user's goals are correctly placed
+        const allGoals = [...debts, ...savingsGoals];
+        allGoals.forEach(goal => {
+            const catId = categoryNameMap.get(goal.name);
+            if(catId) {
+                const amount = 'monthlyInstallment' in goal ? goal.monthlyInstallment : 0;
+                if (!newTarget[catId]) {
+                    newTarget[catId] = [];
+                }
+                const existingItemIndex = newTarget[catId].findIndex(item => item.name === goal.name);
+                const newItem = {
+                    id: `goal-${goal.id}`,
+                    name: goal.name,
+                    amount: String(amount)
+                };
+                if (existingItemIndex > -1) {
+                    newTarget[catId][existingItemIndex] = newItem;
+                } else {
+                    newTarget[catId].push(newItem);
+                }
+            }
+        });
+
+
+        return newTarget;
     } catch (error) {
         console.error("Error generating monthly target from Gemini API:", error);
         throw new Error("Gagal membuat target dengan AI. Silakan coba lagi.");

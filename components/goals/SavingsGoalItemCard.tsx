@@ -34,7 +34,7 @@ const SavingsGoalItemCard: React.FC<SavingsGoalItemCardProps> = ({ goal, onSelec
         if (goal.isEmergencyFund) {
             return (
                 <div className="flex-shrink-0 ml-2 text-xs font-bold text-sky-400 bg-sky-500/10 px-2.5 py-1.5 rounded-full">
-                    <i className="fa-solid fa-shield-check mr-1.5"></i>
+                    <i className="fa-solid fa-shield-halved mr-1.5"></i>
                     Siaga
                 </div>
             );

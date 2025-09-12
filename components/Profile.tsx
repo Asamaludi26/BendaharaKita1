@@ -1,11 +1,8 @@
-import React, { useState } from 'react';
-import Modal from './Modal';
+import React from 'react';
 
 interface ProfileProps {
     theme: 'light' | 'dark';
     onToggleTheme: () => void;
-    onManageCategories: () => void;
-    onResetApp: () => void;
     onOpenTour: () => void;
     onOpenFormGuide: () => void;
 }
@@ -38,13 +35,7 @@ const ProfileButton: React.FC<{ onClick: () => void; label: string; icon: string
 );
 
 
-const Profile: React.FC<ProfileProps> = ({ theme, onToggleTheme, onManageCategories, onResetApp, onOpenTour, onOpenFormGuide }) => {
-    const [isResetModalOpen, setIsResetModalOpen] = useState(false);
-
-    const handleConfirmReset = () => {
-        onResetApp();
-        setIsResetModalOpen(false);
-    }
+const Profile: React.FC<ProfileProps> = ({ theme, onToggleTheme, onOpenTour, onOpenFormGuide }) => {
 
   return (
     <>
@@ -64,10 +55,8 @@ const Profile: React.FC<ProfileProps> = ({ theme, onToggleTheme, onManageCategor
                       <ThemeToggle theme={theme} onToggle={onToggleTheme} />
                   </div>
                 </div>
-                <ProfileButton onClick={onManageCategories} label="Kelola Kategori" icon="fa-chevron-right" />
                 <ProfileButton onClick={onOpenTour} label="Panduan Alur Aplikasi" icon="fa-book-open" />
                 <ProfileButton onClick={onOpenFormGuide} label="Panduan Pengisian Form" icon="fa-file-pen" />
-                <ProfileButton onClick={() => setIsResetModalOpen(true)} label="Reset Seluruh Aplikasi" icon="fa-triangle-exclamation" isDestructive />
               </div>
           </div>
 
@@ -79,23 +68,6 @@ const Profile: React.FC<ProfileProps> = ({ theme, onToggleTheme, onManageCategor
               </div>
           </div>
       </div>
-
-       <Modal isOpen={isResetModalOpen} onClose={() => setIsResetModalOpen(false)}>
-        <div className="relative bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-xl text-center p-6">
-          <button onClick={() => setIsResetModalOpen(false)} className="absolute top-4 right-4 w-10 h-10 rounded-full text-[var(--text-tertiary)] hover:bg-[var(--bg-interactive-hover)] flex items-center justify-center transition-colors z-10" aria-label="Close modal"><i className="fa-solid fa-times text-xl"></i></button>
-          
-          <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-br from-red-400 via-red-500 to-red-600 shadow-lg shadow-red-500/40 mb-4">
-            <i className="fa-solid fa-triangle-exclamation text-3xl text-white"></i>
-          </div>
-          
-          <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-2">Reset Seluruh Data?</h3>
-          <p className="text-[var(--text-secondary)] mb-6">Tindakan ini akan <strong>menghapus semua data</strong> yang telah Anda simpan. <br/><br/><span className="font-bold text-[var(--color-warning)]">Tindakan ini tidak dapat diurungkan.</span></p>
-          <div className="flex flex-col gap-3">
-              <button type="button" onClick={handleConfirmReset} className="w-full bg-red-600 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:bg-red-700 transform hover:scale-105 transition-all">Ya, Hapus Semua Data</button>
-              <button type="button" onClick={() => setIsResetModalOpen(false)} className="w-full bg-transparent text-[var(--text-tertiary)] font-semibold py-3 px-6 rounded-full hover:bg-[var(--bg-interactive-hover)]">Batal</button>
-          </div>
-        </div>
-      </Modal>
     </>
   );
 };

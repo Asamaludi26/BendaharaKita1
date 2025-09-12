@@ -20,11 +20,11 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeView, setView }) => {
     [View.SAVINGS_GOAL_DETAIL]: View.MANAGEMENT,
     [View.DEBT_HISTORY]: View.MANAGEMENT,
     [View.SAVINGS_GOAL_HISTORY]: View.MANAGEMENT,
-    [View.REPORTS_DASHBOARD]: View.DASHBOARD,
     [View.ADD_TARGET]: View.DASHBOARD,
     [View.TARGET_HISTORY]: View.DASHBOARD,
     [View.ACTUALS_HISTORY]: View.DASHBOARD,
     [View.ADD_ACTUAL]: View.DASHBOARD,
+    [View.ACCOUNT_DETAIL]: View.WALLET,
   };
   
   const currentActiveView = activeViewsMap[activeView as keyof typeof activeViewsMap] || activeView;
@@ -38,7 +38,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeView, setView }) => {
             <button
               key={item.view}
               onClick={() => setView(item.view)}
-              className={`relative flex flex-col items-center justify-center w-20 h-16 transition-all duration-500 ease-in-out rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-glow)] group
+              className={`relative flex flex-col items-center justify-center flex-1 h-16 transition-all duration-500 ease-in-out rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-glow)] group
                 ${isActive ? '' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-interactive)]'}`
               }
               aria-label={item.label}

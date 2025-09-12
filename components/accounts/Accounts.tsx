@@ -1,233 +1,314 @@
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import type { Account } from '../../types';
 import Modal from '../Modal';
 
 interface AccountsProps {
-  accounts: Account[];
-  onAddAccount: () => void;
-  onEditAccount: (account: Account) => void;
-  onDeleteAccount: (accountId: string) => void;
-  onTransfer: () => void;
-  onReset: () => void;
-  onSelectAccount: (accountId: string) => void;
-  onInitiateTopUp: () => void;
-  onInitiateWithdrawSavings: () => void;
+    accounts: Account[];
+    onAddAccount: () => void;
+    onEditAccount: (account: Account) => void;
+    onDeleteAccount: (accountId: string) => void;
+    onTransfer: () => void;
+    onReset: () => void;
+    onSelectAccount: (accountId: string) => void;
+    onInitiateTopUp: () => void;
+    onInitiateWithdrawSavings: () => void;
+    onAddExpense: () => void;
 }
 
-// A helper function to render highlighted text
-const renderContentWithHighlight = (content: string) => {
-    const parts = content.split(/(\*\*.*?\*\*)/g);
-    return parts.map((part, index) => {
-        if (part.startsWith('**') && part.endsWith('**')) {
-            return (
-                <strong key={index} className="font-bold text-[var(--primary-glow)]">
-                    {part.slice(2, -2)}
-                </strong>
-            );
-        }
-        return part;
-    });
-};
+const AccountCarouselCard: React.FC<{ account: Account; onSelect: () => void }> = ({ account, onSelect }) => {
+    const isNegative = account.balance < 0;
 
+    const backgroundStyle = isNegative
+        ? 'linear-gradient(135deg, #7f1d1d 0%, #ef4444 100%)'
+        : account.type === 'Bank'
+        ? 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)'
+        : 'linear-gradient(135deg, #166534 0%, #22c55e 100%)';
 
-// A new, more prominent card for the total balance and primary actions.
-const TotalBalanceCard: React.FC<{ totalNetWorth: number; onAddAccount: () => void; onTransfer: () => void; onTopUp: () => void; onWithdrawSavings: () => void; }> = ({ totalNetWorth, onAddAccount, onTransfer, onTopUp, onWithdrawSavings }) => (
-    <div className="relative bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-3xl shadow-2xl p-6 md:p-8 overflow-hidden">
-        <div className="absolute -inset-px rounded-3xl bg-gradient-to-br from-[var(--primary-glow)]/20 via-transparent to-transparent"></div>
-        <div className="relative z-10">
-            <p className="text-lg font-semibold text-[var(--text-secondary)]">Total Saldo Gabungan</p>
-            <p className="text-4xl md:text-5xl font-bold text-[var(--text-primary)] mt-2" style={{ filter: 'drop-shadow(0 0 10px var(--bg-primary))' }}>
-                Rp {totalNetWorth.toLocaleString('id-ID')}
-            </p>
-            <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
-                 <button 
-                    onClick={onAddAccount} 
-                    className="flex items-center justify-center space-x-3 p-4 bg-[var(--bg-interactive)] border border-[var(--border-secondary)] text-[var(--text-secondary)] rounded-xl hover:bg-[var(--bg-interactive-hover)] hover:text-[var(--text-primary)] transition-colors"
-                >
-                    <i className="fa-solid fa-plus-circle text-xl"></i>
-                    <span className="font-bold">Tambah Akun</span>
-                </button>
-                 <button 
-                    onClick={onTransfer} 
-                    className="flex items-center justify-center space-x-3 p-4 bg-[var(--bg-interactive)] border border-[var(--border-secondary)] text-[var(--text-secondary)] rounded-xl hover:bg-[var(--bg-interactive-hover)] hover:text-[var(--text-primary)] transition-colors"
-                 >
-                    <i className="fa-solid fa-right-left text-xl"></i>
-                    <span className="font-semibold">Transfer</span>
-                </button>
-                <button 
-                    onClick={onWithdrawSavings} 
-                    className="flex items-center justify-center space-x-3 p-4 bg-[var(--bg-interactive)] border border-[var(--border-secondary)] text-[var(--text-secondary)] rounded-xl hover:bg-[var(--bg-interactive-hover)] hover:text-[var(--text-primary)] transition-colors"
-                >
-                    <i className="fa-solid fa-vault text-xl"></i>
-                    <span className="font-semibold">Ambil Tabungan</span>
-                </button>
-                <button 
-                    onClick={onTopUp} 
-                    className="flex items-center justify-center space-x-3 p-4 bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white rounded-xl shadow-lg hover:shadow-xl hover:shadow-[var(--primary-glow)]/30 transform hover:scale-105 transition-all"
-                >
-                    <i className="fa-solid fa-arrow-up-from-bracket text-xl"></i>
-                    <span className="font-bold">Isi Saldo</span>
-                </button>
-            </div>
-        </div>
-    </div>
-);
-
-
-// Redesigned AccountCard with an interactive options menu.
-const AccountCard: React.FC<{ account: Account; onEdit: () => void; onDelete: () => void; onSelect: () => void; }> = ({ account, onEdit, onDelete, onSelect }) => {
-    const isPositive = account.balance >= 0;
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const menuRef = useRef<HTMLDivElement>(null);
-
-    const iconBgClass = account.type === 'Bank' 
-        ? 'bg-sky-500/10 text-sky-400'
-        : 'bg-green-500/10 text-green-400';
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-                setIsMenuOpen(false);
-            }
-        };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, [menuRef]);
+    const icon = isNegative ? 'fa-triangle-exclamation' : account.type === 'Bank' ? 'fa-building-columns' : 'fa-wallet';
 
     return (
         <div
-            className="relative bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-2xl group transition-all duration-300 hover:border-[var(--border-secondary)] hover:-translate-y-1 hover:shadow-2xl"
-            style={{ zIndex: isMenuOpen ? 20 : 'auto' }}
+            onClick={onSelect}
+            className="w-full h-48 rounded-2xl p-5 flex flex-col justify-between text-white shadow-lg cursor-pointer transform hover:scale-[1.03] transition-transform duration-300"
+            style={{ background: backgroundStyle }}
         >
-            <div className="flex justify-between items-center p-5">
-                {/* Main clickable area for details */}
-                <div className="flex-grow flex items-center space-x-4 cursor-pointer" onClick={onSelect}>
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${iconBgClass} border border-current`}>
-                        <i className={`fa-solid ${account.type === 'Bank' ? 'fa-building-columns' : 'fa-wallet'} text-xl`}></i>
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-lg text-[var(--text-primary)]">{account.name}</h3>
-                        <p className="text-sm text-[var(--text-tertiary)]">{account.type}</p>
-                    </div>
+            <div className="flex justify-between items-start">
+                <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center"><i className={`fa-solid ${icon}`}></i></div>
+                    <span className="font-bold">{account.name}</span>
                 </div>
+                <span className="text-xs font-semibold uppercase tracking-wider">{account.type}</span>
+            </div>
+            <div>
+                <p className="text-sm opacity-80">Saldo</p>
+                <p className="text-2xl font-bold tracking-tight">Rp {account.balance.toLocaleString('id-ID')}</p>
+            </div>
+        </div>
+    );
+};
 
-                {/* Balance and Actions Area */}
-                <div className="flex items-center space-x-3 ml-2">
-                    <p className={`text-lg sm:text-xl font-bold ${isPositive ? 'text-[var(--text-primary)]' : 'text-[var(--color-expense)]'}`}>
-                        Rp {account.balance.toLocaleString('id-ID')}
-                    </p>
+const AccountListItem: React.FC<{ account: Account; onSelect: () => void; onEdit: () => void; onDelete: () => void }> = ({ account, onSelect, onEdit, onDelete }) => {
+    const isNegative = account.balance < 0;
+    const icon = isNegative ? 'fa-triangle-exclamation' : account.type === 'Bank' ? 'fa-building-columns' : 'fa-wallet';
+    const iconColor = isNegative ? 'var(--color-warning)' : account.type === 'Bank' ? 'var(--primary-glow)' : 'var(--secondary-glow)';
 
-                    {/* Kebab Menu for other actions */}
-                    <div className="relative" ref={menuRef}>
-                        <button onClick={(e) => { e.stopPropagation(); setIsMenuOpen(prev => !prev); }} className="w-8 h-8 rounded-full text-[var(--text-tertiary)] hover:bg-[var(--bg-interactive-hover)] transition-colors">
-                            <i className="fa-solid fa-ellipsis-vertical"></i>
-                        </button>
-                        <div
-                            className={`absolute top-full right-0 mt-2 w-36 bg-[var(--bg-interactive)] border border-[var(--border-secondary)] rounded-lg shadow-2xl z-30 py-1 origin-top-right transition-all duration-200 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isMenuOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
-                        >
-                            <button onClick={() => { onEdit(); setIsMenuOpen(false); }} className="w-full text-left px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-interactive-hover)] hover:text-[var(--text-primary)] transition-colors flex items-center space-x-2">
-                                <i className="fa-solid fa-pencil w-4 text-center"></i>
-                                <span>Edit</span>
-                            </button>
-                            <button onClick={() => { onDelete(); setIsMenuOpen(false); }} className="w-full text-left px-3 py-2 text-sm text-[var(--color-warning)] hover:bg-[var(--bg-interactive-hover)] transition-colors flex items-center space-x-2">
-                                <i className="fa-solid fa-trash-can w-4 text-center"></i>
-                                <span>Hapus</span>
-                            </button>
-                        </div>
-                    </div>
+    return (
+        <div onClick={onSelect} className="relative rounded-xl p-px bg-gradient-to-b from-white/5 to-transparent group cursor-pointer transition-all duration-300 hover:from-white/10">
+            <div className="relative p-3 bg-[var(--bg-secondary)] rounded-[11px] flex items-center space-x-4 hover:bg-[var(--bg-interactive-hover)]">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center border flex-shrink-0" style={{ borderColor: iconColor, backgroundColor: `${iconColor}1A`, color: iconColor }}>
+                    <i className={`fa-solid ${icon} text-xl`}></i>
+                </div>
+                <div className="flex-1 min-w-0">
+                    <p className="font-bold text-[var(--text-primary)] truncate">{account.name}</p>
+                    <p className={`font-semibold text-sm ${isNegative ? 'text-[var(--color-warning)]' : 'text-[var(--text-secondary)]'}`}>Rp {account.balance.toLocaleString('id-ID')}</p>
+                </div>
+                <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={(e) => { e.stopPropagation(); onEdit(); }} className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--text-tertiary)] hover:bg-[var(--bg-interactive-hover)] hover:text-[var(--primary-glow)] transition-colors"><i className="fa-solid fa-pencil"></i></button>
+                    <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--text-tertiary)] hover:bg-[var(--bg-interactive-hover)] hover:text-[var(--color-expense)] transition-colors"><i className="fa-solid fa-trash-can"></i></button>
                 </div>
             </div>
         </div>
     );
 };
 
-const Accounts: React.FC<AccountsProps> = ({ accounts, onAddAccount, onEditAccount, onDeleteAccount, onTransfer, onReset, onSelectAccount, onInitiateTopUp, onInitiateWithdrawSavings }) => {
-    const totalNetWorth = useMemo(() => accounts.reduce((sum, acc) => sum + acc.balance, 0), [accounts]);
-    const [isResetModalOpen, setIsResetModalOpen] = useState(false);
 
-    const handleDelete = (accountId: string) => {
-        if (window.confirm('Apakah Anda yakin? Menghapus akun hanya bisa dilakukan jika tidak ada transaksi yang terkait.')) {
-            onDeleteAccount(accountId);
+const ActionButton: React.FC<{ label: string; icon: string; onClick: () => void; }> = ({ label, icon, onClick }) => (
+    <button onClick={onClick} className="flex flex-col items-center justify-center space-y-2 p-2 rounded-lg hover:bg-[var(--bg-interactive-hover)] transition-colors w-full">
+        <div className="w-12 h-12 rounded-full bg-[var(--bg-interactive)] border border-[var(--border-primary)] flex items-center justify-center text-[var(--primary-glow)]">
+            <i className={`fa-solid ${icon}`}></i>
+        </div>
+        <span className="text-xs font-semibold text-center text-[var(--text-tertiary)]">{label}</span>
+    </button>
+);
+
+
+const Accounts: React.FC<AccountsProps> = ({ accounts, onAddAccount, onEditAccount, onDeleteAccount, onTransfer, onReset, onSelectAccount, onInitiateTopUp, onInitiateWithdrawSavings, onAddExpense, }) => {
+    const [accountToDelete, setAccountToDelete] = useState<Account | null>(null);
+    const [isListView, setIsListView] = useState(false);
+    
+    // Enhanced Carousel Drag & Momentum Logic
+    const carouselRef = useRef<HTMLDivElement>(null);
+    const isDragging = useRef(false);
+    const startX = useRef(0);
+    const scrollLeft = useRef(0);
+    const velocity = useRef(0);
+    const animationFrame = useRef<number | null>(null);
+
+    const [activeIndex, setActiveIndex] = useState(0);
+    const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+    useEffect(() => {
+        cardRefs.current = cardRefs.current.slice(0, accounts.length);
+    }, [accounts]);
+
+    const handleIntersection = useCallback((entries: IntersectionObserverEntry[]) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const index = cardRefs.current.indexOf(entry.target as HTMLDivElement);
+                if (index !== -1) {
+                    setActiveIndex(index);
+                }
+            }
+        });
+    }, []);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(handleIntersection, {
+            root: carouselRef.current,
+            rootMargin: '0px',
+            threshold: 0.6,
+        });
+
+        cardRefs.current.forEach(card => {
+            if (card) observer.observe(card);
+        });
+
+        return () => {
+            cardRefs.current.forEach(card => {
+                if (card) observer.unobserve(card);
+            });
+        };
+    }, [accounts, handleIntersection]);
+
+    const momentumScroll = useCallback(() => {
+        if (!carouselRef.current) return;
+        
+        carouselRef.current.scrollLeft += velocity.current;
+        velocity.current *= 0.95; // Friction
+        
+        if (Math.abs(velocity.current) > 0.5) {
+            animationFrame.current = requestAnimationFrame(momentumScroll);
+        } else {
+            if (animationFrame.current) {
+                cancelAnimationFrame(animationFrame.current);
+            }
+        }
+    }, []);
+
+    const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
+        if (!carouselRef.current) return;
+        isDragging.current = true;
+        const pageX = 'touches' in e ? e.touches[0].pageX : e.pageX;
+        startX.current = pageX - carouselRef.current.offsetLeft;
+        scrollLeft.current = carouselRef.current.scrollLeft;
+        velocity.current = 0;
+        if (animationFrame.current) {
+            cancelAnimationFrame(animationFrame.current);
+        }
+        carouselRef.current.style.cursor = 'grabbing';
+    };
+
+    const handleDragEnd = () => {
+        if (!carouselRef.current) return;
+        isDragging.current = false;
+        carouselRef.current.style.cursor = 'grab';
+        if (Math.abs(velocity.current) > 1) {
+             animationFrame.current = requestAnimationFrame(momentumScroll);
         }
     };
 
-    const handleConfirmReset = () => {
-        onReset();
-        setIsResetModalOpen(false);
+    const handleDragMove = (e: React.MouseEvent | React.TouchEvent) => {
+        if (!isDragging.current || !carouselRef.current) return;
+        e.preventDefault();
+        const pageX = 'touches' in e ? e.touches[0].pageX : e.pageX;
+        const x = pageX - carouselRef.current.offsetLeft;
+        const walk = (x - startX.current) * 2; // Scroll faster
+        const newScrollLeft = scrollLeft.current - walk;
+        
+        velocity.current = newScrollLeft - carouselRef.current.scrollLeft;
+        carouselRef.current.scrollLeft = newScrollLeft;
     };
     
+    const totalBalance = useMemo(() => accounts.reduce((sum, acc) => sum + acc.balance, 0), [accounts]);
+
+    const handleConfirmDelete = () => {
+        if (accountToDelete) {
+            onDeleteAccount(accountToDelete.id);
+            setAccountToDelete(null);
+        }
+    };
+
     return (
         <>
-            <div className="p-4 md:p-6 space-y-6 animate-fade-in">
+            {isListView && (
+                <div onClick={() => setIsListView(false)} className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 animate-fade-in"></div>
+            )}
+            <div className="p-4 md:p-6 space-y-6 animate-fade-in pb-24">
                 <header className="flex justify-between items-center">
-                    <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)]">Dompet Saya</h1>
-                    <button 
-                        onClick={() => setIsResetModalOpen(true)}
-                        className="w-10 h-10 rounded-full bg-[var(--bg-secondary)] text-[var(--text-tertiary)] flex items-center justify-center transition-colors shadow-sm hover:bg-[var(--bg-interactive-hover)] border border-[var(--border-primary)]"
-                        aria-label="Atur Ulang Data Dompet"
-                        title="Atur Ulang Data Dompet"
-                    >
+                    <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)]">Dompet & Akun</h1>
+                    <button onClick={onReset} className="w-10 h-10 rounded-full bg-[var(--bg-secondary)] text-[var(--text-tertiary)] flex items-center justify-center transition-colors shadow-sm hover:bg-[var(--bg-interactive-hover)] border border-[var(--border-primary)]" aria-label="Atur Ulang Data Dompet" title="Atur Ulang Data Dompet">
                         <i className="fa-solid fa-gear"></i>
                     </button>
                 </header>
 
-                <TotalBalanceCard 
-                    totalNetWorth={totalNetWorth} 
-                    onAddAccount={onAddAccount} 
-                    onTransfer={onTransfer} 
-                    onTopUp={onInitiateTopUp}
-                    onWithdrawSavings={onInitiateWithdrawSavings}
-                />
+                <div className="relative p-6 rounded-2xl bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-center shadow-lg">
+                    <p className="text-sm font-medium text-[var(--text-tertiary)]">Total Saldo di Semua Akun</p>
+                    <p className={`text-4xl font-bold mt-2 ${totalBalance < 0 ? 'text-[var(--color-expense)]' : 'text-[var(--text-primary)]'}`}>
+                        Rp {totalBalance.toLocaleString('id-ID')}
+                    </p>
+                </div>
 
-                {accounts.length > 0 ? (
-                    <div className="space-y-4">
-                        <h2 className="text-xl font-bold text-[var(--text-primary)] pt-4">Daftar Akun</h2>
-                        <div className="grid grid-cols-1 gap-4">
-                            {accounts.map(account => (
-                                <AccountCard
-                                    key={account.id}
-                                    account={account}
-                                    onEdit={() => onEditAccount(account)}
-                                    onDelete={() => handleDelete(account.id)}
-                                    onSelect={() => onSelectAccount(account.id)}
-                                />
-                            ))}
+                <div className="p-4 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-2xl">
+                    <div className="grid grid-cols-4 gap-2">
+                        <ActionButton label="Isi Saldo" icon="fa-circle-plus" onClick={onInitiateTopUp} />
+                        <ActionButton label="Transfer" icon="fa-right-left" onClick={onTransfer} />
+                        <ActionButton label="Tarik Tabungan" icon="fa-vault" onClick={onInitiateWithdrawSavings} />
+                        <ActionButton label="Pengeluaran" icon="fa-cart-shopping" onClick={onAddExpense} />
+                    </div>
+                </div>
+
+                <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                        <h2 className="text-xl font-bold text-[var(--text-primary)]">Daftar Akun</h2>
+                         <div className="flex items-center space-x-2">
+                            <button onClick={onAddAccount} className="flex items-center space-x-2 text-sm font-semibold text-[var(--primary-glow)] hover:text-[var(--text-primary)] transition-colors p-2 rounded-lg hover:bg-[var(--bg-interactive-hover)]">
+                                <i className="fa-solid fa-plus"></i>
+                                <span className="hidden sm:inline">Tambah Akun</span>
+                            </button>
+                             <button onClick={() => setIsListView(!isListView)} className="flex items-center space-x-2 text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors p-2 rounded-lg hover:bg-[var(--bg-interactive-hover)]">
+                                <i className={`fa-solid ${isListView ? 'fa-layer-group' : 'fa-list'}`}></i>
+                                <span className="hidden sm:inline">{isListView ? 'Ringkasan' : 'Lihat Semua'}</span>
+                            </button>
                         </div>
                     </div>
-                ) : (
-                    <div className="text-center py-16 px-6 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-2xl">
-                        <div className="w-24 h-24 mx-auto bg-gradient-to-br from-[var(--primary-500)] to-[var(--secondary-500)] rounded-full flex items-center justify-center mb-6 shadow-lg shadow-[var(--primary-glow)]/20">
-                            <i className="fa-solid fa-piggy-bank text-5xl text-white"></i>
+                    {accounts.length > 0 ? (
+                        <div className="relative">
+                            <div
+                                ref={carouselRef}
+                                onMouseDown={handleDragStart}
+                                onMouseUp={handleDragEnd}
+                                onMouseLeave={handleDragEnd}
+                                onMouseMove={handleDragMove}
+                                onTouchStart={handleDragStart}
+                                onTouchEnd={handleDragEnd}
+                                onTouchMove={handleDragMove}
+                                className="flex space-x-4 overflow-x-auto snap-x snap-mandatory p-2 -m-2 no-scrollbar cursor-grab"
+                                style={{scrollBehavior: 'smooth'}}
+                            >
+                                {accounts.map((acc, index) => (
+                                    <div 
+                                        key={acc.id} 
+                                        ref={el => { cardRefs.current[index] = el; }}
+                                        className="w-4/5 sm:w-1/2 md:w-1/3 flex-shrink-0 snap-center"
+                                    >
+                                        <AccountCarouselCard account={acc} onSelect={() => onSelectAccount(acc.id)} />
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="flex justify-center space-x-2 mt-4">
+                                {accounts.map((_, index) => (
+                                    <div key={index} className={`w-2 h-2 rounded-full transition-all duration-300 ${activeIndex === index ? 'bg-[var(--primary-glow)] scale-125' : 'bg-[var(--bg-interactive)]'}`} />
+                                ))}
+                            </div>
                         </div>
-                        <h3 className="text-2xl font-bold text-[var(--text-primary)]">Mulai Lacak Keuangan Anda</h3>
-                        <p className="text-[var(--text-tertiary)] max-w-sm mx-auto mt-2 mb-6">Tambahkan akun bank atau e-wallet pertama Anda untuk mulai mencatat semua transaksi dan melihat gambaran finansial Anda.</p>
-                        <button 
-                            onClick={onAddAccount} 
-                            className="bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
-                        >
-                            Tambah Akun Pertama
-                        </button>
-                    </div>
-                )}
+                    ) : (
+                        <div className="text-center p-8 bg-[var(--bg-secondary)] rounded-2xl mt-4">
+                            <i className="fa-solid fa-folder-open text-4xl text-[var(--text-tertiary)] mb-4"></i>
+                            <p className="font-semibold text-[var(--text-primary)]">Belum Ada Akun</p>
+                            <p className="text-sm text-[var(--text-tertiary)]">Klik 'Tambah Akun' untuk memulai.</p>
+                        </div>
+                    )}
+                </div>
             </div>
 
-            <Modal isOpen={isResetModalOpen} onClose={() => setIsResetModalOpen(false)}>
+            {/* List View Overlay */}
+             {isListView && (
+                <div 
+                    className="fixed bottom-0 left-0 right-0 z-40 bg-[var(--bg-secondary)]/80 backdrop-blur-xl border-t border-[var(--border-primary)] rounded-t-2xl shadow-2xl flex flex-col animate-fade-in-up"
+                    style={{ maxHeight: '70vh', paddingBottom: 'calc(env(safe-area-inset-bottom, 0rem) + 8rem)' }}
+                >
+                    <div className="p-4 pt-3 flex-shrink-0">
+                        <div className="w-12 h-1.5 bg-[var(--border-secondary)] rounded-full mx-auto mb-5"></div>
+                        <h3 className="text-xl font-bold text-center text-[var(--text-primary)]">Semua Akun</h3>
+                    </div>
+                    <div className="overflow-y-auto px-4 flex-grow space-y-3">
+                        {accounts.map(acc => (
+                            <AccountListItem 
+                                key={acc.id}
+                                account={acc}
+                                onSelect={() => { onSelectAccount(acc.id); setIsListView(false); }}
+                                onEdit={() => { onEditAccount(acc); setIsListView(false); }}
+                                onDelete={() => { setAccountToDelete(acc); setIsListView(false); }}
+                            />
+                        ))}
+                    </div>
+                </div>
+             )}
+
+            <Modal isOpen={!!accountToDelete} onClose={() => setAccountToDelete(null)}>
                 <div className="relative bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-xl text-center p-6">
-                    <button onClick={() => setIsResetModalOpen(false)} className="absolute top-4 right-4 w-10 h-10 rounded-full text-[var(--text-tertiary)] hover:bg-[var(--bg-interactive-hover)] flex items-center justify-center transition-colors z-10" aria-label="Close modal"><i className="fa-solid fa-times text-xl"></i></button>
-                    
                     <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-br from-red-400 via-red-500 to-red-600 shadow-lg shadow-red-500/40 mb-4">
                         <i className="fa-solid fa-triangle-exclamation text-3xl text-white"></i>
                     </div>
-
-                    <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-2">Atur Ulang Data Dompet?</h3>
+                    <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-2">Hapus Akun?</h3>
                     <p className="text-[var(--text-secondary)] mb-6">
-                        {renderContentWithHighlight("Tindakan ini akan **menghapus semua akun dan transaksi** yang telah Anda catat. Anda akan dipandu untuk memasukkannya kembali.")}
+                        Anda yakin ingin menghapus akun <strong>{accountToDelete?.name}</strong>? Tindakan ini tidak dapat diurungkan.
                         <br/><br/>
-                        <span className="font-semibold text-[var(--text-tertiary)]">Data Goals (Utang & Tabungan) tidak akan terpengaruh.</span>
+                        <span className="font-bold text-[var(--color-warning)]">Anda hanya bisa menghapus akun yang tidak memiliki riwayat transaksi.</span>
                     </p>
                     <div className="flex flex-col gap-3">
-                        <button type="button" onClick={handleConfirmReset} className="w-full bg-red-600 text-white font-bold py-3 px-6 rounded-full shadow-lg">Ya, Atur Ulang</button>
-                        <button type="button" onClick={() => setIsResetModalOpen(false)} className="w-full bg-transparent text-[var(--text-tertiary)] font-semibold py-3 px-6 rounded-full hover:bg-[var(--bg-interactive-hover)]">Batal</button>
+                        <button type="button" onClick={handleConfirmDelete} className="w-full bg-red-600 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:bg-red-700">Ya, Hapus</button>
+                        <button type="button" onClick={() => setAccountToDelete(null)} className="w-full bg-transparent text-[var(--text-tertiary)] font-semibold py-3 px-6 rounded-full hover:bg-[var(--bg-interactive-hover)]">Batal</button>
                     </div>
                 </div>
             </Modal>

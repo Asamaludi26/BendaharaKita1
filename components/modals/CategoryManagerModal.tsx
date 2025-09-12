@@ -1,60 +1,61 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { UserCategory, TransactionType } from '../../types';
+import { UserCategory, TransactionType, DebtItem, SavingsGoal } from '../../types';
 
 interface CategoryManagerModalProps {
     categories: UserCategory[];
     onSave: (category: UserCategory) => void;
     onDelete: (categoryId: string) => void;
     onClose: () => void;
+    activeDebts: DebtItem[];
+    activeSavingsGoals: SavingsGoal[];
 }
 
-const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({ categories, onSave, onDelete, onClose }) => {
-    const [editingCategory, setEditingCategory] = useState<UserCategory | null>(null);
-    const [newCategoryName, setNewCategoryName] = useState('');
-    const [newCategoryType, setNewCategoryType] = useState<TransactionType>(TransactionType.EXPENSE);
-    
-    const handleEditClick = (category: UserCategory) => {
-        setEditingCategory(category);
-        setNewCategoryName(category.name);
-        setNewCategoryType(category.type);
+const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({ categories, onSave, onDelete, onClose, activeDebts, activeSavingsGoals }) => {
+    const [editingCategory, setEditingCategory] = useState<Partial<UserCategory> | null>(null);
+
+    const usedCategoryNames = useMemo(() => {
+        const debtNames = new Set(activeDebts.map(d => d.name));
+        const savingsNames = new Set(activeSavingsGoals.map(s => s.name));
+        return new Set([...debtNames, ...savingsNames]);
+    }, [activeDebts, activeSavingsGoals]);
+
+    const handleStartAdd = (type: TransactionType) => {
+        setEditingCategory({ id: uuidv4(), name: '', type, isActive: true });
     };
 
-    const handleCancelEdit = () => {
-        setEditingCategory(null);
-        setNewCategoryName('');
-        setNewCategoryType(TransactionType.EXPENSE);
-    };
-
-    const handleSaveClick = () => {
-        if (newCategoryName.trim() === '') return;
-        
-        if (editingCategory) {
-            onSave({ ...editingCategory, name: newCategoryName, type: newCategoryType });
-        } else {
-            onSave({ id: uuidv4(), name: newCategoryName, type: newCategoryType });
+    const handleSave = () => {
+        if (editingCategory && editingCategory.name) {
+            onSave(editingCategory as UserCategory);
+            setEditingCategory(null);
         }
-        handleCancelEdit();
     };
 
-    const handleDeleteClick = (id: string) => {
-        if(window.confirm('Menghapus kategori ini tidak akan mengubah transaksi yang sudah ada. Lanjutkan?')) {
-            onDelete(id);
+    const handleDelete = (categoryId: string) => {
+        if (window.confirm('Yakin ingin menghapus kategori ini?')) {
+            onDelete(categoryId);
         }
-    }
+    };
     
     const renderCategoryList = (type: TransactionType) => {
-        return categories
-            .filter(c => c.type === type)
-            .map(cat => (
-                <div key={cat.id} className="flex items-center justify-between p-2 bg-[var(--bg-interactive)] rounded-lg">
-                    <span className="text-[var(--text-secondary)]">{cat.name}</span>
-                    <div className="space-x-2">
-                        <button onClick={() => handleEditClick(cat)} className="text-[var(--text-tertiary)] hover:text-[var(--primary-glow)] w-6 h-6"><i className="fa-solid fa-pencil"></i></button>
-                        <button onClick={() => handleDeleteClick(cat.id)} className="text-[var(--text-tertiary)] hover:text-[var(--color-expense)] w-6 h-6"><i className="fa-solid fa-trash-can"></i></button>
+        const filteredCategories = categories.filter(c => c.type === type && !usedCategoryNames.has(c.name));
+        
+        return (
+            <div className="space-y-2">
+                {filteredCategories.map(cat => (
+                    <div key={cat.id} className="flex items-center justify-between p-2 bg-[var(--bg-interactive)] rounded-md">
+                        <span className="font-medium text-[var(--text-secondary)]">{cat.name}</span>
+                        <div className="flex items-center space-x-2">
+                             <button onClick={() => setEditingCategory(cat)} className="w-7 h-7 flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--primary-glow)]"><i className="fa-solid fa-pencil text-sm"></i></button>
+                             <button onClick={() => handleDelete(cat.id)} className="w-7 h-7 flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--color-expense)]"><i className="fa-solid fa-trash-can text-sm"></i></button>
+                        </div>
                     </div>
-                </div>
-            ));
+                ))}
+                <button onClick={() => handleStartAdd(type)} className="w-full text-left text-sm font-semibold text-[var(--primary-glow)] p-2 rounded-md hover:bg-[var(--bg-interactive-hover)] transition-colors">
+                    + Tambah Kategori
+                </button>
+            </div>
+        )
     };
 
     return (
@@ -66,45 +67,52 @@ const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({ categories,
                 </button>
             </header>
 
-            <div className="space-y-4 max-h-64 overflow-y-auto pr-2 mb-6">
-                <div>
-                    <h2 className="font-semibold text-lg text-[var(--text-primary)] mb-2" style={{color: 'var(--color-expense)'}}>Pengeluaran</h2>
-                    <div className="space-y-2">{renderCategoryList(TransactionType.EXPENSE)}</div>
+            {editingCategory ? (
+                <div className="space-y-4 p-4 bg-[var(--bg-primary)] rounded-lg border border-[var(--border-primary)]">
+                    <h2 className="font-semibold text-lg text-[var(--text-primary)]">{editingCategory.id ? 'Ubah Kategori' : 'Kategori Baru'}</h2>
+                    <div>
+                        <label className="text-sm font-medium text-[var(--text-secondary)]">Nama Kategori</label>
+                        <input
+                            type="text"
+                            value={editingCategory.name || ''}
+                            onChange={(e) => setEditingCategory(prev => ({...prev, name: e.target.value}))}
+                            className="w-full p-2 mt-1 bg-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-md"
+                            autoFocus
+                        />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <input type="checkbox" id="isActive" checked={editingCategory.isActive} onChange={e => setEditingCategory(prev => ({...prev, isActive: e.target.checked}))} />
+                        <label htmlFor="isActive" className="text-sm text-[var(--text-secondary)]">Aktif</label>
+                    </div>
+                    <div className="flex justify-end gap-3 pt-2">
+                        <button onClick={() => setEditingCategory(null)} className="font-semibold text-[var(--text-secondary)] py-2 px-4 rounded-md hover:bg-[var(--bg-interactive)]">Batal</button>
+                        <button onClick={handleSave} className="font-bold text-white bg-[var(--primary-600)] py-2 px-4 rounded-md">Simpan</button>
+                    </div>
                 </div>
-                 <div>
-                    <h2 className="font-semibold text-lg text-[var(--text-primary)] mb-2" style={{color: 'var(--color-income)'}}>Pemasukan</h2>
-                    <div className="space-y-2">{renderCategoryList(TransactionType.INCOME)}</div>
+            ) : (
+                <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
+                    <div>
+                        <h2 className="text-lg font-semibold text-[var(--color-income)] mb-2">Pemasukan</h2>
+                        {renderCategoryList(TransactionType.INCOME)}
+                    </div>
+                     <div>
+                        <h2 className="text-lg font-semibold text-[var(--color-expense)] mb-2">Pengeluaran</h2>
+                        {renderCategoryList(TransactionType.EXPENSE)}
+                    </div>
+                    <div>
+                        <h2 className="text-lg font-semibold text-[var(--text-tertiary)] mb-2">Kategori Terkunci</h2>
+                        <p className="text-xs text-[var(--text-tertiary)] mb-2">Kategori ini terkait dengan Goals aktif dan tidak dapat diubah atau dihapus.</p>
+                        <div className="space-y-2">
+                            {[...activeDebts, ...activeSavingsGoals].map(goal => (
+                                <div key={goal.id} className="flex items-center space-x-2 p-2 bg-[var(--bg-interactive)] rounded-md text-[var(--text-tertiary)]">
+                                    <i className="fa-solid fa-lock text-xs"></i>
+                                    <span className="text-sm font-medium">{goal.name}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
-            </div>
-
-            <div className="space-y-4 border-t border-[var(--border-primary)] pt-6">
-                <h2 className="text-lg font-bold text-[var(--text-primary)]">{editingCategory ? 'Ubah Kategori' : 'Tambah Kategori Baru'}</h2>
-                <div className="flex items-center justify-center space-x-2 p-1 bg-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-full w-full">
-                    <button type="button" onClick={() => setNewCategoryType(TransactionType.EXPENSE)} className={`px-4 py-2 rounded-full w-1/2 text-sm font-semibold transition-all ${newCategoryType === TransactionType.EXPENSE ? 'bg-[var(--color-expense)] text-white shadow-md' : 'text-[var(--text-secondary)]'}`}>
-                        Pengeluaran
-                    </button>
-                    <button type="button" onClick={() => setNewCategoryType(TransactionType.INCOME)} className={`px-4 py-2 rounded-full w-1/2 text-sm font-semibold transition-all ${newCategoryType === TransactionType.INCOME ? 'bg-[var(--color-income)] text-white shadow-md' : 'text-[var(--text-secondary)]'}`}>
-                        Pemasukan
-                    </button>
-                </div>
-                <input 
-                    type="text"
-                    placeholder="Nama kategori baru"
-                    value={newCategoryName}
-                    onChange={(e) => setNewCategoryName(e.target.value)}
-                    className="w-full p-2 bg-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-md focus:ring-2 focus:ring-[var(--primary-glow)]"
-                />
-                 <div className="flex gap-3">
-                    {editingCategory && (
-                        <button onClick={handleCancelEdit} className="w-full bg-transparent text-[var(--text-tertiary)] font-semibold py-2 px-4 rounded-full hover:bg-[var(--bg-interactive-hover)] transition-colors">
-                            Batal
-                        </button>
-                    )}
-                    <button onClick={handleSaveClick} className="w-full bg-gradient-to-r from-[var(--secondary-600)] to-[var(--primary-500)] text-white font-bold py-2 px-4 rounded-full shadow-lg disabled:opacity-50" disabled={!newCategoryName.trim()}>
-                        {editingCategory ? 'Simpan Perubahan' : 'Tambah'}
-                    </button>
-                 </div>
-            </div>
+            )}
         </div>
     );
 };

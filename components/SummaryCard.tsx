@@ -19,6 +19,8 @@ const SummaryCard: React.FC<SummaryCardProps> = ({ data, isComparisonMode }) => 
   const mainColor = `var(--color-${color})`;
   const changeColor = isPositiveChange ? 'var(--color-income)' : 'var(--color-expense)';
 
+  const amountColorClass = amount < 0 ? 'text-[var(--color-expense)]' : 'text-[var(--text-primary)]';
+
   return (
     <div 
         className="relative rounded-2xl p-px bg-gradient-to-b from-white/10 to-transparent group transition-all duration-300 hover:from-white/20"
@@ -36,11 +38,11 @@ const SummaryCard: React.FC<SummaryCardProps> = ({ data, isComparisonMode }) => 
                 </div>
                 {isComparisonMode && target ? (
                 <div>
-                    <p className="text-xl font-bold text-[var(--text-primary)]">{formatCurrency(amount)}</p>
+                    <p className={`text-xl font-bold ${amountColorClass}`}>{formatCurrency(amount)}</p>
                     <p className="text-xs text-[var(--text-tertiary)]">/ {formatCurrency(target)}</p>
                 </div>
                 ) : (
-                <p className="text-2xl font-bold text-[var(--text-primary)]">{formatCurrency(amount)}</p>
+                <p className={`text-2xl font-bold ${amountColorClass}`}>{formatCurrency(amount)}</p>
                 )}
             </div>
             <div className="mt-4">

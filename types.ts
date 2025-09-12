@@ -14,7 +14,6 @@ export enum View {
   ACTUALS_HISTORY = 'ACTUALS_HISTORY',
   DEBT_HISTORY = 'DEBT_HISTORY',
   SAVINGS_GOAL_HISTORY = 'SAVINGS_GOAL_HISTORY',
-  REPORTS_DASHBOARD = 'REPORTS_DASHBOARD',
   WALLET = 'WALLET',
   ACCOUNT_DETAIL = 'ACCOUNT_DETAIL',
 }
@@ -80,13 +79,8 @@ export interface TargetFormField {
 }
 
 export interface MonthlyTarget {
-  pendapatan: TargetFormField[];
-  cicilanUtang: TargetFormField[];
-  pengeluaranUtama: TargetFormField[];
-  kebutuhan: TargetFormField[];
-  penunjang: TargetFormField[];
-  pendidikan: TargetFormField[];
-  tabungan: TargetFormField[];
+  // key is the UserCategory id
+  [categoryId: string]: TargetFormField[];
 }
 
 export interface ArchivedMonthlyTarget {
@@ -120,4 +114,5 @@ export interface UserCategory {
     id: string;
     name: string;
     type: TransactionType;
+    isActive: boolean;
 }

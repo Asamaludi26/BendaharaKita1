@@ -42,7 +42,7 @@ const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({ transac
             </div>
             
             <div className="space-y-3 mb-8">
-                <DetailRow label="Tanggal" value={formattedDate} icon="fa-calendar-alt" />
+                <DetailRow label="Tanggal" value={formattedDate} icon="fa-calendar-days" />
                 <DetailRow label="Kategori" value={transaction.category} icon="fa-tags" />
                 <DetailRow label="Akun" value={accountName} icon="fa-wallet" />
                 <DetailRow label="Tipe" value={isIncome ? 'Pemasukan' : 'Pengeluaran'} icon={isIncome ? 'fa-arrow-down' : 'fa-arrow-up'} />

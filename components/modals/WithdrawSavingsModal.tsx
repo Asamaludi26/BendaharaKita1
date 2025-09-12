@@ -58,7 +58,7 @@ const WithdrawSavingsModal: React.FC<WithdrawSavingsModalProps> = ({ savingsGoal
 
     const modalTitle = isEmergencyWithdrawal ? "Gunakan Dana Darurat" : "Ambil Dana Tabungan";
     const modalDescription = isEmergencyWithdrawal ? "Gunakan hanya untuk kebutuhan mendesak." : "Pindahkan dana dari tujuan ke dompet.";
-    const modalIcon = isEmergencyWithdrawal ? "fa-shield-heart" : "fa-vault";
+    const modalIcon = isEmergencyWithdrawal ? "fa-shield-halved" : "fa-vault";
 
     const confirmationTitle = isEmergencyWithdrawal ? "Gunakan Dana Darurat?" : "Anda Yakin?";
     const confirmationIcon = isEmergencyWithdrawal ? "fa-triangle-exclamation" : "fa-circle-question";

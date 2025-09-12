@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import type { Transaction, UserCategory, Account } from '../../types';
+import type { Transaction, UserCategory, Account } from '../types';
 import { TransactionType } from '../types';
 
 interface TransactionsProps {
@@ -10,15 +10,26 @@ interface TransactionsProps {
   onSelect: (transaction: Transaction) => void;
 }
 
-const TransactionItem: React.FC<{ transaction: Transaction; style: React.CSSProperties, onSelect: (transaction: Transaction) => void, accountName: string | undefined }> = ({ transaction, style, onSelect, accountName }) => {
+interface TransactionItemProps {
+  transaction: Transaction;
+  style: React.CSSProperties;
+  onSelect: (transaction: Transaction) => void;
+  accountName: string | undefined;
+}
+
+const TransactionItem: React.FC<TransactionItemProps> = React.memo(({ transaction, style, onSelect, accountName }) => {
   const isIncome = transaction.type === TransactionType.INCOME;
   const indicatorColor = isIncome ? 'var(--color-income)' : 'var(--color-expense)';
+  
+  const handleSelect = useCallback(() => {
+    onSelect(transaction);
+  }, [transaction, onSelect]);
 
   return (
     <div 
         className="relative rounded-xl p-px bg-gradient-to-b from-white/5 to-transparent group cursor-pointer transition-all duration-300 hover:from-white/10"
         style={style} 
-        onClick={() => onSelect(transaction)} 
+        onClick={handleSelect} 
         role="button" 
         tabIndex={0} 
         aria-label={`Lihat detail transaksi: ${transaction.description}`}
@@ -45,7 +56,7 @@ const TransactionItem: React.FC<{ transaction: Transaction; style: React.CSSProp
       </div>
     </div>
   );
-};
+});
 
 const FilterChip: React.FC<{ label: string; value: string; selectedValue: string; onSelect: (value: string) => void; }> = ({ label, value, selectedValue, onSelect }) => {
     const isActive = value === selectedValue;
@@ -334,7 +345,7 @@ const Transactions: React.FC<TransactionsProps> = ({ transactions, userCategorie
 
       <button
         onClick={onAdd}
-        className="fixed bottom-28 right-4 md:bottom-6 md:right-6 w-14 h-14 rounded-2xl hidden md:flex items-center justify-center text-white shadow-lg shadow-[var(--primary-glow)]/30 transform hover:scale-110 transition-all z-30"
+        className="fixed bottom-28 right-4 md:bottom-6 md:right-6 w-14 h-14 rounded-2xl flex md:flex items-center justify-center text-white shadow-lg shadow-[var(--primary-glow)]/30 transform hover:scale-110 transition-all z-30"
         style={{ backgroundImage: 'var(--gradient-primary)' }}
         aria-label="Tambah Transaksi Baru"
       >

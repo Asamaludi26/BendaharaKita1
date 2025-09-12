@@ -1,31 +1,41 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { Account, Transaction, TransactionType, UserCategory } from '../../types';
+import { Account, Transaction, TransactionType, UserCategory, MonthlyTarget } from '../../types';
 
 interface TopUpModalProps {
     accounts: Account[];
     onSave: (transaction: Transaction) => void;
     onClose: () => void;
     userCategories: UserCategory[];
+    currentMonthlyTarget: MonthlyTarget | null;
 }
 
-const TopUpModal: React.FC<TopUpModalProps> = ({ accounts, onSave, onClose, userCategories }) => {
+const TopUpModal: React.FC<TopUpModalProps> = ({ accounts, onSave, onClose, userCategories, currentMonthlyTarget }) => {
 
     const [selectedAccountId, setSelectedAccountId] = useState(accounts.length > 0 ? accounts[0].id : '');
 
     const incomeCategories = useMemo(() => {
+        if (currentMonthlyTarget && currentMonthlyTarget.pendapatan && currentMonthlyTarget.pendapatan.length > 0) {
+            return currentMonthlyTarget.pendapatan.map(item => ({ id: item.id, name: item.name, type: TransactionType.INCOME }));
+        }
         return userCategories.filter(c => c.type === TransactionType.INCOME);
-    }, [userCategories]);
+    }, [userCategories, currentMonthlyTarget]);
     
     const defaultCategory = useMemo(() => {
-        return incomeCategories.find(c => c.name === 'Isi Saldo')?.name || (incomeCategories.length > 0 ? incomeCategories[0].name : '');
+        const topUpCategory = incomeCategories.find(c => c.name === 'Isi Saldo');
+        if (topUpCategory) return topUpCategory.name;
+        
+        const salaryCategory = incomeCategories.find(c => c.name === 'Gaji');
+        if (salaryCategory) return salaryCategory.name;
+
+        return incomeCategories.length > 0 ? incomeCategories[0].name : '';
     }, [incomeCategories]);
 
     const selectedAccount = useMemo(() => accounts.find(a => a.id === selectedAccountId), [accounts, selectedAccountId]);
 
     const [formData, setFormData] = useState({
         amount: '',
-        description: '', // Will be set in useEffect
+        description: '', 
         category: defaultCategory,
         date: new Date().toISOString().split('T')[0],
     });
@@ -34,10 +44,11 @@ const TopUpModal: React.FC<TopUpModalProps> = ({ accounts, onSave, onClose, user
         if (selectedAccount) {
             setFormData(prev => ({
                 ...prev,
-                description: `Isi Saldo ${selectedAccount.name}`
+                description: `Isi Saldo ${selectedAccount.name}`,
+                category: defaultCategory
             }));
         }
-    }, [selectedAccount]);
+    }, [selectedAccount, defaultCategory]);
 
     const handleInputChange = (field: keyof typeof formData, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -69,7 +80,7 @@ const TopUpModal: React.FC<TopUpModalProps> = ({ accounts, onSave, onClose, user
             <header className="flex items-start justify-between mb-6">
                 <div className="flex items-center space-x-4">
                      <div className="w-12 h-12 rounded-xl flex items-center justify-center border border-[var(--border-primary)] text-[var(--color-income)] bg-[var(--color-income)]/10 flex-shrink-0">
-                        <i className="fa-solid fa-plus-circle text-2xl"></i>
+                        <i className="fa-solid fa-circle-plus text-2xl"></i>
                     </div>
                     <div>
                         <h1 className="text-xl font-bold text-[var(--text-primary)]">Isi Saldo</h1>
