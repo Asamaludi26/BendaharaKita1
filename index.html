@@ -74,17 +74,20 @@
   }
 
   :root[data-theme="light"] {
-    /* "Zenith UI" Refined Theme (Light) */
-    --bg-primary: #F6F8FA;
-    --bg-secondary: #FFFFFF;
+    /* "Zenith UI" Refined Theme (Light) - ABSOLUTE CONTRAST (V5) */
+    --bg-primary: #FFFFFF;
+    --bg-secondary: #F6F8FA;
     --bg-interactive: #F0F2F4;
     --bg-interactive-hover: #E6E8EB;
-    --border-primary: rgba(0, 0, 0, 0.08);
-    --border-secondary: rgba(0, 0, 0, 0.12);
     
-    --text-primary: #1F2328;
-    --text-secondary: #57606A;
-    --text-tertiary: #6E7781;
+    /* Borders - ABSOLUTE contrast */
+    --border-primary: #888888; /* Solid, very dark grey */
+    --border-secondary: #666666; /* Even darker */
+    
+    /* Text Colors - ABSOLUTE contrast (as requested: "make it black") */
+    --text-primary: #000000;   /* Pure black for main text */
+    --text-secondary: #212121; /* Very dark gray for labels */
+    --text-tertiary: #424242;  /* Dark gray for placeholders */
 
     --bg-success-subtle: #DAFBE1;
     --text-success-strong: #2EA043;
@@ -136,6 +139,12 @@
   button, a, input, [tabindex], summary, select, details { transition: all 0.2s ease-in-out; }
   input:focus-visible, select:focus-visible { outline: 2px solid var(--primary-glow); outline-offset: 2px; }
   button:focus-visible { outline: 2px solid var(--primary-glow); outline-offset: 2px; border-radius: 0.5rem; }
+
+  /* High-contrast placeholder text */
+  input::placeholder, textarea::placeholder {
+    color: var(--text-tertiary);
+    opacity: 1; /* Override browser defaults */
+  }
 
 
   /* Keyframe animations */

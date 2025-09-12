@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import {
     View,
@@ -38,40 +38,45 @@ const SummaryCard: React.FC<{ title: string; amount: number; colorClass: string 
 const TargetItem: React.FC<{
     item: TargetFormField;
     isLocked?: boolean;
+    isEditingMode: boolean;
     onChange: (field: 'name' | 'amount', value: string) => void;
     onRemove: () => void;
-}> = ({ item, isLocked = false, onChange, onRemove }) => (
-    <div className="flex items-center space-x-2">
-        <input
-            type="text"
-            placeholder="Nama item"
-            value={item.name}
-            onChange={(e) => onChange('name', e.target.value)}
-            className={`flex-1 p-2 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-md text-sm ${isLocked ? 'cursor-not-allowed opacity-70' : ''}`}
-            readOnly={isLocked}
-        />
-        <div className="relative">
-            <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2 text-[var(--text-tertiary)] text-sm">Rp</span>
+}> = ({ item, isLocked = false, isEditingMode, onChange, onRemove }) => {
+    const isItemLocked = isLocked || item.id.startsWith('goal-');
+    
+    return (
+        <div className="flex items-center space-x-2 py-2">
             <input
                 type="text"
-                inputMode="numeric"
-                placeholder="0"
-                value={Number(item.amount || '0').toLocaleString('id-ID')}
-                onChange={(e) => onChange('amount', e.target.value.replace(/[^0-9]/g, ''))}
-                className="w-32 p-2 pl-7 text-right bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-md text-sm"
-                readOnly={isLocked}
+                placeholder="Nama item"
+                value={item.name}
+                onChange={(e) => onChange('name', e.target.value)}
+                className={`flex-1 p-2 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-md text-sm min-w-0 ${!isEditingMode || isItemLocked ? 'cursor-not-allowed opacity-70' : ''}`}
+                readOnly={!isEditingMode || isItemLocked}
             />
+            <div className="relative">
+                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2 text-[var(--text-tertiary)] text-sm">Rp</span>
+                <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="0"
+                    value={Number(item.amount || '0').toLocaleString('id-ID')}
+                    onChange={(e) => onChange('amount', e.target.value.replace(/[^0-9]/g, ''))}
+                    className={`w-28 md:w-32 p-2 pl-7 text-right bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-md text-sm ${!isEditingMode || isItemLocked ? 'cursor-not-allowed opacity-70' : ''}`}
+                    readOnly={!isEditingMode || isItemLocked}
+                />
+            </div>
+            <button
+                type="button"
+                onClick={onRemove}
+                disabled={!isEditingMode || isItemLocked}
+                className="w-8 h-8 flex-shrink-0 flex items-center justify-center text-[var(--text-tertiary)] rounded-md hover:bg-[var(--bg-interactive-hover)] hover:text-[var(--color-expense)] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+                <i className="fa-solid fa-trash-can text-sm"></i>
+            </button>
         </div>
-        <button
-            type="button"
-            onClick={onRemove}
-            disabled={isLocked}
-            className="w-8 h-8 flex-shrink-0 flex items-center justify-center text-[var(--text-tertiary)] rounded-md hover:bg-[var(--bg-interactive-hover)] hover:text-[var(--color-expense)] disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-            <i className="fa-solid fa-trash-can text-sm"></i>
-        </button>
-    </div>
-);
+    );
+};
 
 const AddTargetForm: React.FC<AddTargetFormProps> = ({
     setView,
@@ -91,6 +96,45 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({
     const [aiPrompt, setAiPrompt] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [openAccordions, setOpenAccordions] = useState<Record<string, boolean>>({});
+    const [isActionBarVisible, setIsActionBarVisible] = useState(true);
+
+    const [isEditingMode, setIsEditingMode] = useState(!initialData);
+    const [hasChanges, setHasChanges] = useState(false);
+    const [showEditConfirm, setShowEditConfirm] = useState(false);
+    const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+    const initialTargetState = useRef<MonthlyTarget | null>(null);
+    
+    const lastScrollY = useRef(0);
+
+    useEffect(() => {
+        const scrollableContainer = document.querySelector('#root > div');
+        if (!scrollableContainer) return;
+
+        const handleScroll = () => {
+            const currentScrollY = scrollableContainer.scrollTop;
+            
+            if (currentScrollY < 50) {
+                setIsActionBarVisible(true);
+                lastScrollY.current = currentScrollY;
+                return;
+            }
+
+            if (Math.abs(currentScrollY - lastScrollY.current) < 20) return;
+
+            if (currentScrollY > lastScrollY.current) { // Scrolling down
+                setIsActionBarVisible(true);
+            } else { // Scrolling up
+                setIsActionBarVisible(false);
+            }
+            lastScrollY.current = currentScrollY;
+        };
+        
+        scrollableContainer.addEventListener('scroll', handleScroll, { passive: true });
+        return () => {
+            scrollableContainer.removeEventListener('scroll', handleScroll);
+        };
+    }, []);
+
 
     const categoryMap = useMemo(() => new Map(userCategories.map(c => [c.id, c])), [userCategories]);
     
@@ -120,10 +164,7 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({
     }, [userCategories, activeDebts, activeSavingsGoals]);
 
     useEffect(() => {
-        const autoPopulatedTarget: MonthlyTarget = {};
-        if (initialData) {
-            Object.assign(autoPopulatedTarget, initialData);
-        }
+        const autoPopulatedTarget: MonthlyTarget = initialData ? JSON.parse(JSON.stringify(initialData)) : {};
 
         activeDebts.forEach(debt => {
             const category = debtCategories.find(c => c.name === debt.name);
@@ -144,9 +185,10 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({
                 }
             }
         });
-        setTarget(autoPopulatedTarget);
 
-        // Auto-open accordions for goals
+        setTarget(autoPopulatedTarget);
+        initialTargetState.current = JSON.parse(JSON.stringify(autoPopulatedTarget));
+        
         const goalAccordionStates: Record<string, boolean> = {};
         [...debtCategories, ...savingsCategories].forEach(cat => {
             goalAccordionStates[cat.id] = true;
@@ -155,8 +197,19 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({
 
     }, [initialData, activeDebts, activeSavingsGoals, debtCategories, savingsCategories]);
 
+    useEffect(() => {
+        if (initialTargetState.current) {
+            const changes = JSON.stringify(target) !== JSON.stringify(initialTargetState.current);
+            setHasChanges(changes);
+        } else if (!initialData) {
+            const isEmpty = Object.values(target).every(items => items.length === 0);
+            setHasChanges(!isEmpty);
+        }
+    }, [target, initialData]);
+
 
     const handleCopyFromLastMonth = () => {
+        if (!isEditingMode) return;
         const lastMonth = new Date();
         lastMonth.setMonth(lastMonth.getMonth() - 1);
         const lastMonthYear = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
@@ -169,7 +222,7 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({
     };
     
     const handleGenerateWithAI = async () => {
-        if (!aiPrompt.trim()) return;
+        if (!isEditingMode || !aiPrompt.trim()) return;
         setIsGenerating(true);
         try {
             const result = await generateMonthlyTarget(aiPrompt, activeDebts, activeSavingsGoals, userCategories);
@@ -193,6 +246,7 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({
     };
 
     const handleAddItem = (categoryId: string) => {
+        if (!isEditingMode) return;
         const newItem: TargetFormField = { id: uuidv4(), name: '', amount: '' };
         setTarget(prev => ({
             ...prev,
@@ -202,6 +256,7 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({
     };
     
     const handleRemoveItem = (categoryId: string, itemId: string) => {
+        if (!isEditingMode) return;
         setTarget(prev => ({
             ...prev,
             [categoryId]: (prev[categoryId] || []).filter(item => item.id !== itemId),
@@ -225,10 +280,83 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({
         return { income, expenses, savings, potentialBalance: income - expenses - savings };
     }, [target, incomeCategories, expenseCategories, debtCategories, savingsCategories]);
     
-    const SectionHeader: React.FC<{title: string, color: string, icon: string}> = ({title, color, icon}) => (
-        <div className="flex items-center space-x-3 mb-3 border-b-2 pb-2" style={{borderColor: `var(--color-${color})`}}>
-            <i className={`fa-solid ${icon} text-lg`} style={{color: `var(--color-${color})`}}></i>
-            <h2 className="text-lg font-semibold" style={{color: `var(--color-${color})`}}>{title}</h2>
+    const handleMainActionClick = () => {
+        if (!isEditingMode) {
+            setShowEditConfirm(true);
+        } else {
+            setShowSaveConfirm(true);
+        }
+    };
+
+    const confirmEdit = () => {
+        setIsEditingMode(true);
+        setShowEditConfirm(false);
+        initialTargetState.current = JSON.parse(JSON.stringify(target));
+    };
+
+    const confirmSave = () => {
+        onSave(target);
+        setShowSaveConfirm(false);
+    };
+
+    const getButtonText = () => {
+        if (initialData) {
+            return isEditingMode ? 'Simpan Perubahan' : 'Ubah Target';
+        }
+        return 'Simpan Target';
+    };
+
+    const isButtonDisabled = isEditingMode && !hasChanges;
+
+    const Section: React.FC<{
+        title: string;
+        color: string;
+        icon: string;
+        categories: UserCategory[];
+        isLocked?: boolean;
+        noItemsText: string;
+        noItemsAction?: () => void;
+        noItemsActionText?: string;
+    }> = ({ title, color, icon, categories, isLocked, noItemsText, noItemsAction, noItemsActionText }) => (
+        <div>
+            <div className="flex items-center space-x-3 mb-3 border-b-2 pb-2" style={{borderColor: `var(--color-${color})`}}>
+                <i className={`fa-solid ${icon} text-lg`} style={{color: `var(--color-${color})`}}></i>
+                <h2 className="text-lg font-semibold" style={{color: `var(--color-${color})`}}>{title}</h2>
+            </div>
+            <div className="space-y-3">
+                {categories.length > 0 ? categories.map(cat => (
+                    <AccordionSection 
+                        key={cat.id} 
+                        title={cat.name} 
+                        isOpen={openAccordions[cat.id] || isLocked}
+                        headerClassName={isLocked && !isEditingMode ? 'bg-[var(--bg-interactive)]/50' : ''}
+                        badge={isLocked ? <i className="fa-solid fa-lock text-xs text-[var(--text-tertiary)]"></i> : undefined}
+                    >
+                        <div className="divide-y divide-[var(--border-primary)]">
+                            {(target[cat.id] || []).map(item => 
+                                <TargetItem 
+                                    key={item.id} 
+                                    item={item} 
+                                    isLocked={isLocked} 
+                                    isEditingMode={isEditingMode}
+                                    onChange={(f, v) => handleItemChange(cat.id, item.id, f, v)} 
+                                    onRemove={() => handleRemoveItem(cat.id, item.id)} 
+                                />
+                            )}
+                        </div>
+                        {!isLocked && (
+                            <button type="button" onClick={() => handleAddItem(cat.id)} disabled={!isEditingMode} className="text-sm font-semibold text-[var(--primary-glow)] hover:text-[var(--text-primary)] mt-2 p-2 -ml-2 rounded-md hover:bg-[var(--bg-interactive-hover)] disabled:opacity-50 disabled:cursor-not-allowed">+ Tambah Item</button>
+                        )}
+                    </AccordionSection>
+                )) : (
+                    <div className="text-center p-4 bg-[var(--bg-secondary)] rounded-lg border border-dashed border-[var(--border-primary)]">
+                        <p className="text-sm text-[var(--text-tertiary)]">{noItemsText}</p>
+                        {noItemsAction && noItemsActionText && (
+                            <button type="button" onClick={noItemsAction} disabled={!isEditingMode} className="mt-2 text-sm font-semibold text-[var(--primary-glow)] hover:text-[var(--text-primary)] disabled:opacity-50 disabled:cursor-not-allowed">{noItemsActionText}</button>
+                        )}
+                    </div>
+                )}
+            </div>
         </div>
     );
 
@@ -240,7 +368,7 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({
                         <button onClick={() => setView(View.DASHBOARD)} className="text-[var(--text-tertiary)]"><i className="fa-solid fa-arrow-left text-xl"></i></button>
                         <div>
                             <h1 className="text-2xl font-bold text-[var(--text-primary)]">Target Bulanan</h1>
-                            <p className="text-[var(--text-tertiary)]">Rencanakan keuangan Anda untuk bulan ini.</p>
+                            <p className="text-[var(--text-tertiary)]">{isEditingMode ? 'Rencanakan keuangan Anda.' : 'Mode lihat.'}</p>
                         </div>
                     </div>
                      <button onClick={onManageCategories} className="hidden sm:flex items-center space-x-2 text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors p-2 rounded-lg hover:bg-[var(--bg-interactive-hover)]">
@@ -258,84 +386,69 @@ const AddTargetForm: React.FC<AddTargetFormProps> = ({
                     </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
-                     <button onClick={() => setIsAiModalOpen(true)} className="flex-1 text-sm bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:shadow-xl"><i className="fa-solid fa-robot mr-2"></i>Buat dengan AI</button>
-                     <button onClick={handleCopyFromLastMonth} className="flex-1 text-sm bg-[var(--bg-interactive)] border border-[var(--border-secondary)] text-[var(--text-secondary)] font-semibold py-3 px-4 rounded-lg"><i className="fa-solid fa-copy mr-2"></i>Salin Bulan Lalu</button>
+                <div className="flex flex-col sm:flex-row gap-3">
+                     <button onClick={() => setIsAiModalOpen(true)} disabled={!isEditingMode} className="flex-1 text-sm bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"><i className="fa-solid fa-robot mr-2"></i>Buat dengan AI</button>
+                     <button onClick={handleCopyFromLastMonth} disabled={!isEditingMode} className="flex-1 text-sm bg-[var(--bg-interactive)] border border-[var(--border-secondary)] text-[var(--text-secondary)] font-semibold py-3 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"><i className="fa-solid fa-copy mr-2"></i>Salin Bulan Lalu</button>
                 </div>
                 
-                <form onSubmit={(e) => { e.preventDefault(); onSave(target); }} className="space-y-6 pb-20">
-                    {/* PENDAPATAN */}
-                    <div>
-                        <SectionHeader title="Pendapatan" color="income" icon="fa-arrow-down" />
-                        <div className="space-y-3">
-                        {incomeCategories.map(cat => (
-                            <AccordionSection key={cat.id} title={cat.name} isOpen={openAccordions[cat.id]}>
-                                {(target[cat.id] || []).map(item => <TargetItem key={item.id} item={item} onChange={(f, v) => handleItemChange(cat.id, item.id, f, v)} onRemove={() => handleRemoveItem(cat.id, item.id)} />)}
-                                <button type="button" onClick={() => handleAddItem(cat.id)} className="text-sm font-semibold text-[var(--primary-glow)] hover:text-[var(--text-primary)] mt-2">+ Tambah Item</button>
-                            </AccordionSection>
-                        ))}
-                        </div>
-                    </div>
-                    {/* HUTANG */}
-                    <div>
-                        <SectionHeader title="Hutang" color="debt" icon="fa-file-invoice-dollar" />
-                        <div className="space-y-3">
-                        {debtCategories.map(cat => (
-                            <AccordionSection key={cat.id} title={cat.name} isOpen={true} headerClassName="bg-[var(--bg-interactive)]/50" badge={<i className="fa-solid fa-lock text-xs text-[var(--text-tertiary)]"></i>}>
-                                {(target[cat.id] || []).map(item => <TargetItem key={item.id} item={item} isLocked={true} onChange={() => {}} onRemove={() => {}} />)}
-                            </AccordionSection>
-                        ))}
-                        {debtCategories.length === 0 && <p className="text-xs text-center text-[var(--text-tertiary)] py-2">Tidak ada utang aktif.</p>}
-                        </div>
-                    </div>
-                    {/* TABUNGAN */}
-                    <div>
-                        <SectionHeader title="Tabungan" color="savings" icon="fa-piggy-bank" />
-                        <div className="space-y-3">
-                        {savingsCategories.map(cat => (
-                            <AccordionSection key={cat.id} title={cat.name} isOpen={true} headerClassName="bg-[var(--bg-interactive)]/50" badge={<i className="fa-solid fa-lock text-xs text-[var(--text-tertiary)]"></i>}>
-                                {(target[cat.id] || []).map(item => <TargetItem key={item.id} item={item} isLocked={!item.id.includes('goal-')} onChange={(f, v) => handleItemChange(cat.id, item.id, f, v)} onRemove={() => handleRemoveItem(cat.id, item.id)} />)}
-                            </AccordionSection>
-                        ))}
-                        {savingsCategories.length === 0 && <p className="text-xs text-center text-[var(--text-tertiary)] py-2">Tidak ada tujuan tabungan aktif.</p>}
-                        </div>
-                    </div>
-                    {/* PENGELUARAN */}
-                     <div>
-                        <SectionHeader title="Pengeluaran" color="expense" icon="fa-arrow-up" />
-                        <div className="space-y-3">
-                        {expenseCategories.map(cat => (
-                            <AccordionSection key={cat.id} title={cat.name} isOpen={openAccordions[cat.id]}>
-                                {(target[cat.id] || []).map(item => <TargetItem key={item.id} item={item} onChange={(f, v) => handleItemChange(cat.id, item.id, f, v)} onRemove={() => handleRemoveItem(cat.id, item.id)} />)}
-                                <button type="button" onClick={() => handleAddItem(cat.id)} className="text-sm font-semibold text-[var(--primary-glow)] hover:text-[var(--text-primary)] mt-2">+ Tambah Item</button>
-                            </AccordionSection>
-                        ))}
-                        </div>
-                    </div>
+                <div className="space-y-6 pb-48">
+                    <Section title="Pendapatan" color="income" icon="fa-arrow-down" categories={incomeCategories} noItemsText="Tidak ada kategori pendapatan aktif." noItemsAction={onManageCategories} noItemsActionText="Kelola Kategori" />
+                    <Section title="Hutang" color="debt" icon="fa-file-invoice-dollar" categories={debtCategories} isLocked={true} noItemsText="Tidak ada utang aktif." noItemsAction={onAddDebt} noItemsActionText="Tambah Utang" />
+                    <Section title="Tabungan" color="savings" icon="fa-piggy-bank" categories={savingsCategories} isLocked={true} noItemsText="Tidak ada tujuan tabungan aktif." noItemsAction={onAddSavingsGoal} noItemsActionText="Tambah Tujuan Tabungan" />
+                    <Section title="Pengeluaran" color="expense" icon="fa-arrow-up" categories={expenseCategories} noItemsText="Tidak ada kategori pengeluaran aktif." noItemsAction={onManageCategories} noItemsActionText="Kelola Kategori" />
+                </div>
 
-                    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20 w-full max-w-lg px-4">
-                        <button type="submit" className="w-full bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white font-bold py-4 px-6 rounded-full shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all">
-                            Simpan Target
-                        </button>
+                <div className={`fixed bottom-28 left-0 right-0 z-20 transition-all duration-500 ease-in-out ${isActionBarVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full pointer-events-none'}`}>
+                    <div className="p-4 bg-[var(--bg-secondary)]/80 backdrop-blur-lg border-t border-[var(--border-primary)]">
+                        <div className="max-w-lg mx-auto">
+                            <button
+                                type="button"
+                                onClick={handleMainActionClick}
+                                disabled={isButtonDisabled}
+                                className="w-full bg-gradient-to-r from-[var(--primary-500)] to-[var(--secondary-500)] text-white font-bold py-4 px-6 rounded-full shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                            >
+                                {getButtonText()}
+                            </button>
+                        </div>
                     </div>
-                </form>
+                </div>
             </div>
-
+            
+            {/* AI Modal */}
             <Modal isOpen={isAiModalOpen} onClose={() => setIsAiModalOpen(false)}>
                 <div className="bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-2xl p-6 w-full max-w-lg">
                     <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">Buat Target dengan AI</h2>
-                    <p className="text-sm text-[var(--text-secondary)] mb-4">Jelaskan kondisi keuangan atau tujuan Anda bulan ini. AI akan membantu membuatkan draf target untuk Anda. Contoh: "Bulan ini saya mau lebih hemat, coba kurangi jajan dan hiburan 20%".</p>
-                    <textarea
-                        value={aiPrompt}
-                        onChange={(e) => setAiPrompt(e.target.value)}
-                        placeholder="Ketikkan prompt Anda di sini..."
-                        className="w-full h-32 p-3 bg-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-md text-sm"
-                    />
+                    <p className="text-sm text-[var(--text-secondary)] mb-4">Jelaskan kondisi keuangan atau tujuan Anda bulan ini. Contoh: "Bulan ini saya mau lebih hemat, coba kurangi jajan dan hiburan 20%".</p>
+                    <textarea value={aiPrompt} onChange={(e) => setAiPrompt(e.target.value)} placeholder="Ketikkan prompt Anda di sini..." className="w-full h-32 p-3 bg-[var(--bg-interactive)] border border-[var(--border-primary)] rounded-md text-sm" />
                     <div className="mt-4 flex justify-end gap-3">
                         <button onClick={() => setIsAiModalOpen(false)} className="font-semibold text-[var(--text-secondary)] py-2 px-4 rounded-md">Batal</button>
-                        <button onClick={handleGenerateWithAI} disabled={isGenerating || !aiPrompt.trim()} className="font-bold text-white bg-[var(--primary-600)] py-2 px-4 rounded-md disabled:opacity-50">
-                            {isGenerating ? 'Memproses...' : 'Buat Target'}
-                        </button>
+                        <button onClick={handleGenerateWithAI} disabled={isGenerating || !aiPrompt.trim()} className="font-bold text-white bg-[var(--primary-600)] py-2 px-4 rounded-md disabled:opacity-50">{isGenerating ? 'Memproses...' : 'Buat Target'}</button>
+                    </div>
+                </div>
+            </Modal>
+            
+            {/* Edit Confirmation Modal */}
+            <Modal isOpen={showEditConfirm} onClose={() => setShowEditConfirm(false)}>
+                <div className="bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-2xl p-6 w-full max-w-sm text-center">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center bg-gradient-to-br from-yellow-400 to-orange-500"><i className="fa-solid fa-pencil-alt text-3xl text-white"></i></div>
+                    <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">Ubah Target?</h3>
+                    <p className="text-sm text-[var(--text-secondary)] mb-6">Anda akan masuk ke mode edit untuk mengubah target bulan ini. Lanjutkan?</p>
+                    <div className="flex gap-3">
+                        <button onClick={() => setShowEditConfirm(false)} className="w-full bg-[var(--bg-interactive)] text-[var(--text-secondary)] font-semibold py-2 px-4 rounded-full">Batal</button>
+                        <button onClick={confirmEdit} className="w-full bg-orange-500 text-white font-bold py-2 px-4 rounded-full">Ya, Ubah</button>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Save Confirmation Modal */}
+            <Modal isOpen={showSaveConfirm} onClose={() => setShowSaveConfirm(false)}>
+                <div className="bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-2xl p-6 w-full max-w-sm text-center">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center bg-gradient-to-br from-[var(--primary-500)] to-[var(--secondary-500)]"><i className="fa-solid fa-save text-3xl text-white"></i></div>
+                    <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">Simpan Target?</h3>
+                    <p className="text-sm text-[var(--text-secondary)] mb-6">Apakah Anda yakin ingin menyimpan target untuk bulan ini?</p>
+                    <div className="flex gap-3">
+                        <button onClick={() => setShowSaveConfirm(false)} className="w-full bg-[var(--bg-interactive)] text-[var(--text-secondary)] font-semibold py-2 px-4 rounded-full">Batal</button>
+                        <button onClick={confirmSave} className="w-full bg-[var(--primary-600)] text-white font-bold py-2 px-4 rounded-full">Ya, Simpan</button>
                     </div>
                 </div>
             </Modal>

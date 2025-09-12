@@ -478,6 +478,7 @@ const App: React.FC = () => {
     
     // --- GOALS ONBOARDING & CRUD ---
     const handleGoalsOnboardingComplete = (data: { debts: DebtItem[], savingsGoals: SavingsGoal[] }) => {
+        // FIX: Corrected a typo from 'setHasSkippedOnboarding' to 'setHasSkippedGoalsOnboarding' to match the actual state setter.
         setDebts(data.debts); setSavingsGoals(data.savingsGoals); setGoalsOnboardingComplete(true); setHasSkippedGoalsOnboarding(false);
         setActiveModal(null); setToast({ message: 'Pengaturan awal berhasil!', type: 'success' });
     };
@@ -616,6 +617,10 @@ const App: React.FC = () => {
                     onInitiateTopUp={handleOpenTopUpModal}
                     onInitiateWithdrawSavings={handleOpenWithdrawSavingsModal}
                     onAddExpense={handleOpenExpenseModal}
+                    transactions={transactions}
+                    displayDate={displayDate}
+                    activeDebts={activeDebts}
+                    activeSavingsGoals={activeSavingsGoals}
                 />;
                 break;
             case View.ACCOUNT_DETAIL:
@@ -627,7 +632,7 @@ const App: React.FC = () => {
                 pageComponent = <AddTargetForm setView={setView} onSave={handleSaveTarget} initialData={currentMonthlyTarget} archivedTargets={archivedTargets} currentMonthYear={currentMonthYear} activeDebts={activeDebts} activeSavingsGoals={activeSavingsGoals} onAddDebt={() => setActiveModal('ADD_DEBT')} onAddSavingsGoal={() => setActiveModal('ADD_SAVINGS_GOAL')} userCategories={userCategories} onManageCategories={() => setIsCategoryModalOpen(true)} />;
                 break;
             case View.ADD_ACTUAL:
-                pageComponent = <ActualsReportView setView={setView} monthlyTarget={currentMonthlyTarget} transactions={transactions} debts={debts} savingsGoals={savingsGoals} displayDate={displayDate} userCategories={userCategories} />;
+                pageComponent = <ActualsReportView setView={setView} monthlyTarget={currentMonthlyTarget} transactions={transactions} activeDebts={activeDebts} activeSavingsGoals={activeSavingsGoals} displayDate={displayDate} userCategories={userCategories} />;
                 break;
             case View.TARGET_HISTORY:
                 pageComponent = <TargetHistory archives={archivedTargets} setView={setView} />;

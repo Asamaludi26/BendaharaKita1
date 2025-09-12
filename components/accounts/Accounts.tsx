@@ -1,5 +1,7 @@
 import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react';
-import type { Account } from '../../types';
+// FIX: Separated TransactionType import as it is used as a value, not just a type.
+import type { Account, Transaction, DebtItem, SavingsGoal } from '../../types';
+import { TransactionType } from '../../types';
 import Modal from '../Modal';
 
 interface AccountsProps {
@@ -13,6 +15,10 @@ interface AccountsProps {
     onInitiateTopUp: () => void;
     onInitiateWithdrawSavings: () => void;
     onAddExpense: () => void;
+    transactions: Transaction[];
+    displayDate: Date;
+    activeDebts: DebtItem[];
+    activeSavingsGoals: SavingsGoal[];
 }
 
 const AccountCarouselCard: React.FC<{ account: Account; onSelect: () => void }> = ({ account, onSelect }) => {
@@ -81,12 +87,22 @@ const ActionButton: React.FC<{ label: string; icon: string; onClick: () => void;
     </button>
 );
 
+const CategoryBreakdownItem: React.FC<{ name: string; amount: number; percentage: number; color: string }> = ({ name, amount, percentage, color }) => (
+    <div className="space-y-1.5">
+        <div className="flex justify-between items-center text-sm">
+            <p className="font-semibold text-[var(--text-secondary)] truncate">{name}</p>
+            <p className="font-bold text-[var(--text-primary)]">Rp {amount.toLocaleString('id-ID')}</p>
+        </div>
+        <div className="w-full bg-[var(--bg-interactive)] rounded-full h-2.5">
+            <div className="h-2.5 rounded-full" style={{ width: `${percentage}%`, backgroundColor: color, boxShadow: `0 0 8px ${color}` }}></div>
+        </div>
+    </div>
+);
 
-const Accounts: React.FC<AccountsProps> = ({ accounts, onAddAccount, onEditAccount, onDeleteAccount, onTransfer, onReset, onSelectAccount, onInitiateTopUp, onInitiateWithdrawSavings, onAddExpense, }) => {
+const Accounts: React.FC<AccountsProps> = ({ accounts, onAddAccount, onEditAccount, onDeleteAccount, onTransfer, onReset, onSelectAccount, onInitiateTopUp, onInitiateWithdrawSavings, onAddExpense, transactions, displayDate, activeDebts, activeSavingsGoals }) => {
     const [accountToDelete, setAccountToDelete] = useState<Account | null>(null);
     const [isListView, setIsListView] = useState(false);
     
-    // Enhanced Carousel Drag & Momentum Logic
     const carouselRef = useRef<HTMLDivElement>(null);
     const isDragging = useRef(false);
     const startX = useRef(0);
@@ -188,6 +204,57 @@ const Accounts: React.FC<AccountsProps> = ({ accounts, onAddAccount, onEditAccou
         }
     };
 
+    const monthlyTransactions = useMemo(() => {
+        const start = new Date(displayDate.getFullYear(), displayDate.getMonth(), 1);
+        const end = new Date(displayDate.getFullYear(), displayDate.getMonth() + 1, 0, 23, 59, 59, 999);
+        return transactions.filter(t => {
+            const txDate = new Date(t.date);
+            return txDate >= start && txDate <= end;
+        });
+    }, [transactions, displayDate]);
+
+    const categoryBreakdown = useMemo(() => {
+        const debtCategoryNames = new Set(activeDebts.map(d => d.name));
+        const savingsCategoryNames = new Set(activeSavingsGoals.map(sg => sg.name));
+
+        const incomeSummary: { [key: string]: number } = {};
+        const expenseSummary: { [key: string]: number } = {};
+        const debtSummary: { [key: string]: number } = {};
+        const savingsSummary: { [key: string]: number } = {};
+
+        monthlyTransactions.forEach(tx => {
+            if (tx.type === TransactionType.INCOME) {
+                incomeSummary[tx.category] = (incomeSummary[tx.category] || 0) + tx.amount;
+            } else {
+                if (debtCategoryNames.has(tx.category)) {
+                    debtSummary[tx.category] = (debtSummary[tx.category] || 0) + tx.amount;
+                } else if (savingsCategoryNames.has(tx.category)) {
+                    savingsSummary[tx.category] = (savingsSummary[tx.category] || 0) + tx.amount;
+                } else {
+                    expenseSummary[tx.category] = (expenseSummary[tx.category] || 0) + tx.amount;
+                }
+            }
+        });
+
+        const toSortedArray = (summary: { [key: string]: number }) =>
+            Object.entries(summary)
+                .map(([name, value]) => ({ name, value }))
+                .sort((a, b) => b.value - a.value);
+
+        const income = toSortedArray(incomeSummary);
+        const expenses = toSortedArray(expenseSummary);
+        const debts = toSortedArray(debtSummary);
+        const savings = toSortedArray(savingsSummary);
+
+        const totalIncome = income.reduce((sum, item) => sum + item.value, 0);
+        const totalExpenses = expenses.reduce((sum, item) => sum + item.value, 0);
+        const totalDebts = debts.reduce((sum, item) => sum + item.value, 0);
+        const totalSavings = savings.reduce((sum, item) => sum + item.value, 0);
+
+        return { income, expenses, debts, savings, totalIncome, totalExpenses, totalDebts, totalSavings };
+    }, [monthlyTransactions, activeDebts, activeSavingsGoals]);
+
+
     return (
         <>
             {isListView && (
@@ -207,15 +274,81 @@ const Accounts: React.FC<AccountsProps> = ({ accounts, onAddAccount, onEditAccou
                         Rp {totalBalance.toLocaleString('id-ID')}
                     </p>
                 </div>
+                
+                {!isListView && (
+                    <>
+                        <div className="p-4 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-2xl">
+                            <div className="grid grid-cols-4 gap-2">
+                                <ActionButton label="Isi Saldo" icon="fa-circle-plus" onClick={onInitiateTopUp} />
+                                <ActionButton label="Transfer" icon="fa-right-left" onClick={onTransfer} />
+                                <ActionButton label="Tarik Tabungan" icon="fa-vault" onClick={onInitiateWithdrawSavings} />
+                                <ActionButton label="Pengeluaran" icon="fa-cart-shopping" onClick={onAddExpense} />
+                            </div>
+                        </div>
 
-                <div className="p-4 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-2xl">
-                    <div className="grid grid-cols-4 gap-2">
-                        <ActionButton label="Isi Saldo" icon="fa-circle-plus" onClick={onInitiateTopUp} />
-                        <ActionButton label="Transfer" icon="fa-right-left" onClick={onTransfer} />
-                        <ActionButton label="Tarik Tabungan" icon="fa-vault" onClick={onInitiateWithdrawSavings} />
-                        <ActionButton label="Pengeluaran" icon="fa-cart-shopping" onClick={onAddExpense} />
-                    </div>
-                </div>
+                        <div className="relative rounded-2xl p-px bg-gradient-to-b from-white/10 to-transparent">
+                            <div className="bg-[var(--bg-secondary)] rounded-[15px] p-6 space-y-6">
+                                <h2 className="text-xl font-bold text-[var(--text-primary)]">Ringkasan Alokasi Bulan Ini</h2>
+                                
+                                {/* Income Section */}
+                                <div className="space-y-3">
+                                    <div className="flex justify-between items-baseline">
+                                        <h3 className="font-semibold text-[var(--color-income)] flex items-center gap-2"><i className="fa-solid fa-arrow-down"></i> Pemasukan</h3>
+                                        <span className="text-sm font-bold text-[var(--text-primary)]">Rp {categoryBreakdown.totalIncome.toLocaleString('id-ID')}</span>
+                                    </div>
+                                    <div className="space-y-4">
+                                        {categoryBreakdown.income.length > 0 ? categoryBreakdown.income.map(item => (
+                                            // FIX: Passed `amount` prop explicitly instead of spreading `item`.
+                                            <CategoryBreakdownItem key={item.name} name={item.name} amount={item.value} percentage={(item.value / categoryBreakdown.totalIncome) * 100} color="var(--color-income)" />
+                                        )) : <p className="text-xs text-center text-[var(--text-tertiary)] py-2">Belum ada pemasukan bulan ini.</p>}
+                                    </div>
+                                </div>
+                                
+                                 {/* Expenses Section */}
+                                <div>
+                                    <h3 className="font-semibold text-[var(--color-expense)] flex items-center gap-2 mb-3"><i className="fa-solid fa-arrow-up"></i> Pengeluaran</h3>
+                                    <div className="space-y-6 p-4 bg-[var(--bg-interactive)] rounded-lg">
+                                        {/* Debt Payments */}
+                                        <div className="space-y-3">
+                                            <div className="flex justify-between items-baseline">
+                                                <h4 className="font-semibold text-[var(--text-secondary)] text-sm flex items-center gap-2"><i className="fa-solid fa-file-invoice-dollar text-[var(--color-debt)]"></i> Pembayaran Utang</h4>
+                                                <span className="text-sm font-bold text-[var(--text-primary)]">Rp {categoryBreakdown.totalDebts.toLocaleString('id-ID')}</span>
+                                            </div>
+                                            {categoryBreakdown.debts.length > 0 ? categoryBreakdown.debts.map(item => (
+                                                // FIX: Passed `amount` prop explicitly instead of spreading `item`.
+                                                <CategoryBreakdownItem key={item.name} name={item.name} amount={item.value} percentage={(item.value / (categoryBreakdown.totalDebts + categoryBreakdown.totalSavings + categoryBreakdown.totalExpenses)) * 100} color="var(--color-debt)" />
+                                            )) : <p className="text-xs text-center text-[var(--text-tertiary)] py-2">Tidak ada pembayaran utang.</p>}
+                                        </div>
+
+                                        {/* Savings Contributions */}
+                                        <div className="space-y-3">
+                                            <div className="flex justify-between items-baseline">
+                                                <h4 className="font-semibold text-[var(--text-secondary)] text-sm flex items-center gap-2"><i className="fa-solid fa-piggy-bank text-[var(--color-savings)]"></i> Setoran Tabungan</h4>
+                                                <span className="text-sm font-bold text-[var(--text-primary)]">Rp {categoryBreakdown.totalSavings.toLocaleString('id-ID')}</span>
+                                            </div>
+                                            {categoryBreakdown.savings.length > 0 ? categoryBreakdown.savings.map(item => (
+                                                // FIX: Passed `amount` prop explicitly instead of spreading `item`.
+                                                <CategoryBreakdownItem key={item.name} name={item.name} amount={item.value} percentage={(item.value / (categoryBreakdown.totalDebts + categoryBreakdown.totalSavings + categoryBreakdown.totalExpenses)) * 100} color="var(--color-savings)" />
+                                            )) : <p className="text-xs text-center text-[var(--text-tertiary)] py-2">Tidak ada setoran tabungan.</p>}
+                                        </div>
+
+                                        {/* Other Expenses */}
+                                        <div className="space-y-3">
+                                            <div className="flex justify-between items-baseline">
+                                                <h4 className="font-semibold text-[var(--text-secondary)] text-sm flex items-center gap-2"><i className="fa-solid fa-receipt text-[var(--color-expense)]"></i> Pengeluaran Lainnya</h4>
+                                                <span className="text-sm font-bold text-[var(--text-primary)]">Rp {categoryBreakdown.totalExpenses.toLocaleString('id-ID')}</span>
+                                            </div>
+                                            {categoryBreakdown.expenses.length > 0 ? categoryBreakdown.expenses.map(item => (
+                                                // FIX: Passed `amount` prop explicitly instead of spreading `item`.
+                                                <CategoryBreakdownItem key={item.name} name={item.name} amount={item.value} percentage={(item.value / (categoryBreakdown.totalDebts + categoryBreakdown.totalSavings + categoryBreakdown.totalExpenses)) * 100} color="var(--color-expense)" />
+                                            )) : <p className="text-xs text-center text-[var(--text-tertiary)] py-2">Tidak ada pengeluaran lain.</p>}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </>
+                )}
 
                 <div className="space-y-4">
                     <div className="flex justify-between items-center">

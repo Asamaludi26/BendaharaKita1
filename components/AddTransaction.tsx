@@ -7,8 +7,8 @@ interface ActualsReportViewProps {
   setView: (view: View) => void;
   monthlyTarget: MonthlyTarget | null;
   transactions: Transaction[];
-  debts: DebtItem[];
-  savingsGoals: SavingsGoal[];
+  activeDebts: DebtItem[];
+  activeSavingsGoals: SavingsGoal[];
   displayDate: Date;
   userCategories: UserCategory[];
 }
@@ -90,7 +90,7 @@ const SectionHeader: React.FC<{title: string, color: string, icon: string}> = ({
     </div>
 );
 
-const ActualsReportView: React.FC<ActualsReportViewProps> = ({ setView, monthlyTarget, transactions, displayDate, userCategories }) => {
+const ActualsReportView: React.FC<ActualsReportViewProps> = ({ setView, monthlyTarget, transactions, displayDate, userCategories, activeDebts, activeSavingsGoals }) => {
 
     const categoryActuals = useMemo(() => {
         const currentMonthStart = new Date(displayDate.getFullYear(), displayDate.getMonth(), 1);
@@ -104,6 +104,7 @@ const ActualsReportView: React.FC<ActualsReportViewProps> = ({ setView, monthlyT
         const actualsMap: { [categoryName: string]: number } = {};
         
         currentMonthTransactions.forEach(tx => {
+            // The transaction category should match the target item name
             if (!actualsMap[tx.category]) {
                 actualsMap[tx.category] = 0;
             }
@@ -113,36 +114,38 @@ const ActualsReportView: React.FC<ActualsReportViewProps> = ({ setView, monthlyT
         return actualsMap;
     }, [transactions, displayDate]);
 
-    const { incomeCategories, expenseCategories, savingsCategories, debtCategories, totalTargetIncome, totalTargetExpenses, totalTargetSavings, totalActualIncome, totalActualExpenses, totalActualSavings } = useMemo(() => {
-         const incomeCats: UserCategory[] = [];
-         const expenseCats: UserCategory[] = [];
-         const savingsCats: UserCategory[] = [];
-         const debtCats: UserCategory[] = [];
+    const { 
+        incomeCategories, 
+        expenseCategories, 
+        savingsCategories, 
+        debtCategories, 
+        totalTargetIncome, 
+        totalTargetExpenses, 
+        totalTargetSavings, 
+        totalActualIncome, 
+        totalActualExpenses, 
+        totalActualSavings 
+    } = useMemo(() => {
+        const debtNames = new Set(activeDebts.map(d => d.name));
+        const savingsNames = new Set(activeSavingsGoals.map(sg => sg.name));
 
-         const goalCategoryNames = new Set<string>();
+        const incomeCats: UserCategory[] = [];
+        const expenseCats: UserCategory[] = [];
+        const savingsCats: UserCategory[] = [];
+        const debtCats: UserCategory[] = [];
 
-         if (monthlyTarget) {
-            // A more robust way to identify goal-based categories from the target itself
-            Object.values(monthlyTarget).flat().forEach(item => {
-                if (item.id.startsWith('goal-')) {
-                    goalCategoryNames.add(item.name);
-                }
-            });
-         }
+        userCategories.forEach(cat => {
+            if (!monthlyTarget || !monthlyTarget[cat.id] || monthlyTarget[cat.id].length === 0) {
+                return;
+            }
 
-         userCategories.forEach(cat => {
-            if(!cat.isActive || !monthlyTarget || !monthlyTarget[cat.id]) return;
-            
-            if (cat.type === TransactionType.INCOME) {
-                incomeCats.push(cat);
-            } else { // Expense types
-                if (goalCategoryNames.has(cat.name)) {
-                     // Check if it's a debt-like or savings-like name
-                    if (cat.name.toLowerCase().includes('cicilan') || cat.name.toLowerCase().includes('kpr') || cat.name.includes('utang')) {
-                        debtCats.push(cat);
-                    } else { // Assume savings otherwise
-                        savingsCats.push(cat);
-                    }
+            if (debtNames.has(cat.name)) {
+                debtCats.push(cat);
+            } else if (savingsNames.has(cat.name)) {
+                savingsCats.push(cat);
+            } else if (cat.isActive) {
+                if (cat.type === TransactionType.INCOME) {
+                    incomeCats.push(cat);
                 } else {
                     expenseCats.push(cat);
                 }
@@ -155,10 +158,8 @@ const ActualsReportView: React.FC<ActualsReportViewProps> = ({ setView, monthlyT
             categories.forEach(cat => {
                 const items = monthlyTarget?.[cat.id] || [];
                 items.forEach(item => {
-                    const targetAmount = parseInt(item.amount || '0');
-                    const actualAmount = categoryActuals[item.name] || 0;
-                    targetTotal += targetAmount;
-                    actualTotal += actualAmount;
+                    targetTotal += parseInt(item.amount || '0');
+                    actualTotal += categoryActuals[item.name] || 0;
                 });
             });
             return { targetTotal, actualTotal };
@@ -181,7 +182,7 @@ const ActualsReportView: React.FC<ActualsReportViewProps> = ({ setView, monthlyT
             totalActualExpenses: actualExpensesRegular + actualDebts,
             totalActualSavings: actualSavings
         };
-    }, [monthlyTarget, userCategories, categoryActuals]);
+    }, [monthlyTarget, userCategories, activeDebts, activeSavingsGoals, categoryActuals]);
 
 
     if (!monthlyTarget) {
